@@ -1,0 +1,337 @@
+/* =========================================================
+   BYR CLUB — DESIGN SYSTEM
+   ========================================================= */
+
+:root {
+  /* Colores de marca */
+  --byr-blue-950: #041327;
+  --byr-blue-900: #071d3c;
+  --byr-blue-800: #0a2d61;
+  --byr-blue-700: #104793;
+  --byr-blue-600: #1764c0;
+  --byr-blue-500: #2581e8;
+  --byr-blue-300: #7dbbff;
+
+  --byr-white: #ffffff;
+  --byr-text: #f6f8ff;
+  --byr-text-muted: #b7c5dc;
+
+  --byr-yellow: #ffd640;
+  --byr-orange: #ff8a24;
+  --byr-pink: #ef2d75;
+  --byr-green: #33d17a;
+  --byr-red: #ff4d5e;
+
+  /* Fondos */
+  --byr-bg-page:
+    radial-gradient(circle at top, rgba(37, 129, 232, 0.18), transparent 34%),
+    linear-gradient(180deg, #071d3c 0%, #041327 100%);
+
+  --byr-bg-card:
+    linear-gradient(145deg, rgba(23, 100, 192, 0.95), rgba(10, 45, 97, 0.98));
+
+  /* Bordes y sombras */
+  --byr-border-soft: rgba(255, 255, 255, 0.12);
+  --byr-border-strong: rgba(255, 255, 255, 0.24);
+
+  --byr-shadow-card:
+    0 24px 60px rgba(0, 0, 0, 0.42),
+    0 4px 14px rgba(0, 0, 0, 0.24);
+
+  --byr-shadow-button:
+    0 10px 24px rgba(0, 0, 0, 0.28);
+
+  /* Radios */
+  --byr-radius-sm: 12px;
+  --byr-radius-md: 18px;
+  --byr-radius-lg: 28px;
+  --byr-radius-pill: 999px;
+
+  /* Espaciado */
+  --byr-space-1: 4px;
+  --byr-space-2: 8px;
+  --byr-space-3: 12px;
+  --byr-space-4: 16px;
+  --byr-space-5: 20px;
+  --byr-space-6: 24px;
+  --byr-space-8: 32px;
+  --byr-space-10: 40px;
+  --byr-space-12: 48px;
+
+  /* Animaciones */
+  --byr-transition-fast: 160ms ease;
+  --byr-transition-normal: 260ms ease;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--byr-text);
+  background: var(--byr-bg-page);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+/* =========================================================
+   LAYOUT
+   ========================================================= */
+
+.byr-page {
+  min-height: 100vh;
+  width: 100%;
+  padding: var(--byr-space-6);
+}
+
+.byr-container {
+  width: min(100%, 1100px);
+  margin: 0 auto;
+}
+
+.byr-game-layout {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--byr-space-6);
+}
+
+/* =========================================================
+   TIPOGRAFÍA
+   ========================================================= */
+
+.byr-title {
+  margin: 0;
+  color: var(--byr-white);
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 0.95;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.byr-subtitle {
+  margin: var(--byr-space-3) 0 0;
+  color: var(--byr-text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.byr-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--byr-space-2);
+  margin-bottom: var(--byr-space-4);
+  padding: 8px 14px;
+  border: 1px solid var(--byr-border-soft);
+  border-radius: var(--byr-radius-pill);
+  color: var(--byr-yellow);
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   TARJETAS
+   ========================================================= */
+
+.byr-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--byr-border-soft);
+  border-radius: var(--byr-radius-lg);
+  background: var(--byr-bg-card);
+  box-shadow: var(--byr-shadow-card);
+}
+
+.byr-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16),
+      transparent 32%,
+      transparent 70%,
+      rgba(255, 255, 255, 0.05)
+    );
+}
+
+.byr-card-content {
+  position: relative;
+  z-index: 1;
+  padding: var(--byr-space-8);
+}
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+
+.byr-button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--byr-space-2);
+  padding: 12px 22px;
+  border-radius: var(--byr-radius-pill);
+  color: var(--byr-blue-950);
+  background: linear-gradient(180deg, #ffe66c, var(--byr-yellow));
+  box-shadow: var(--byr-shadow-button);
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform var(--byr-transition-fast),
+    filter var(--byr-transition-fast),
+    box-shadow var(--byr-transition-fast);
+}
+
+.byr-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+}
+
+.byr-button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.byr-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.byr-button--secondary {
+  color: var(--byr-white);
+  border: 1px solid var(--byr-border-strong);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+/* =========================================================
+   ESTADOS Y BADGES
+   ========================================================= */
+
+.byr-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--byr-space-2);
+  padding: 7px 12px;
+  border-radius: var(--byr-radius-pill);
+  color: var(--byr-white);
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.byr-badge--success {
+  color: #c8ffe1;
+  background: rgba(51, 209, 122, 0.18);
+}
+
+.byr-badge--warning {
+  color: #fff1a7;
+  background: rgba(255, 214, 64, 0.18);
+}
+
+/* =========================================================
+   EFECTOS
+   ========================================================= */
+
+.byr-glow {
+  box-shadow:
+    var(--byr-shadow-card),
+    0 0 42px rgba(37, 129, 232, 0.18);
+}
+
+@keyframes byr-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes byr-pop {
+  0% {
+    transform: scale(0.88);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.byr-animation-float {
+  animation: byr-float 3s ease-in-out infinite;
+}
+
+.byr-animation-pop {
+  animation: byr-pop 420ms ease both;
+}
+
+/* =========================================================
+   ACCESIBILIDAD
+   ========================================================= */
+
+:focus-visible {
+  outline: 3px solid var(--byr-yellow);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .byr-page,
+  .byr-game-layout {
+    padding: var(--byr-space-4);
+  }
+
+  .byr-card-content {
+    padding: var(--byr-space-6);
+  }
+}

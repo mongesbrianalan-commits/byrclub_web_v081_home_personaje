@@ -1,0 +1,99 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    background:#071a35;
+
+    font-family:Arial,Helvetica,sans-serif;
+
+    min-height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+}
+
+.scratch-page{
+
+    width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+}
+
+.scratch-card{
+
+    position:relative;
+
+    width:360px;
+    height:420px;
+
+    border-radius:28px;
+
+    overflow:hidden;
+
+    background:linear-gradient(
+        180deg,
+        #0b2d61,
+        #123f86
+    );
+
+    box-shadow:
+        0 20px 45px rgba(0,0,0,.45);
+
+}
+
+.scratch-prize{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    color:white;
+
+    text-align:center;
+
+    padding:30px;
+
+}
+
+.icon{
+
+    font-size:72px;
+
+    margin-bottom:18px;
+
+}
+
+h2{
+
+    font-size:34px;
+
+    margin-bottom:10px;
+
+}
+
+p{
+
+    opacity:.8;
+
+}
+
+#scratchCanvas{
+
+    position:absolute;
+
+    inset:0;
+
+}
