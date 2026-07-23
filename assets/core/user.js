@@ -193,6 +193,126 @@
     return true;
   }
 
+  function claimPrize(prize, source = "Premio") {
+  if (!prize || !prize.id) {
+    console.error("Premio inválido:", prize);
+    return false;
+  }
+
+  const prizeRegistry = {
+    "points-50": {
+      points: 50,
+      xp: 25
+    },
+    "points-100": {
+      points: 100,
+      xp: 35
+    },
+    "points-250": {
+      points: 250,
+      xp: 50
+    },
+    "fries": {
+      xp: 20,
+      inventory: {
+        id: "fries",
+        label: "Papas gratis",
+        icon: "🍟",
+        type: "reward"
+      }
+    },
+    "drink": {
+      xp: 20,
+      inventory: {
+        id: "drink",
+        label: "Bebida gratis",
+        icon: "🥤",
+        type: "reward"
+      }
+    },
+    "surprise": {
+      xp: 25,
+      inventory: {
+        id: "surprise",
+        label: "Premio sorpresa",
+        icon: "🎁",
+        type: "reward"
+      }
+    },
+    "double-points": {
+      xp: 30,
+      inventory: {
+        id: "double-points",
+        label: "2x puntos",
+        icon: "🍔",
+        type: "boost"
+      }
+    },
+    "badge": {
+      xp: 40,
+      achievement: {
+        id: "roulette-exclusive-badge",
+        label: "Insignia exclusiva",
+        icon: "💎"
+      }
+    }
+  };
+
+  const reward = prizeRegistry[prize.id];
+
+  if (!reward) {
+    console.error("Premio no registrado:", prize.id);
+    return false;
+  }
+
+  const now = new Date().toISOString();
+
+  if (reward.points) {
+    state.wallet.points += reward.points;
+  }
+
+  if (reward.xp) {
+    state.progression.xp += reward.xp;
+  }
+
+  if (reward.inventory) {
+    state.inventory.unshift({
+      ...reward.inventory,
+      code: prize.code || null,
+      source,
+      status: "available",
+      obtainedAt: now
+    });
+  }
+
+  if (reward.achievement) {
+    const alreadyUnlocked = state.achievements.some(
+      (achievement) => achievement.id === reward.achievement.id
+    );
+
+    if (!alreadyUnlocked) {
+      state.achievements.unshift({
+        ...reward.achievement,
+        source,
+        unlockedAt: now
+      });
+    }
+  }
+
+  state.history.unshift({
+    type: "prize",
+    prizeId: prize.id,
+    label: prize.label || reward.inventory?.label || reward.achievement?.label,
+    points: reward.points || 0,
+    xp: reward.xp || 0,
+    source,
+    date: now
+  });
+
+  persist("prize-claimed");
+  return true;
+}
+
   function reset() {
     state = window.BYRStorage.reset();
     emitChange("reset");
@@ -201,13 +321,14 @@
   registerDailyVisit();
 
   window.BYRUser = {
-    getState,
-    getProgression,
-    addXp,
-    addPoints,
-    spendPoints,
-    setName,
-    registerDailyVisit,
-    reset
-  };
+  getState,
+  getProgression,
+  addXp,
+  addPoints,
+  spendPoints,
+  setName,
+  registerDailyVisit,
+  claimPrize,
+  reset
+};
 })();
