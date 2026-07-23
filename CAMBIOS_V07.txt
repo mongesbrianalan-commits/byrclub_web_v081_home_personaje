@@ -1,0 +1,8 @@
+BYR CLUB v0.7 — Ajustes de la primera pantalla
+
+- Personaje reducido para que no domine toda la portada.
+- Textos alejados del borde izquierdo.
+- Contenido centrado dentro de un ancho máximo visual.
+- Mejor equilibrio entre texto y personaje.
+- Cartel del personaje reducido y reposicionado.
+- Se mantuvieron intactas las demás pantallas y el estilo visual.

@@ -1,0 +1,11 @@
+BYR CLUB V1.3 — MI PERFIL PREMIUM
+
+- Reconstrucción completa de perfil.html.
+- Hero gamificado con rango Maestro, Nivel 4 y 2.450 puntos.
+- Barra XP premium animada: 82% hacia Nivel 5.
+- Próxima recompensa destacada con foto real de Doble Cheese.
+- Estadísticas premium, vitrina de logros, historial y racha.
+- Roadmap de rangos Rookie > Fan > Experto > Maestro > Leyenda.
+- Nueva hoja perfil-premium.css y script perfil-premium.js.
+- Responsive para desktop, tablet y celular.
+- Home y Beneficios no fueron modificadas.

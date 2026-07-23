@@ -1,0 +1,8 @@
+BYR CLUB V1.0 — BENEFICIOS PREMIUM
+- Home v0.8.1 conservada sin cambios.
+- Beneficios rediseñado con fotos reales BYR.
+- Barra de nivel/puntos y progreso.
+- Recompensa legendaria destacada.
+- Categorías interactivas sin recargar.
+- Tarjetas premium con estados, etiquetas y progreso.
+- Diseño responsive y animaciones.

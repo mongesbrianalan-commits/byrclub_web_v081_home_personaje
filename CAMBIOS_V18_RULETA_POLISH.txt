@@ -1,0 +1,10 @@
+BYR CLUB — V18 RULETA POLISH
+
+- Etiquetas e iconos perfectamente centrados dentro de los 8 sectores.
+- Placas individuales para cada premio.
+- Borde dorado reforzado y mayor profundidad visual.
+- Brillo animado sobre la rueda.
+- Aguja con movimiento tipo tick durante el giro.
+- Sonido suave de tick generado por el navegador.
+- Rebote y destello del sector ganador al detenerse.
+- Ajustes responsive para celular.

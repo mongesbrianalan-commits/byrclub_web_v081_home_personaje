@@ -1,0 +1,18 @@
+BYR CLUB v19 — INICIO DE ARQUITECTURA 2.0
+
+Cambios realizados:
+- La lógica de la Ruleta Diaria ahora vive en:
+  assets/games/roulette/roulette.js
+- Los controles locales de desarrollo viven en:
+  assets/games/roulette/roulette.css
+- juegos.html fue actualizado para cargar esos módulos.
+- En Live Server aparece un panel "Modo prueba" abajo a la derecha.
+- El botón "Reiniciar ruleta" borra el giro diario y permite volver a probar sin usar la consola.
+- El panel solo aparece en localhost o 127.0.0.1; no aparecerá al publicar el sitio en byrclub.com.ar.
+- No se modificaron el diseño aprobado ni la lógica de premios de la v18.
+
+Prueba recomendada:
+1. Abrir la carpeta con VS Code.
+2. Abrir juegos.html con Live Server.
+3. Girar la ruleta.
+4. Pulsar "Reiniciar ruleta" para volver a habilitarla.

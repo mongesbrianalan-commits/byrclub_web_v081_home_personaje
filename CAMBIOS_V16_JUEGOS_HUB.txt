@@ -1,0 +1,10 @@
+BYR CLUB V16 — HUB DE JUEGOS PREMIUM
+
+- Reconstrucción completa de juegos.html.
+- Nuevo hero arcade con mascota BYR, tokens y llamada diaria.
+- Tarjeta de racha semanal y estado de oportunidades.
+- Hub de juegos con Ruleta diaria destacada.
+- Próximamente: Raspá y Ganá, Caja Misteriosa, Trivia y Desafíos.
+- Sección Arcade Futuro con nuevos conceptos bloqueados.
+- Diseño responsive para escritorio, tablet y celular.
+- Home, Beneficios, Perfil y Prode permanecen sin cambios.

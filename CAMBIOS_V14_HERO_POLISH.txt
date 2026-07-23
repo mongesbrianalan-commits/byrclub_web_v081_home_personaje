@@ -1,0 +1,10 @@
+BYR CLUB — V14 HERO POLISH
+
+- Se mantuvieron Home y Beneficios sin cambios.
+- Se fijó explícitamente el orden del hero: texto a la izquierda y mascota a la derecha.
+- La mascota ahora queda apoyada visualmente sobre la base del hero, sin flotar.
+- Se agregó una sombra de contacto debajo del personaje.
+- Se centraron y alinearon los rayos detrás de la mascota.
+- Se reubicó el globo de diálogo para integrarlo mejor con el personaje.
+- Se reemplazó el rebote vertical por una microanimación más sutil y estable.
+- Se ajustó el layout responsive para tablet y celular.

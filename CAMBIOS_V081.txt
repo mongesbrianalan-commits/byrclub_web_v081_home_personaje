@@ -1,0 +1,7 @@
+BYR CLUB — V0.8.1
+
+Corrección exclusiva del hero de la Home:
+- El personaje ahora ocupa el gran espacio vacío de la izquierda.
+- Fue subido y agrandado para recuperar presencia visual.
+- El bloque de texto se mantiene a la derecha, sin modificar su estilo.
+- Menú, fondo, CTA, textos y demás secciones permanecen intactos.

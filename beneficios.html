@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071b70">
+  <title>Beneficios — BYR Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="benefits-page">
+  <div class="page-noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Ir al inicio"><img src="assets/logo-byr.png" alt="Logo BYR"><span>CLUB</span></a>
+    <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="index.html">Inicio</a><a class="active" href="beneficios.html">Beneficios</a><a href="prodes.html">Prodes</a><a href="juegos.html">Juegos</a><a href="puntos.html">Puntos</a><a href="perfil.html">Mi perfil</a>
+    </nav>
+    <a class="header-cta" href="index.html#fundadores">Quiero ser fundador</a>
+  </header>
+
+  <main class="benefits-main">
+    <section class="benefits-hero">
+      <div class="benefits-copy reveal-benefit">
+        <span class="benefits-kicker">Recompensas reales. Antojos reales.</span>
+        <h1>Desbloqueá<br><strong>beneficios BYR</strong></h1>
+        <p>Cada compra suma. Cada punto te acerca a algo que de verdad querés comerte.</p>
+        <div class="motivation-card">
+          <span>Te faltan solo</span><strong>480</strong><span>puntos para una Doble Cheese</span>
+          <small>Con una visita más, puede ser tuya.</small>
+        </div>
+      </div>
+      <div class="benefits-hero-art reveal-benefit">
+        <div class="hero-reward-glow"></div>
+        <img src="assets/rewards/doble-cheese.jpg" alt="Doble Cheese Burger BYR">
+        <div class="hero-sticker">¡Ya casi<br>es tuya!</div>
+        <img class="benefits-mascot" src="assets/personaje-byr.png" alt="Mascota BYR Club presentando los beneficios">
+      </div>
+    </section>
+
+    <section class="member-strip" aria-label="Resumen de puntos">
+      <div><span>Tu nivel</span><strong>⭐ Nivel 4</strong></div>
+      <div><span>Tus puntos</span><strong>2.020 pts</strong></div>
+      <div class="member-progress"><span>Próximo premio: Doble Cheese</span><div class="benefits-progress"><i style="--progress:80.8%"></i></div><small>2.020 / 2.500 puntos</small></div>
+      <button type="button" data-tab-target="hamburguesas">Ver recompensas</button>
+    </section>
+
+    <section class="legendary-section reveal-benefit">
+      <div class="legendary-copy">
+        <span class="legendary-label">👑 Recompensa legendaria</span>
+        <h2>Combo Triple Cheese</h2>
+        <p>Triple Cheese Burger, papas BYR y Coca-Cola. El premio grande para los que van en serio.</p>
+        <div class="legendary-meta"><strong>8.000 pts</strong><span>Exclusivo Nivel 6</span></div>
+        <div class="benefits-progress legendary-progress"><i style="--progress:25.25%"></i></div>
+        <small>Ya recorriste el 25% del camino.</small>
+        <button class="locked-action" type="button">🔒 Seguí sumando</button>
+      </div>
+      <div class="legendary-visual"><div class="legendary-rays"></div><img src="assets/rewards/combo-triple.png" alt="Combo Triple Cheese con papas y gaseosa"></div>
+    </section>
+
+    <section class="rewards-section">
+      <div class="section-title-wrap reveal-benefit"><p class="kicker">Tu vitrina de premios</p><h2>Elegí tu próximo objetivo</h2><p class="benefits-subcopy">Tocá una categoría y mirá cuánto te falta para desbloquearla.</p></div>
+      <div class="reward-tabs" role="tablist" aria-label="Categorías de beneficios">
+        <button class="reward-tab active" data-tab="hamburguesas" role="tab">🍔 Hamburguesas</button>
+        <button class="reward-tab" data-tab="papas" role="tab">🍟 Papas</button>
+        <button class="reward-tab" data-tab="bebidas" role="tab">🥤 Bebidas</button>
+        <button class="reward-tab" data-tab="especiales" role="tab">👑 Especiales</button>
+      </div>
+
+      <div class="reward-panel active" data-panel="hamburguesas">
+        <div class="premium-reward-grid">
+          <article class="premium-reward available reveal-benefit">
+            <div class="reward-image"><img src="assets/rewards/cheese-burger.jpg" alt="Cheese Burger"><span class="reward-tag hot">🔥 Más canjeada</span></div>
+            <div class="reward-body"><h3>Cheese Burger</h3><p>El clásico que nunca falla.</p><div class="reward-points"><strong>1.800 pts</strong><span>Disponible</span></div><div class="benefits-progress"><i style="--progress:100%"></i></div><small>Recompensa lista para reclamar.</small><button class="redeem-action">¡Canjear ahora!</button></div>
+          </article>
+          <article class="premium-reward reveal-benefit">
+            <div class="reward-image"><img src="assets/rewards/doble-cheese.jpg" alt="Doble Cheese Burger"><span class="reward-tag favorite">⭐ Favorita</span></div>
+            <div class="reward-body"><h3>Doble Cheese Burger</h3><p>Más carne, más cheddar, más ganas.</p><div class="reward-points"><strong>2.500 pts</strong><span>Te faltan 480</span></div><div class="benefits-progress"><i style="--progress:80.8%"></i></div><small>Con una visita más puede ser tuya.</small><button class="locked-action">🔒 Ya casi</button></div>
+          </article>
+          <article class="premium-reward reveal-benefit">
+            <div class="reward-image"><img src="assets/rewards/cuarto-byr.jpg" alt="Cuarto de BYR"><span class="reward-tag new">🎉 Nueva</span></div>
+            <div class="reward-body"><h3>Cuarto de BYR</h3><p>El sabor clásico con sello BYR.</p><div class="reward-points"><strong>3.000 pts</strong><span>Te faltan 980</span></div><div class="benefits-progress"><i style="--progress:67.3%"></i></div><small>Estás a dos visitas de desbloquearla.</small><button class="locked-action">🔒 Seguí sumando</button></div>
+          </article>
+          <article class="premium-reward reveal-benefit">
+            <div class="reward-image"><img src="assets/rewards/americana.jpg" alt="Americana"><span class="reward-tag hot">🔥 Bomba BYR</span></div>
+            <div class="reward-body"><h3>Americana</h3><p>Huevo, panceta, cebolla y BBQ. Una bomba.</p><div class="reward-points"><strong>3.800 pts</strong><span>Te faltan 1.780</span></div><div class="benefits-progress"><i style="--progress:53.1%"></i></div><small>Ya cruzaste la mitad del camino.</small><button class="locked-action">🔒 Seguí sumando</button></div>
+          </article>
+          <article class="premium-reward reveal-benefit">
+            <div class="reward-image"><img src="assets/rewards/cannons.jpg" alt="Cannons"><span class="reward-tag exclusive">👑 Exclusiva</span></div>
+            <div class="reward-body"><h3>Cannons</h3><p>Cheddar, panceta y bastones. Mucho BYR.</p><div class="reward-points"><strong>4.500 pts</strong><span>Te faltan 2.480</span></div><div class="benefits-progress"><i style="--progress:44.9%"></i></div><small>Un objetivo grande merece festejo grande.</small><button class="locked-action">🔒 Nivel 5</button></div>
+          </article>
+          <article class="premium-reward reveal-benefit">
+            <div class="reward-image"><img src="assets/rewards/la-triple.jpg" alt="La Triple"><span class="reward-tag exclusive">👑 Épica</span></div>
+            <div class="reward-body"><h3>La Triple</h3><p>Solo para los que van en serio.</p><div class="reward-points"><strong>5.200 pts</strong><span>Te faltan 3.180</span></div><div class="benefits-progress"><i style="--progress:38.8%"></i></div><small>Cada visita te acerca a esta bestia.</small><button class="locked-action">🔒 Nivel 5</button></div>
+          </article>
+        </div>
+      </div>
+
+      <div class="reward-panel" data-panel="papas"><div class="single-reward-wrap"><article class="premium-reward wide available"><div class="reward-image product-cutout"><img src="assets/rewards/papas.png" alt="Porción de papas BYR"><span class="reward-tag hot">🔥 Salen siempre</span></div><div class="reward-body"><h3>Porción de papas BYR</h3><p>El acompañamiento que nunca sobra.</p><div class="reward-points"><strong>900 pts</strong><span>Disponible</span></div><div class="benefits-progress"><i style="--progress:100%"></i></div><small>Podés reclamarla en tu próxima visita.</small><button class="redeem-action">¡Quiero mis papas!</button></div></article></div></div>
+      <div class="reward-panel" data-panel="bebidas"><div class="single-reward-wrap"><article class="premium-reward wide available"><div class="reward-image light-image"><img src="assets/rewards/coca-cola.jpg" alt="Coca-Cola"><span class="reward-tag new">🥤 Refrescante</span></div><div class="reward-body"><h3>Coca-Cola 1 litro</h3><p>Para acompañar tu pedido como corresponde.</p><div class="reward-points"><strong>700 pts</strong><span>Disponible</span></div><div class="benefits-progress"><i style="--progress:100%"></i></div><small>Recompensa lista para reclamar.</small><button class="redeem-action">Canjear bebida</button></div></article></div></div>
+      <div class="reward-panel" data-panel="especiales"><div class="single-reward-wrap"><article class="premium-reward wide legendary-mini"><div class="reward-image product-cutout"><img src="assets/rewards/combo-triple.png" alt="Combo Triple Cheese"><span class="reward-tag exclusive">👑 Legendaria</span></div><div class="reward-body"><h3>Combo Triple Cheese</h3><p>Hamburguesa, papas y gaseosa. El premio máximo.</p><div class="reward-points"><strong>8.000 pts</strong><span>Te faltan 5.980</span></div><div class="benefits-progress"><i style="--progress:25.25%"></i></div><small>Seguí jugando. Seguí comiendo. Seguí sumando.</small><button class="locked-action">🔒 Exclusivo Nivel 6</button></div></article></div></div>
+    </section>
+  </main>
+
+  <footer><a class="footer-brand" href="index.html"><img src="assets/logo-byr.png" alt="BYR"><span>Hamburguesería</span></a><div class="footer-links"><a href="https://www.instagram.com/byr.docksud/" target="_blank" rel="noreferrer">Instagram</a><a href="index.html#fundadores">BYR Club</a><span>Dock Sud, Avellaneda</span></div><p>© 2026 BYR Club</p></footer>
+  <script src="script.js"></script><script src="beneficios.js"></script>
+</body>
+</html>

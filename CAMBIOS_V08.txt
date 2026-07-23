@@ -1,0 +1,11 @@
+BYR CLUB v0.8 — HOME PREMIUM
+
+- Menú superior flotante con botones cápsula.
+- Hero con nueva jerarquía: BYR CLUB + mensaje corto de campaña.
+- CTA principal: QUIERO SER FUNDADOR.
+- Aviso byrclub.com.ar.
+- Personaje 15–20% más pequeño y desplazado hacia la derecha.
+- Animación de respiración y balanceo suave.
+- Fondo con brochazos y doodles sutiles.
+- Entrada animada del texto, personaje y CTA.
+- Cambios limitados a la Home mediante la clase home-v08.

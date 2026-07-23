@@ -1,0 +1,44 @@
+/* BYR CLUB 2.0 — herramientas locales de la Ruleta Diaria */
+.roulette-dev-panel{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:500;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 11px 10px 14px;
+  border:2px solid rgba(255,255,255,.2);
+  border-radius:16px;
+  background:rgba(4,17,67,.94);
+  color:#fff;
+  box-shadow:0 14px 34px rgba(0,0,0,.38);
+  backdrop-filter:blur(12px);
+  font-family:"Baloo 2",sans-serif;
+}
+.roulette-dev-panel span{
+  color:#8ecbff;
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.roulette-dev-panel button{
+  border:0;
+  border-radius:11px;
+  padding:9px 12px;
+  background:#ffd51f;
+  color:#071342;
+  font:900 .75rem "Baloo 2",sans-serif;
+  text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 4px 0 #9d7300;
+  transition:transform .18s ease,filter .18s ease;
+}
+.roulette-dev-panel button:hover{transform:translateY(-2px);filter:brightness(1.06)}
+.roulette-dev-panel button:active{transform:translateY(2px);box-shadow:0 2px 0 #9d7300}
+.roulette-dev-panel.is-confirmed{border-color:rgba(85,223,135,.65)}
+.roulette-dev-panel.is-confirmed span{color:#55df87}
+@media(max-width:620px){
+  .roulette-dev-panel{right:10px;bottom:10px;left:10px;justify-content:space-between}
+}

@@ -1,0 +1,171 @@
+.byr-user-bar {
+  position: fixed;
+  top: 92px;
+  right: 24px;
+  z-index: 120;
+  width: min(330px, calc(100vw - 32px));
+  padding: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(14, 50, 140, 0.96),
+      rgba(5, 22, 72, 0.96)
+    );
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-family: inherit;
+  backdrop-filter: blur(12px);
+}
+
+.byr-user-main {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.byr-user-avatar {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #ffd51f;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 1.7rem;
+  box-shadow: 0 5px 0 #8c6500;
+}
+
+.byr-user-copy {
+  min-width: 0;
+}
+
+.byr-user-greeting {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.byr-user-level {
+  color: #8ec8ff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.byr-user-points {
+  min-width: 74px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #ffd51f;
+  color: #071342;
+  text-align: center;
+  box-shadow: 0 5px 0 #926900;
+}
+
+.byr-user-points strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.byr-user-points span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.byr-user-progress {
+  margin-top: 12px;
+}
+
+.byr-user-progress-copy {
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #b9cef5;
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.byr-user-progress-track {
+  height: 10px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.byr-user-progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, #39c6ff, #ffd51f);
+  box-shadow: 0 0 16px rgba(255, 213, 31, 0.45);
+  transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.byr-user-footer {
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #8da7d5;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.byr-user-streak {
+  color: #ffcf35;
+}
+
+.byr-level-toast {
+  position: fixed;
+  left: 50%;
+  top: 110px;
+  z-index: 500;
+  padding: 16px 24px;
+  border: 3px solid #fff;
+  border-radius: 20px;
+  background: #ffd51f;
+  color: #071342;
+  font-weight: 1000;
+  text-align: center;
+  box-shadow:
+    0 9px 0 #966b00,
+    0 22px 55px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -30px) scale(0.9);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.byr-level-toast.is-visible {
+  transform: translate(-50%, 0) scale(1);
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .byr-user-bar {
+    position: relative;
+    top: auto;
+    right: auto;
+    z-index: 5;
+    width: calc(100% - 28px);
+    margin: 14px auto;
+  }
+}
