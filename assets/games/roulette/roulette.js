@@ -156,10 +156,24 @@
       wheel.classList.remove("is-spinning");
       stopTickSound();
       highlightWinningSegment(prizeIndex);
-      const result = { prize: currentPrize, code: generatePrizeCode(), date: new Date().toISOString() };
-      localStorage.setItem(STORAGE_KEY, getTodayKey());
-      localStorage.setItem(RESULT_KEY, JSON.stringify(result));
-      isSpinning = false;
+const result = {
+  prize: currentPrize,
+  code: generatePrizeCode(),
+  date: new Date().toISOString()
+};
+
+BYRUser.claimPrize(
+  {
+    ...currentPrize,
+    code: result.code
+  },
+  "Ruleta diaria"
+);
+
+localStorage.setItem(STORAGE_KEY, getTodayKey());
+localStorage.setItem(RESULT_KEY, JSON.stringify(result));
+
+isSpinning = false;
       updateDailyState();
       window.setTimeout(() => openResultModal(currentPrize, result.code), 720);
     }, SPIN_DURATION + 120);
