@@ -1,46 +1,270 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+  <meta charset="UTF-8" />
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
 
-<title>Raspadita | BYR Club</title>
+  <title>Raspadita diaria | BYR Club</title>
 
-<link rel="stylesheet" href="../../ui/design-system.css">
-<link rel="stylesheet" href="scratch.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
+  <link
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../../ui/design-system.css" />
+  <link rel="stylesheet" href="scratch.css" />
 </head>
 
 <body>
+  <header class="site-header">
+    <a class="brand" href="../../../index.html">
+      <img src="../../logo-byr.png" alt="BYR Club" />
+    </a>
 
-<div class="scratch-page">
+    <nav class="site-nav" aria-label="Navegación principal">
+      <a href="../../../index.html">Inicio</a>
+      <a href="../../../beneficios.html">Beneficios</a>
+      <a href="../../../prodes.html">Prodes</a>
+      <a class="is-active" href="../../../juegos.html">Juegos</a>
+      <a href="../../../puntos.html">Puntos</a>
+      <a href="../../../perfil.html">Mi perfil</a>
+    </nav>
 
-    <div class="scratch-card">
+    <a class="header-button" href="../../../perfil.html">
+      Ver recompensas
+    </a>
+  </header>
 
-        <div class="scratch-prize">
+  <main class="scratch-page">
+    <div class="background-rays"></div>
+    <div class="background-dots"></div>
 
-            <div class="icon">
-                🍟
-            </div>
+    <span class="floating-shape floating-shape--star">★</span>
+    <span class="floating-shape floating-shape--plus">+</span>
+    <span class="floating-shape floating-shape--circle"></span>
+    <span class="floating-shape floating-shape--cross">×</span>
 
-            <h2>Papas Gratis</h2>
+    <section class="scratch-hero">
+      <div class="hero-copy">
+        <span class="hero-pill">Tu premio diario</span>
 
-            <p>
-                Descubrí tu premio raspando la superficie.
-            </p>
+        <h1>
+          <span>Raspá.</span>
+          <strong>Ganá.</strong>
+          <span>Disfrutá.</span>
+        </h1>
 
+        <p>
+          Tenés una oportunidad por día para descubrir un premio exclusivo
+          de BYR Club.
+        </p>
+
+        <a class="hero-action" href="#dailyScratch">
+          Raspar ahora
+          <span>↓</span>
+        </a>
+      </div>
+
+      <div class="hero-character">
+        <div class="speech-bubble">
+          ¡Hoy podés
+          <strong>ganar!</strong>
         </div>
 
-        <canvas id="scratchCanvas"></canvas>
+        <div class="character-rays"></div>
 
+        <img
+          src="../../personaje-byr.png"
+          alt="Mascota de BYR Club"
+          class="character-image"
+        />
+
+        <div class="byr-coin" aria-hidden="true">
+          <span>BYR</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="scratch-game" id="dailyScratch">
+      <div class="game-heading">
+        <span>Raspadita diaria</span>
+        <h2>Descubrí qué te tocó hoy</h2>
+
+        <p>
+          Raspá con el mouse o con el dedo. Revelá al menos el 60% para
+          habilitar tu premio.
+        </p>
+      </div>
+
+      <article class="scratch-ticket" id="scratchTicket">
+        <div class="ticket-cut ticket-cut--left"></div>
+        <div class="ticket-cut ticket-cut--right"></div>
+
+        <div class="ticket-header">
+          <div>
+            <span>Ticket diario</span>
+            <strong id="ticketNumber">#BYR-2026</strong>
+          </div>
+
+          <img src="../../logo-byr.png" alt="" />
+
+          <div class="ticket-header__right">
+            <strong>Raspá acá</strong>
+            <span>↘</span>
+          </div>
+        </div>
+
+        <div class="scratch-area" id="scratchArea">
+          <div class="prize-content" id="prizeContent">
+            <span class="prize-kicker">¡Ganaste!</span>
+
+            <div class="prize-icon" id="prizeIcon">🍟</div>
+
+            <h3 id="prizeTitle">Papas gratis</h3>
+
+            <p id="prizeXp">+20 XP</p>
+          </div>
+
+          <canvas
+            id="scratchCanvas"
+            aria-label="Superficie plateada para raspar"
+          ></canvas>
+
+          <div class="scratch-particles" id="scratchParticles"></div>
+<div class="prize-shine" id="prizeShine"></div>
+
+          <div class="scratch-hint" id="scratchHint">
+            <div class="hint-coin">BYR</div>
+
+            <div>
+              <strong>Raspá acá</strong>
+              <span>Con tu dedo o el mouse</span>
+            </div>
+          </div>
+
+          <div class="coin-cursor" id="coinCursor" aria-hidden="true">
+            BYR
+          </div>
+        </div>
+
+        <div class="ticket-stars" aria-hidden="true">
+          ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★
+        </div>
+      </article>
+
+      <div class="scratch-progress">
+        <div class="progress-copy">
+          <strong id="progressTitle">Empezá a raspar</strong>
+          <span id="scratchProgressText">0% revelado</span>
+        </div>
+
+        <div class="progress-track">
+          <span id="scratchProgressBar"></span>
+        </div>
+      </div>
+
+      <button
+        class="claim-button"
+        id="claimPrizeButton"
+        type="button"
+        disabled
+      >
+        Reclamar premio
+      </button>
+
+      <p class="game-status" id="scratchStatus">
+        Revelá al menos el 60% para descubrir tu premio.
+      </p>
+
+      <button
+        class="test-reset-button"
+        id="resetScratchButton"
+        type="button"
+      >
+        Reiniciar raspadita — modo prueba
+      </button>
+    </section>
+
+    <section class="games-strip">
+      <a class="game-option is-active" href="#">
+        <span>🪙</span>
+
+        <div>
+          <strong>Raspadita</strong>
+          <small>Premio diario</small>
+        </div>
+      </a>
+
+      <a class="game-option" href="#">
+        <span>🎁</span>
+
+        <div>
+          <strong>Caja misteriosa</strong>
+          <small>Próximamente</small>
+        </div>
+      </a>
+
+      <a class="game-option" href="#">
+        <span>🧠</span>
+
+        <div>
+          <strong>Trivia BYR</strong>
+          <small>Próximamente</small>
+        </div>
+      </a>
+
+      <a class="game-option" href="#">
+        <span>🎯</span>
+
+        <div>
+          <strong>Misiones</strong>
+          <small>Próximamente</small>
+        </div>
+      </a>
+    </section>
+
+    <a class="back-to-games" href="../../../juegos.html">
+      ← Volver al arcade
+    </a>
+  </main>
+
+  <div class="win-overlay" id="winOverlay" aria-hidden="true">
+    <div class="win-card">
+      <button
+        class="win-close"
+        id="closeWinOverlay"
+        type="button"
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
+
+      <span class="win-kicker">Premio reclamado</span>
+
+      <div class="win-icon" id="winPrizeIcon">🍟</div>
+
+      <h2 id="winPrizeTitle">Papas gratis</h2>
+
+      <p id="winPrizeXp">+20 XP sumados</p>
+
+      <a href="../../../perfil.html" class="win-button">
+        Ver en mi perfil
+      </a>
     </div>
 
-</div>
+    <div class="confetti" id="confetti"></div>
+  </div>
 
-<script src="scratch.js"></script>
-
+  <script src="../../core/storage.js"></script>
+  <script src="../../core/prizes.js"></script>
+  <script src="../../core/user.js"></script>
+  <script src="scratch.js"></script>
 </body>
-
 </html>
