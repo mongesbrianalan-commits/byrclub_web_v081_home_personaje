@@ -1,0 +1,283 @@
+.byr-effects-root{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:99999;
+}
+
+/* =========================
+   FLOATING TEXT
+========================= */
+
+.byr-floating-text{
+
+    position:absolute;
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:12px 22px;
+
+    border-radius:999px;
+
+    font-weight:900;
+
+    font-size:20px;
+
+    color:#fff;
+
+    background:linear-gradient(135deg,#0b6cff,#38a4ff);
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,.35),
+        0 0 25px rgba(56,164,255,.45);
+
+    transform:
+        translate(-50%,0)
+        scale(.7);
+
+    opacity:0;
+
+    transition:
+        transform .8s cubic-bezier(.18,.88,.22,1),
+        opacity .8s;
+}
+
+.byr-floating-text.is-active{
+
+    transform:
+        translate(-50%,-140px)
+        scale(1);
+
+    opacity:1;
+}
+
+.byr-floating-text__icon{
+
+    font-size:26px;
+}
+
+.byr-floating-text--xp{
+
+    background:linear-gradient(135deg,#ffbf00,#ffd84e);
+    color:#2b1c00;
+}
+
+.byr-floating-text--points{
+
+    background:linear-gradient(135deg,#0077ff,#44bbff);
+}
+
+/* =========================
+   PRIZE CARD
+========================= */
+
+.byr-prize-effect{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    opacity:0;
+
+    transition:opacity .35s;
+}
+
+.byr-prize-effect.is-active{
+
+    opacity:1;
+}
+
+.byr-prize-effect__glow{
+
+    position:absolute;
+
+    width:420px;
+    height:420px;
+
+    border-radius:50%;
+
+    background:radial-gradient(circle,
+        rgba(0,170,255,.45),
+        transparent 70%);
+
+    animation:
+        byrPulse 1.6s infinite;
+}
+
+.byr-prize-effect__card{
+
+    position:relative;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+
+    gap:14px;
+
+    padding:36px;
+
+    min-width:340px;
+
+    border-radius:28px;
+
+    background:
+        linear-gradient(180deg,#ffffff,#edf7ff);
+
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.35);
+
+    transform:
+        scale(.75);
+
+    transition:
+        transform .45s cubic-bezier(.18,.88,.22,1);
+}
+
+.byr-prize-effect.is-active
+.byr-prize-effect__card{
+
+    transform:scale(1);
+}
+
+.byr-prize-effect__eyebrow{
+
+    font-size:13px;
+
+    letter-spacing:2px;
+
+    color:#0087ff;
+
+    font-weight:900;
+}
+
+.byr-prize-effect__icon{
+
+    font-size:74px;
+}
+
+.byr-prize-effect__title{
+
+    font-size:30px;
+
+    color:#003b7a;
+
+    text-align:center;
+}
+
+/* =========================
+   LEVEL UP
+========================= */
+
+.byr-level-up-effect{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    opacity:0;
+
+    transition:opacity .4s;
+}
+
+.byr-level-up-effect.is-active{
+
+    opacity:1;
+}
+
+.byr-level-up-effect__content{
+
+    display:flex;
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:16px;
+
+    padding:46px;
+
+    border-radius:34px;
+
+    background:
+        linear-gradient(180deg,#005eff,#28b8ff);
+
+    color:white;
+
+    box-shadow:
+        0 30px 90px rgba(0,0,0,.45);
+
+    animation:
+        byrPop .6s;
+}
+
+.byr-level-up-effect__stars{
+
+    font-size:46px;
+}
+
+.byr-level-up-effect__eyebrow{
+
+    font-size:18px;
+
+    letter-spacing:3px;
+
+    font-weight:900;
+}
+
+.byr-level-up-effect__level{
+
+    font-size:54px;
+
+    line-height:1;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes byrPulse{
+
+    0%{
+
+        transform:scale(.8);
+
+        opacity:.4;
+    }
+
+    100%{
+
+        transform:scale(1.5);
+
+        opacity:0;
+    }
+
+}
+
+@keyframes byrPop{
+
+    0%{
+
+        transform:scale(.6);
+    }
+
+    70%{
+
+        transform:scale(1.08);
+    }
+
+    100%{
+
+        transform:scale(1);
+    }
+
+}

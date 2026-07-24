@@ -101,6 +101,7 @@ const characterImage = document.querySelector(".character-image");
   let isClaimed = false;
   let lastPoint = null;
   let progressCheckTimer = null;
+  let lastScratchSoundAt = 0;
 
   function getTodayKey() {
     const now = new Date();
@@ -365,9 +366,21 @@ coinCursor.classList.add("is-scratching");
     const currentPoint = getPointerPosition(event);
 
     updateCoinCursor(currentPoint);
-    eraseLine(lastPoint, currentPoint);
+eraseLine(lastPoint, currentPoint);
+
 createScratchDust(currentPoint);
-    lastPoint = currentPoint;
+
+const now = performance.now();
+
+if (
+  window.BYRAudio &&
+  now - lastScratchSoundAt > 55
+) {
+  BYRAudio.scratch();
+  lastScratchSoundAt = now;
+}
+
+lastPoint = currentPoint;
 
     scheduleProgressCheck();
   }
@@ -455,6 +468,9 @@ function stopDrawing() {
     coinCursor.classList.remove("is-visible");
     scratchHint.classList.add("is-hidden");
     scratchTicket.classList.add("is-revealed");
+    if (window.BYRAudio) {
+  BYRAudio.reveal();
+}
 scratchTicket.classList.add("is-celebrating");
 scratchArea.classList.add("is-glowing");
 prizeContent.classList.add("is-winning");
@@ -494,7 +510,18 @@ window.setTimeout(() => {
     }
 
     const prizeCode = generatePrizeCode();
+const previousState = window.BYRUser?.getState
+  ? BYRUser.getState()
+  : null;
 
+const previousPoints =
+  Number(previousState?.wallet?.points) || 0;
+
+const previousXp =
+  Number(previousState?.progression?.xp) || 0;
+
+const previousLevel =
+  Number(previousState?.progression?.level) || 1;
     const claimed = window.BYRUser?.claimPrize(
       {
         id: selectedPrize.id,
@@ -526,6 +553,66 @@ window.setTimeout(() => {
 
     statusText.textContent =
       "Tu premio ya está guardado en tu perfil de BYR Club.";
+      if (window.BYREffects) {
+  BYREffects.prize(selectedPrize);
+
+  if (selectedPrize.type === "points" && selectedPrize.amount) {
+    BYREffects.points(selectedPrize.amount, {
+      x: window.innerWidth / 2,
+      y: window.innerHeight * 0.68
+    });
+  }
+
+  if (selectedPrize.xp) {
+    window.setTimeout(() => {
+      BYREffects.xp(selectedPrize.xp, {
+        x: window.innerWidth / 2,
+        y: window.innerHeight * 0.72
+      });
+    }, 350);
+  }
+}
+
+if (window.BYRHUD && window.BYRUser?.getState) {
+  const updatedState = BYRUser.getState();
+
+  const updatedPoints =
+    Number(updatedState?.wallet?.points) || 0;
+
+  const updatedXp =
+    Number(updatedState?.progression?.xp) || 0;
+
+  const updatedLevel =
+    Number(updatedState?.progression?.level) || 1;
+
+  BYRHUD.updatePoints({
+    from: previousPoints,
+    to: updatedPoints,
+    duration: 950
+  });
+
+  window.setTimeout(() => {
+    BYRHUD.updateXp({
+      from: previousXp,
+      to: updatedXp,
+      duration: 950
+    });
+
+    BYRHUD.sync({
+      duration: 950
+    });
+  }, 250);
+
+  if (updatedLevel > previousLevel) {
+    window.setTimeout(() => {
+      BYRHUD.updateLevel(updatedLevel);
+
+      if (window.BYREffects) {
+        BYREffects.levelUp(updatedLevel);
+      }
+    }, 900);
+  }
+}
 
     showWinOverlay();
   }

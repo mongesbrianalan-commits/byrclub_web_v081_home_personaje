@@ -1,0 +1,376 @@
+/* =========================================
+   BYR USER HEADER
+========================================= */
+
+.byr-user-header {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+
+  background: linear-gradient(180deg, #0f3fbf 0%, #1556e0 100%);
+
+  border-bottom: 4px solid #ffd12c;
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, .22);
+
+  overflow: hidden;
+}
+
+.byr-user-header::before{
+  content:"";
+
+  position:absolute;
+  inset:0;
+
+  background-image:
+    radial-gradient(rgba(255,255,255,.12) 1px, transparent 1px);
+
+  background-size:22px 22px;
+
+  opacity:.55;
+
+  pointer-events:none;
+}
+
+.byr-user-header__inner{
+
+  position:relative;
+
+  max-width:1280px;
+
+  margin:0 auto;
+
+  padding:22px 28px;
+
+  display:flex;
+
+  align-items:center;
+
+  gap:28px;
+
+  flex-wrap:wrap;
+}
+
+/* =========================================
+   PERFIL
+========================================= */
+
+.byr-user-header__profile{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:16px;
+
+  text-decoration:none;
+
+  color:white;
+}
+
+.byr-user-header__avatar{
+
+  width:72px;
+  height:72px;
+
+  border-radius:50%;
+
+  background:
+    linear-gradient(135deg,#ffd12c,#ffb300);
+
+  color:#08328e;
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  font-size:34px;
+
+  font-weight:900;
+
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.28);
+}
+
+.byr-user-header__identity{
+
+  display:flex;
+
+  flex-direction:column;
+}
+
+.byr-user-header__greeting{
+
+  font-size:14px;
+
+  opacity:.8;
+}
+
+.byr-user-header__name{
+
+  font-size:30px;
+
+  font-weight:900;
+
+  line-height:1;
+}
+
+/* =========================================
+   STATS
+========================================= */
+
+.byr-user-header__stats{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:18px;
+
+  flex:1;
+
+  flex-wrap:wrap;
+}
+
+.byr-user-stat{
+
+  min-width:180px;
+
+  display:flex;
+
+  align-items:center;
+
+  gap:14px;
+
+  background:white;
+
+  border-radius:22px;
+
+  padding:14px 18px;
+
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.15);
+}
+
+.byr-user-stat__icon{
+
+  font-size:30px;
+}
+
+.byr-user-stat__label{
+
+  display:block;
+
+  font-size:13px;
+
+  color:#666;
+}
+
+.byr-user-stat__value{
+
+  font-size:28px;
+
+  color:#0047c9;
+
+  font-weight:900;
+}
+
+/* =========================================
+   XP
+========================================= */
+
+.byr-user-header__progress{
+
+  flex:1;
+
+  min-width:260px;
+
+  background:white;
+
+  border-radius:22px;
+
+  padding:16px 18px;
+
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.15);
+}
+
+.byr-user-header__progress-top{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  margin-bottom:10px;
+
+  font-size:14px;
+
+  font-weight:800;
+
+  color:#444;
+}
+
+.byr-user-header__progress-fill{
+
+  width:0%;
+
+  height:14px;
+
+  border-radius:999px;
+
+  background:
+    linear-gradient(90deg,#ffd12c,#ff8a00);
+}
+
+.byr-user-header__progress-track{
+
+  height:14px;
+
+  background:#dde8ff;
+
+  border-radius:999px;
+
+  overflow:hidden;
+}
+
+/* =========================================
+   BOTÓN
+========================================= */
+
+.byr-user-header__profile-button{
+
+  text-decoration:none;
+
+  background:#ffd12c;
+
+  color:#082a80;
+
+  font-weight:900;
+
+  padding:16px 24px;
+
+  border-radius:18px;
+
+  box-shadow:
+    0 8px 0 #d8a900;
+
+  transition:.2s;
+}
+
+.byr-user-header__profile-button:hover{
+
+  transform:translateY(-2px);
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width:900px){
+
+  .byr-user-header__inner{
+
+    flex-direction:column;
+
+    align-items:stretch;
+  }
+
+  .byr-user-header__stats{
+
+    flex-direction:column;
+  }
+
+  .byr-user-stat{
+
+    width:100%;
+  }
+
+  .byr-user-header__progress{
+
+    width:100%;
+  }
+
+  .byr-user-header__profile-button{
+
+    width:100%;
+
+    text-align:center;
+  }
+
+}
+/* =========================================
+   HEADER COMPACTO AL HACER SCROLL
+========================================= */
+
+.byr-user-header.is-compact .byr-user-header__inner {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.byr-user-header.is-compact .byr-user-header__avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
+}
+
+.byr-user-header.is-compact .byr-user-header__name {
+  font-size: 22px;
+}
+
+.byr-user-header.is-compact .byr-user-header__greeting {
+  display: none;
+}
+
+.byr-user-header.is-compact .byr-user-stat {
+  min-width: 135px;
+  padding: 8px 12px;
+  border-radius: 16px;
+}
+
+.byr-user-header.is-compact .byr-user-stat__icon {
+  font-size: 23px;
+}
+
+.byr-user-header.is-compact .byr-user-stat__label {
+  font-size: 11px;
+}
+
+.byr-user-header.is-compact .byr-user-stat__value {
+  font-size: 21px;
+}
+
+.byr-user-header.is-compact .byr-user-header__progress {
+  padding: 9px 13px;
+  border-radius: 16px;
+}
+
+.byr-user-header.is-compact .byr-user-header__progress-top {
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.byr-user-header.is-compact .byr-user-header__profile-button {
+  padding: 10px 16px;
+  border-radius: 14px;
+  box-shadow: 0 5px 0 #d8a900;
+}
+
+.byr-user-header__inner,
+.byr-user-header__avatar,
+.byr-user-header__name,
+.byr-user-stat,
+.byr-user-stat__icon,
+.byr-user-stat__value,
+.byr-user-header__progress,
+.byr-user-header__profile-button {
+  transition:
+    padding .25s ease,
+    width .25s ease,
+    height .25s ease,
+    font-size .25s ease,
+    border-radius .25s ease,
+    transform .25s ease;
+}

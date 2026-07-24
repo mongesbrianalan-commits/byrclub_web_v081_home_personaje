@@ -1,0 +1,228 @@
+/* =========================================
+   BYR CLUB — HUD GLOBAL
+========================================= */
+
+[data-byr-points],
+[data-byr-xp],
+[data-byr-level],
+#userPoints,
+#pointsValue,
+#headerPoints,
+#userXp,
+#xpValue,
+#headerXp,
+#userLevel,
+#levelValue {
+  display: inline-block;
+  transform-origin: center;
+  will-change: transform, filter;
+}
+
+/* =========================================
+   ESTADO: ACTUALIZANDO
+========================================= */
+
+[data-byr-points].is-updating,
+[data-byr-xp].is-updating,
+#userPoints.is-updating,
+#pointsValue.is-updating,
+#headerPoints.is-updating,
+#userXp.is-updating,
+#xpValue.is-updating,
+#headerXp.is-updating {
+  animation: byrHudCounting 0.34s ease-in-out infinite alternate;
+}
+
+/* =========================================
+   ESTADO: ACTUALIZADO
+========================================= */
+
+[data-byr-points].has-updated,
+[data-byr-xp].has-updated,
+[data-byr-level].has-updated,
+#userPoints.has-updated,
+#pointsValue.has-updated,
+#headerPoints.has-updated,
+#userXp.has-updated,
+#xpValue.has-updated,
+#headerXp.has-updated,
+#userLevel.has-updated,
+#levelValue.has-updated {
+  animation: byrHudUpdated 0.45s cubic-bezier(0.18, 0.88, 0.22, 1);
+}
+
+/* =========================================
+   PUNTOS
+========================================= */
+
+[data-byr-points].is-updating,
+#userPoints.is-updating,
+#pointsValue.is-updating,
+#headerPoints.is-updating {
+  filter:
+    drop-shadow(0 0 5px rgba(51, 179, 255, 0.75))
+    drop-shadow(0 0 12px rgba(0, 110, 255, 0.45));
+}
+
+/* =========================================
+   XP
+========================================= */
+
+[data-byr-xp].is-updating,
+#userXp.is-updating,
+#xpValue.is-updating,
+#headerXp.is-updating {
+  filter:
+    drop-shadow(0 0 5px rgba(255, 203, 42, 0.85))
+    drop-shadow(0 0 12px rgba(255, 162, 0, 0.45));
+}
+
+/* =========================================
+   BARRA DE XP
+========================================= */
+
+[data-byr-xp-bar],
+#xpBarFill,
+#xpProgressFill {
+  position: relative;
+  overflow: hidden;
+
+  transition-property: width;
+  transition-timing-function:
+    cubic-bezier(0.18, 0.88, 0.22, 1);
+
+  will-change: width;
+}
+
+[data-byr-xp-bar]::after,
+#xpBarFill::after,
+#xpProgressFill::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  width: 42%;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    );
+
+  transform: translateX(-180%) skewX(-18deg);
+
+  animation: byrXpBarShine 2.2s ease-in-out infinite;
+}
+
+/* =========================================
+   PULSO DEL CONTENEDOR DEL HUD
+========================================= */
+
+.byr-hud-pulse {
+  animation: byrHudContainerPulse 0.58s
+    cubic-bezier(0.18, 0.88, 0.22, 1);
+}
+
+/* =========================================
+   ANIMACIONES
+========================================= */
+
+@keyframes byrHudCounting {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.08) translateY(-1px);
+  }
+}
+
+@keyframes byrHudUpdated {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.28) rotate(-2deg);
+  }
+
+  72% {
+    transform: scale(0.94) rotate(1deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes byrXpBarShine {
+  0%,
+  44% {
+    transform: translateX(-180%) skewX(-18deg);
+    opacity: 0;
+  }
+
+  52% {
+    opacity: 1;
+  }
+
+  70% {
+    transform: translateX(340%) skewX(-18deg);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(340%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes byrHudContainerPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+    filter: brightness(1.18);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* =========================================
+   ACCESIBILIDAD
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-byr-points],
+  [data-byr-xp],
+  [data-byr-level],
+  #userPoints,
+  #pointsValue,
+  #headerPoints,
+  #userXp,
+  #xpValue,
+  #headerXp,
+  #userLevel,
+  #levelValue,
+  [data-byr-xp-bar],
+  #xpBarFill,
+  #xpProgressFill {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  [data-byr-xp-bar]::after,
+  #xpBarFill::after,
+  #xpProgressFill::after {
+    display: none;
+  }
+}
