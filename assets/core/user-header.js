@@ -184,34 +184,11 @@
   }
 
 function init() {
-  const header = createUserHeader();
-
+  createUserHeader();
   updateIdentity();
 
   if (window.BYRHUD?.sync) {
     BYRHUD.sync();
   }
-
-  const userHeader =
-    header || document.getElementById(HEADER_ID);
-
-  if (!userHeader) {
-    return;
-  }
-
-  const updateCompactState = () => {
-    userHeader.classList.toggle(
-      "is-compact",
-      window.scrollY > 120
-    );
-  };
-
-  updateCompactState();
-
-  window.addEventListener(
-    "scroll",
-    updateCompactState,
-    { passive: true }
-  );
 }
 })();

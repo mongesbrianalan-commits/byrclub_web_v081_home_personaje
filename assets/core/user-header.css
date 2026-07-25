@@ -3,18 +3,43 @@
 ========================================= */
 
 .byr-user-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 900;
 
-  background: linear-gradient(180deg, #0f3fbf 0%, #1556e0 100%);
+  display: block;
+  width: 100%;
+
+  background: linear-gradient(
+    180deg,
+    #0f3fbf 0%,
+    #1556e0 100%
+  );
 
   border-bottom: 4px solid #ffd12c;
 
   box-shadow:
     0 12px 30px rgba(0, 0, 0, .22);
+}
 
-  overflow: hidden;
+/* Cuando llega arriba de la pantalla */
+.byr-user-header.is-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  width: 100%;
+  z-index: 9999;
+}
+
+/* Mantiene ocupado el espacio del header cuando queda fijo */
+.byr-user-header-placeholder {
+  display: none;
+  width: 100%;
+}
+
+.byr-user-header-placeholder.is-active {
+  display: block;
 }
 
 .byr-user-header::before{
