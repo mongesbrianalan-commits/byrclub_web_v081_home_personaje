@@ -1,9 +1,14 @@
 (() => {
   "use strict";
 
+  /* =========================================
+     CONSTANTES
+  ========================================= */
+
   const SHELL_ID = "byr-app-shell";
   const USER_PANEL_ID = "byr-app-user-panel";
-  const STYLE_ID = "byr-app-shell-styles";
+
+  let levelObserver = null;
 
   /* =========================================
      RUTAS
@@ -23,473 +28,6 @@
   }
 
   /* =========================================
-     ESTILOS
-  ========================================= */
-
-  function injectStyles() {
-    if (document.getElementById(STYLE_ID)) {
-      return;
-    }
-
-    const style = document.createElement("style");
-
-    style.id = STYLE_ID;
-
-    style.textContent = `
-      /* =====================================
-         BYR APP SHELL
-      ===================================== */
-
-      #${SHELL_ID} {
-        position: sticky;
-        top: 0;
-        z-index: 9999;
-
-        width: 100%;
-
-        background: #071b5c;
-
-        box-shadow:
-          0 12px 30px rgba(0, 0, 0, .28);
-      }
-
-      #${SHELL_ID} .site-header {
-        position: relative;
-        top: auto;
-        left: auto;
-        right: auto;
-
-        width: 100%;
-        z-index: 2;
-      }
-
-      /* =====================================
-         USER PANEL
-      ===================================== */
-
-      #${USER_PANEL_ID} {
-        position: relative;
-
-        width: 100%;
-
-        padding: 14px 24px;
-
-        background:
-          linear-gradient(
-            180deg,
-            #123ca4 0%,
-            #092a7a 100%
-          );
-
-        border-top:
-          1px solid rgba(255, 255, 255, .12);
-
-        border-bottom:
-          4px solid #ffd12c;
-
-        color: #fff;
-
-        overflow: hidden;
-      }
-
-      #${USER_PANEL_ID}::before {
-        content: "";
-
-        position: absolute;
-        inset: 0;
-
-        background-image:
-          radial-gradient(
-            rgba(255, 255, 255, .12) 1px,
-            transparent 1px
-          );
-
-        background-size: 22px 22px;
-
-        opacity: .45;
-
-        pointer-events: none;
-      }
-
-      .byr-app-user__inner {
-        position: relative;
-
-        max-width: 1280px;
-
-        margin: 0 auto;
-
-        display: grid;
-
-        grid-template-columns:
-          minmax(210px, auto)
-          minmax(130px, auto)
-          minmax(130px, auto)
-          minmax(240px, 1fr)
-          auto;
-
-        align-items: center;
-
-        gap: 14px;
-      }
-
-      /* =====================================
-         IDENTIDAD
-      ===================================== */
-
-      .byr-app-user__profile {
-        display: flex;
-
-        align-items: center;
-
-        gap: 12px;
-
-        min-width: 0;
-
-        color: #fff;
-
-        text-decoration: none;
-      }
-
-      .byr-app-user__avatar {
-        flex: 0 0 auto;
-
-        width: 52px;
-        height: 52px;
-
-        display: grid;
-
-        place-items: center;
-
-        border: 4px solid #fff;
-
-        border-radius: 50%;
-
-        background:
-          linear-gradient(
-            135deg,
-            #ffd72e,
-            #ff9d00
-          );
-
-        color: #072772;
-
-        font-size: 25px;
-        font-weight: 900;
-
-        box-shadow:
-          0 6px 0 #d99f00,
-          0 10px 18px rgba(0, 0, 0, .25);
-      }
-
-      .byr-app-user__identity {
-        display: flex;
-
-        flex-direction: column;
-
-        min-width: 0;
-      }
-
-      .byr-app-user__greeting {
-        font-size: 12px;
-
-        opacity: .78;
-      }
-
-      .byr-app-user__name {
-        overflow: hidden;
-
-        color: #fff;
-
-        font-size: 21px;
-        line-height: 1.05;
-
-        white-space: nowrap;
-
-        text-overflow: ellipsis;
-      }
-
-      /* =====================================
-         STATS
-      ===================================== */
-
-      .byr-app-stat {
-        display: flex;
-
-        align-items: center;
-
-        gap: 9px;
-
-        min-height: 54px;
-
-        padding: 9px 13px;
-
-        background: #fff;
-
-        border: 2px solid rgba(6, 36, 111, .12);
-
-        border-radius: 16px;
-
-        box-shadow:
-          0 6px 0 rgba(4, 25, 83, .3);
-      }
-
-      .byr-app-stat__icon {
-        font-size: 24px;
-      }
-
-      .byr-app-stat__content {
-        display: flex;
-
-        flex-direction: column;
-      }
-
-      .byr-app-stat__label {
-        color: #66708a;
-
-        font-size: 10px;
-        font-weight: 800;
-
-        text-transform: uppercase;
-      }
-
-      .byr-app-stat__value {
-        color: #0a3aa4;
-
-        font-size: 22px;
-        font-weight: 900;
-        line-height: 1;
-      }
-
-      /* =====================================
-         XP
-      ===================================== */
-
-      .byr-app-xp {
-        min-width: 0;
-
-        padding: 10px 14px;
-
-        background:
-          rgba(255, 255, 255, .11);
-
-        border:
-          1px solid rgba(255, 255, 255, .16);
-
-        border-radius: 16px;
-      }
-
-      .byr-app-xp__top {
-        display: flex;
-
-        justify-content: space-between;
-
-        gap: 12px;
-
-        margin-bottom: 7px;
-
-        font-size: 11px;
-        font-weight: 800;
-      }
-
-      .byr-app-xp__track {
-        height: 11px;
-
-        overflow: hidden;
-
-        background:
-          rgba(0, 12, 61, .55);
-
-        border:
-          2px solid rgba(255, 255, 255, .14);
-
-        border-radius: 999px;
-      }
-
-      .byr-app-xp__fill {
-        width: 0%;
-        height: 100%;
-
-        background:
-          linear-gradient(
-            90deg,
-            #28c7ff 0%,
-            #88e6dc 45%,
-            #ffd526 100%
-          );
-
-        border-radius: inherit;
-
-        transition:
-          width .65s cubic-bezier(.2, .8, .2, 1);
-      }
-
-      /* =====================================
-         BOTÓN
-      ===================================== */
-
-      .byr-app-user__button {
-        display: inline-flex;
-
-        align-items: center;
-
-        justify-content: center;
-
-        min-height: 48px;
-
-        padding: 11px 17px;
-
-        background:
-          linear-gradient(
-            180deg,
-            #ffe246,
-            #ffc617
-          );
-
-        border-radius: 15px;
-
-        color: #092b79;
-
-        font-size: 13px;
-        font-weight: 900;
-
-        text-align: center;
-        text-decoration: none;
-
-        box-shadow:
-          0 6px 0 #d49c00;
-
-        transition:
-          transform .18s ease,
-          box-shadow .18s ease;
-      }
-
-      .byr-app-user__button:hover {
-        transform: translateY(-2px);
-
-        box-shadow:
-          0 8px 0 #d49c00;
-      }
-
-      /* =====================================
-         TABLET
-      ===================================== */
-
-      @media (max-width: 1050px) {
-        .byr-app-user__inner {
-          grid-template-columns:
-            minmax(190px, 1fr)
-            minmax(120px, auto)
-            minmax(120px, auto)
-            minmax(220px, 1fr);
-        }
-
-        .byr-app-user__button {
-          display: none;
-        }
-      }
-
-      /* =====================================
-         CELULAR
-      ===================================== */
-
-      @media (max-width: 700px) {
-        #${SHELL_ID} {
-          position: sticky;
-          top: 0;
-        }
-
-        #${USER_PANEL_ID} {
-          padding: 9px 12px;
-
-          border-bottom-width: 3px;
-        }
-
-        .byr-app-user__inner {
-          grid-template-columns:
-            minmax(0, 1fr)
-            auto
-            auto;
-
-          gap: 8px;
-        }
-
-        .byr-app-user__profile {
-          gap: 8px;
-        }
-
-        .byr-app-user__avatar {
-          width: 39px;
-          height: 39px;
-
-          border-width: 3px;
-
-          font-size: 19px;
-
-          box-shadow:
-            0 4px 0 #d99f00;
-        }
-
-        .byr-app-user__greeting {
-          display: none;
-        }
-
-        .byr-app-user__name {
-          max-width: 120px;
-
-          font-size: 16px;
-        }
-
-        .byr-app-stat {
-          min-height: 42px;
-
-          padding: 7px 9px;
-
-          border-radius: 12px;
-
-          box-shadow:
-            0 4px 0 rgba(4, 25, 83, .3);
-        }
-
-        .byr-app-stat__icon {
-          display: none;
-        }
-
-        .byr-app-stat__label {
-          font-size: 8px;
-        }
-
-        .byr-app-stat__value {
-          font-size: 17px;
-        }
-
-        .byr-app-xp {
-          grid-column: 1 / -1;
-
-          padding: 6px 9px;
-
-          border-radius: 11px;
-        }
-
-        .byr-app-xp__top {
-          margin-bottom: 4px;
-
-          font-size: 9px;
-        }
-
-        .byr-app-xp__track {
-          height: 8px;
-        }
-
-        .byr-app-user__button {
-          display: none;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
-  }
-
-  /* =========================================
      NAVEGACIÓN
   ========================================= */
 
@@ -502,9 +40,10 @@
       <a
         class="brand"
         href="${rootPath}index.html"
+        aria-label="Ir al inicio de BYR Club"
       >
         <img
-          src="${rootPath}logo-byr.png"
+          src="${rootPath}assets/logo-byr.png"
           alt="BYR Club"
         />
       </a>
@@ -566,20 +105,106 @@
         return;
       }
 
-      const fileName = href.split("/").pop();
+      const fileName = href
+        .split("/")
+        .pop()
+        ?.split("?")[0]
+        ?.split("#")[0];
 
       const isCurrentPage =
-        fileName &&
+        Boolean(fileName) &&
         currentPath.endsWith(fileName);
 
-      const isGamePage =
+      const isInternalGame =
         currentPath.includes("/games/") &&
         fileName === "juegos.html";
 
-      if (isCurrentPage || isGamePage) {
+      if (isCurrentPage || isInternalGame) {
         link.classList.add("is-active");
       }
     });
+  }
+
+  /* =========================================
+     ESTADO DEL USUARIO
+  ========================================= */
+
+  function getUserState() {
+    if (!window.BYRUser?.getState) {
+      return null;
+    }
+
+    try {
+      return window.BYRUser.getState();
+    } catch (error) {
+      console.warn(
+        "BYR App Shell: no se pudo leer el usuario.",
+        error
+      );
+
+      return null;
+    }
+  }
+
+  function getUserName(state) {
+    return (
+      state?.profile?.name ||
+      state?.profile?.displayName ||
+      state?.user?.name ||
+      state?.name ||
+      "Usuario"
+    );
+  }
+
+  function getUserLevel(state) {
+    const possibleLevel =
+      state?.progression?.level ??
+      state?.level ??
+      state?.user?.level ??
+      1;
+
+    const level = Number(possibleLevel);
+
+    if (!Number.isFinite(level) || level < 1) {
+      return 1;
+    }
+
+    return Math.floor(level);
+  }
+
+  function getRankFromLevel(level) {
+    if (level >= 12) {
+      return {
+        name: "Leyenda",
+        icon: "👑"
+      };
+    }
+
+    if (level >= 8) {
+      return {
+        name: "Maestro",
+        icon: "🏆"
+      };
+    }
+
+    if (level >= 5) {
+      return {
+        name: "Experto",
+        icon: "🔥"
+      };
+    }
+
+    if (level >= 3) {
+      return {
+        name: "Fan",
+        icon: "⭐"
+      };
+    }
+
+    return {
+      name: "Novato",
+      icon: "🌱"
+    };
   }
 
   /* =========================================
@@ -609,8 +234,8 @@
             class="byr-app-user__avatar"
             aria-hidden="true"
           >
-            <span data-byr-avatar-initial>
-              B
+            <span class="byr-app-user__avatar-icon">
+              🍔
             </span>
           </div>
 
@@ -623,52 +248,70 @@
               class="byr-app-user__name"
               data-byr-user-name
             >
-              Brian
+              Usuario
             </strong>
           </div>
         </a>
 
-        <div class="byr-app-stat">
+        <div
+          class="byr-app-user__level"
+          data-byr-rank-container
+          aria-label="Rango del usuario"
+        >
           <span
-            class="byr-app-stat__icon"
+            class="byr-app-user__rank-icon"
+            data-byr-rank-icon
+            aria-hidden="true"
+          >
+            🌱
+          </span>
+
+          <span class="byr-app-user__level-label">
+            Rango
+          </span>
+
+          <strong
+            class="byr-app-user__level-value"
+            data-byr-rank
+          >
+            Novato
+          </strong>
+
+          <!--
+            BYRHUD sigue actualizando este elemento.
+            Está oculto porque el HUD visible muestra el rango.
+          -->
+          <span
+            data-byr-level
+            hidden
+            aria-hidden="true"
+          >
+            1
+          </span>
+        </div>
+
+        <div
+          class="byr-app-user__points"
+          aria-label="Puntos acumulados"
+        >
+          <span
+            class="byr-app-user__points-icon"
             aria-hidden="true"
           >
             🪙
           </span>
 
-          <div class="byr-app-stat__content">
-            <span class="byr-app-stat__label">
-              Puntos
-            </span>
-
+          <div class="byr-app-user__points-copy">
             <strong
-              class="byr-app-stat__value"
+              class="byr-app-user__points-value"
               data-byr-points
             >
               0
             </strong>
-          </div>
-        </div>
 
-        <div class="byr-app-stat">
-          <span
-            class="byr-app-stat__icon"
-            aria-hidden="true"
-          >
-            ⭐
-          </span>
-
-          <div class="byr-app-stat__content">
-            <span class="byr-app-stat__label">
-              Nivel
+            <span class="byr-app-user__points-label">
+              puntos
             </span>
-
-            <strong
-              class="byr-app-stat__value"
-              data-byr-level
-            >
-              1
-            </strong>
           </div>
         </div>
 
@@ -699,13 +342,6 @@
           </div>
         </div>
 
-        <a
-          class="byr-app-user__button"
-          href="${rootPath}perfil.html"
-        >
-          Ver mi perfil
-        </a>
-
       </div>
     `;
 
@@ -713,47 +349,92 @@
   }
 
   /* =========================================
-     DATOS DEL USUARIO
+     SINCRONIZACIÓN DEL USUARIO
   ========================================= */
 
-  function getUserState() {
-    if (!window.BYRUser?.getState) {
-      return null;
-    }
-
-    return window.BYRUser.getState();
-  }
-
-  function getUserName(state) {
-    return (
-      state?.profile?.name ||
-      state?.profile?.displayName ||
-      state?.user?.name ||
-      state?.name ||
-      "Usuario"
-    );
-  }
-
-  function updateUserIdentity(shell) {
-    const state = getUserState();
+  function updateUserIdentity(shell, state) {
     const name = getUserName(state);
 
     const nameElement =
       shell.querySelector("[data-byr-user-name]");
 
-    const initialElement =
-      shell.querySelector(
-        "[data-byr-avatar-initial]"
-      );
-
     if (nameElement) {
       nameElement.textContent = name;
     }
+  }
 
-    if (initialElement) {
-      initialElement.textContent =
-        name.trim().charAt(0).toUpperCase() || "U";
+  function updateRank(shell, suppliedLevel) {
+    const state = getUserState();
+
+    const level = Number.isFinite(
+      Number(suppliedLevel)
+    )
+      ? Math.max(1, Math.floor(Number(suppliedLevel)))
+      : getUserLevel(state);
+
+    const rank = getRankFromLevel(level);
+
+    const rankElement =
+      shell.querySelector("[data-byr-rank]");
+
+    const rankIconElement =
+      shell.querySelector("[data-byr-rank-icon]");
+
+    const rankContainer =
+      shell.querySelector("[data-byr-rank-container]");
+
+    if (rankElement) {
+      rankElement.textContent = rank.name;
     }
+
+    if (rankIconElement) {
+      rankIconElement.textContent = rank.icon;
+    }
+
+    if (rankContainer) {
+      rankContainer.setAttribute(
+        "aria-label",
+        `Rango ${rank.name}, nivel ${level}`
+      );
+
+      rankContainer.dataset.level =
+        String(level);
+
+      rankContainer.dataset.rank =
+        rank.name.toLowerCase();
+    }
+  }
+
+  function observeLevelChanges(shell) {
+    if (levelObserver) {
+      levelObserver.disconnect();
+      levelObserver = null;
+    }
+
+    const hiddenLevelElement =
+      shell.querySelector("[data-byr-level]");
+
+    if (!hiddenLevelElement) {
+      return;
+    }
+
+    levelObserver = new MutationObserver(() => {
+      const level =
+        Number(hiddenLevelElement.textContent);
+
+      if (Number.isFinite(level)) {
+        updateRank(shell, level);
+      }
+    });
+
+    levelObserver.observe(
+      hiddenLevelElement,
+      {
+        characterData: true,
+        childList: true,
+        subtree: true
+      }
+    );
   }
 
   /* =========================================
@@ -776,8 +457,9 @@
     shell.className = "byr-app-shell";
 
     /*
-     * Reutilizamos el menú que ya existe
-     * para no perder su diseño ni el botón móvil.
+     * Reutilizamos el encabezado que ya existe
+     * en la página para conservar su diseño y
+     * su navegación móvil.
      */
     const existingHeader =
       document.querySelector(".site-header");
@@ -787,18 +469,20 @@
       createFallbackNavigation(rootPath);
 
     shell.appendChild(navigation);
-    shell.appendChild(createUserPanel(rootPath));
+    shell.appendChild(
+      createUserPanel(rootPath)
+    );
 
     document.body.prepend(shell);
 
     markActiveNavigation(shell);
-    updateUserIdentity(shell);
+    observeLevelChanges(shell);
 
     return shell;
   }
 
   /* =========================================
-     SINCRONIZACIÓN
+     SINCRONIZACIÓN GENERAL
   ========================================= */
 
   function sync() {
@@ -809,27 +493,76 @@
       return;
     }
 
-    updateUserIdentity(shell);
+    const state = getUserState();
 
+    updateUserIdentity(shell, state);
+
+    /*
+     * Primero actualizamos puntos, XP, nivel
+     * y barra usando el sistema global.
+     */
     if (window.BYRHUD?.sync) {
       window.BYRHUD.sync();
     }
+
+    /*
+     * Después convertimos el nivel numérico
+     * en el rango visible correspondiente.
+     */
+    updateRank(shell);
   }
 
   /* =========================================
-     INICIO
+     API PÚBLICA
+  ========================================= */
+
+  function setRankFromLevel(level) {
+    const shell =
+      document.getElementById(SHELL_ID);
+
+    if (!shell) {
+      return;
+    }
+
+    updateRank(shell, level);
+  }
+
+  function refreshNavigation() {
+    const shell =
+      document.getElementById(SHELL_ID);
+
+    if (!shell) {
+      return;
+    }
+
+    markActiveNavigation(shell);
+  }
+
+  /* =========================================
+     INICIALIZACIÓN
   ========================================= */
 
   function init() {
-    injectStyles();
-    createAppShell();
+    const shell = createAppShell();
+
+    if (!shell) {
+      console.warn(
+        "BYR App Shell: no se pudo crear el componente."
+      );
+
+      return;
+    }
+
     sync();
   }
 
   window.BYRAppShell = {
     init,
     sync,
-    createAppShell
+    createAppShell,
+    setRankFromLevel,
+    refreshNavigation,
+    getRankFromLevel
   };
 
   if (document.readyState === "loading") {

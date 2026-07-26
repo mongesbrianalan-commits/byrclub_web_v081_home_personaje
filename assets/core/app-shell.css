@@ -1,0 +1,698 @@
+/* =========================================
+   BYR APP SHELL — PREMIUM HUD V2
+========================================= */
+
+#byr-app-shell {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+
+  width: 100%;
+
+  background: #071b5c;
+
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, .26);
+}
+
+#byr-app-shell .site-header {
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+
+  width: 100%;
+  min-height: 72px;
+
+  z-index: 2;
+}
+
+/* =========================================
+   PANEL DEL USUARIO
+========================================= */
+
+#byr-app-user-panel {
+  position: relative;
+
+  width: 100%;
+
+  padding: 8px 20px 9px;
+
+  overflow: hidden;
+
+  color: #fff;
+
+  background:
+    linear-gradient(
+      180deg,
+      #123ca4 0%,
+      #092a7a 100%
+    );
+
+  border-top:
+    1px solid rgba(255, 255, 255, .11);
+
+  border-bottom:
+    3px solid #ffd12c;
+}
+
+#byr-app-user-panel::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    radial-gradient(
+      rgba(255, 255, 255, .11) 1px,
+      transparent 1px
+    );
+
+  background-size: 22px 22px;
+
+  opacity: .4;
+
+  pointer-events: none;
+}
+
+#byr-app-user-panel::after {
+  content: "";
+
+  position: absolute;
+
+  top: -80%;
+  left: -15%;
+
+  width: 46%;
+  height: 230%;
+
+  background:
+    linear-gradient(
+      115deg,
+      transparent 35%,
+      rgba(255, 255, 255, .08) 50%,
+      transparent 65%
+    );
+
+  transform: rotate(7deg);
+
+  pointer-events: none;
+}
+
+.byr-app-user__inner {
+  position: relative;
+  z-index: 1;
+
+  max-width: 1140px;
+
+  margin: 0 auto;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(175px, auto)
+    minmax(118px, auto)
+    minmax(180px, auto)
+    minmax(300px, 1fr);
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+/* =========================================
+   PERFIL
+========================================= */
+
+.byr-app-user__profile {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 0;
+
+  color: #fff;
+
+  text-decoration: none;
+
+  transition:
+    transform .18s ease,
+    opacity .18s ease;
+}
+
+.byr-app-user__profile:hover {
+  transform: translateY(-1px);
+}
+
+.byr-app-user__profile:active {
+  transform: translateY(1px);
+}
+
+.byr-app-user__avatar {
+  flex: 0 0 auto;
+
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+
+  place-items: center;
+
+  border: 3px solid #fff;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffd72e 0%,
+      #ff9d00 100%
+    );
+
+  box-shadow:
+    0 4px 0 #d99f00,
+    0 7px 14px rgba(0, 0, 0, .22);
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease;
+}
+
+.byr-app-user__profile:hover
+.byr-app-user__avatar {
+  transform: rotate(-4deg) scale(1.04);
+
+  box-shadow:
+    0 5px 0 #d99f00,
+    0 9px 16px rgba(0, 0, 0, .24);
+}
+
+.byr-app-user__avatar-icon {
+  display: block;
+
+  font-size: 24px;
+  line-height: 1;
+
+  transform: translateY(-1px);
+
+  filter:
+    drop-shadow(
+      0 2px 1px rgba(0, 0, 0, .18)
+    );
+}
+
+.byr-app-user__identity {
+  display: flex;
+
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.byr-app-user__greeting {
+  display: none;
+}
+
+.byr-app-user__name {
+  overflow: hidden;
+
+  max-width: 125px;
+
+  color: #fff;
+
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.byr-app-user__name::after {
+  content: "BYR CLUB";
+
+  display: block;
+
+  margin-top: 4px;
+
+  color: rgba(255, 255, 255, .67);
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: .08em;
+}
+
+/* =========================================
+   RANGO / NIVEL
+========================================= */
+
+.byr-app-user__level {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 7px;
+
+  min-height: 38px;
+
+  padding: 6px 11px;
+
+  border:
+    1px solid rgba(255, 255, 255, .17);
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .13),
+      rgba(255, 255, 255, .07)
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+.byr-app-user__rank-icon {
+  flex: 0 0 auto;
+
+  font-size: 15px;
+  line-height: 1;
+}
+
+.byr-app-user__level-label {
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: .03em;
+
+  text-transform: uppercase;
+
+  opacity: .75;
+}
+
+.byr-app-user__level-value {
+  color: #ffd72e;
+
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* =========================================
+   PUNTOS
+========================================= */
+
+.byr-app-user__points {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 7px;
+
+  min-height: 38px;
+
+  padding: 6px 12px;
+
+  border-radius: 12px;
+
+  color: #092b79;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffe64e 0%,
+      #ffc61c 100%
+    );
+
+  box-shadow:
+    0 4px 0 #d49c00,
+    0 7px 14px rgba(0, 0, 0, .17);
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+.byr-app-user__points:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 0 #d49c00,
+    0 9px 16px rgba(0, 0, 0, .2);
+}
+
+.byr-app-user__points-icon {
+  font-size: 20px;
+}
+
+.byr-app-user__points-copy {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 4px;
+}
+
+.byr-app-user__points-value {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.byr-app-user__points-label {
+  font-size: 9px;
+  font-weight: 900;
+
+  text-transform: uppercase;
+}
+
+/* =========================================
+   EXPERIENCIA
+========================================= */
+
+.byr-app-xp {
+  min-width: 0;
+
+  padding: 7px 10px;
+
+  border:
+    1px solid rgba(255, 255, 255, .15);
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .11),
+      rgba(255, 255, 255, .075)
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.byr-app-xp__top {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-bottom: 4px;
+
+  color: rgba(255, 255, 255, .93);
+
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.byr-app-xp__top strong {
+  color: #fff;
+
+  font-weight: 900;
+}
+
+.byr-app-xp__track {
+  position: relative;
+
+  height: 7px;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255, 255, 255, .13);
+
+  border-radius: 999px;
+
+  background:
+    rgba(0, 12, 61, .62);
+
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, .25);
+}
+
+.byr-app-xp__fill {
+  position: relative;
+
+  width: 0%;
+  height: 100%;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      #28c7ff 0%,
+      #88e6dc 46%,
+      #ffd526 100%
+    );
+
+  box-shadow:
+    0 0 10px rgba(255, 213, 38, .34);
+
+  transition:
+    width .7s cubic-bezier(.2, .8, .2, 1);
+}
+
+.byr-app-xp__fill::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      110deg,
+      transparent 20%,
+      rgba(255, 255, 255, .5) 46%,
+      transparent 70%
+    );
+
+  transform: translateX(-130%);
+
+  animation:
+    byr-xp-shine 3.2s ease-in-out infinite;
+}
+
+@keyframes byr-xp-shine {
+  0%,
+  60% {
+    transform: translateX(-130%);
+  }
+
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+/* =========================================
+   ACCESIBILIDAD
+========================================= */
+
+.byr-app-user__profile:focus-visible,
+.byr-app-user__points:focus-visible {
+  outline: 3px solid #ffd72e;
+  outline-offset: 3px;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 950px) {
+  #byr-app-shell .site-header {
+    min-height: 66px;
+  }
+
+  .byr-app-user__inner {
+    grid-template-columns:
+      minmax(165px, 1fr)
+      auto
+      auto;
+  }
+
+  .byr-app-xp {
+    grid-column: 1 / -1;
+  }
+}
+
+/* =========================================
+   CELULAR
+========================================= */
+
+@media (max-width: 700px) {
+  #byr-app-shell {
+    position: sticky;
+    top: 0;
+  }
+
+  #byr-app-shell .site-header {
+    min-height: 58px;
+  }
+
+  #byr-app-user-panel {
+    padding: 6px 8px 7px;
+
+    border-bottom-width: 3px;
+  }
+
+  .byr-app-user__inner {
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto
+      auto;
+
+    gap: 6px;
+  }
+
+  .byr-app-user__profile {
+    gap: 6px;
+  }
+
+  .byr-app-user__avatar {
+    width: 34px;
+    height: 34px;
+
+    border-width: 2px;
+
+    box-shadow:
+      0 3px 0 #d99f00;
+  }
+
+  .byr-app-user__avatar-icon {
+    font-size: 19px;
+  }
+
+  .byr-app-user__name {
+    max-width: 94px;
+
+    font-size: 13px;
+  }
+
+  .byr-app-user__name::after {
+    margin-top: 3px;
+
+    font-size: 7px;
+  }
+
+  .byr-app-user__level {
+    min-height: 32px;
+
+    gap: 4px;
+
+    padding: 4px 7px;
+
+    border-radius: 9px;
+  }
+
+  .byr-app-user__rank-icon {
+  font-size: 12px;
+}
+
+  .byr-app-user__level-label {
+    display: none;
+  }
+
+  .byr-app-user__level-value {
+    font-size: 15px;
+  }
+
+  .byr-app-user__points {
+    min-height: 32px;
+
+    padding: 4px 7px;
+
+    border-radius: 9px;
+
+    box-shadow:
+      0 3px 0 #d49c00;
+  }
+
+  .byr-app-user__points-icon {
+    display: none;
+  }
+
+  .byr-app-user__points-value {
+    font-size: 15px;
+  }
+
+  .byr-app-user__points-label {
+    display: none;
+  }
+
+  .byr-app-xp {
+    grid-column: 1 / -1;
+
+    padding: 5px 7px;
+
+    border-radius: 9px;
+  }
+
+  .byr-app-xp__top {
+    margin-bottom: 3px;
+
+    font-size: 7px;
+  }
+
+  .byr-app-xp__track {
+    height: 6px;
+  }
+}
+
+/* =========================================
+   CELULARES MUY ANGOSTOS
+========================================= */
+
+@media (max-width: 380px) {
+  .byr-app-user__inner {
+    gap: 5px;
+  }
+
+  .byr-app-user__avatar {
+    width: 31px;
+    height: 31px;
+  }
+
+  .byr-app-user__avatar-icon {
+    font-size: 17px;
+  }
+
+  .byr-app-user__name {
+    max-width: 78px;
+
+    font-size: 12px;
+  }
+
+  .byr-app-user__level,
+  .byr-app-user__points {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+}
+
+/* =========================================
+   REDUCIR MOVIMIENTO
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .byr-app-user__profile,
+  .byr-app-user__avatar,
+  .byr-app-user__points,
+  .byr-app-xp__fill {
+    transition: none;
+  }
+
+  .byr-app-xp__fill::after {
+    animation: none;
+  }
+}
