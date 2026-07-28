@@ -8,54 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="juegos-premium.css">
-  <link rel="stylesheet" href="assets/games/roulette/roulette.css">
-<link rel="stylesheet" href="assets/core/user-ui.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="juegos-premium.css">
+<link rel="stylesheet" href="assets/games/roulette/roulette.css">
+
+<link rel="stylesheet" href="assets/core/hud.css">
+<link rel="stylesheet" href="assets/core/app-shell.css">
+
 </head>
-<body class="games-page">
-  <aside class="byr-user-bar" id="byrUserBar">
-  <div class="byr-user-main">
-    <div class="byr-user-avatar" id="byrUserAvatar">🍔</div>
-
-    <div class="byr-user-copy">
-      <strong class="byr-user-greeting" id="byrUserGreeting">
-        Hola, Brian
-      </strong>
-
-      <span class="byr-user-level" id="byrUserLevel">
-        Nivel 1
-      </span>
-    </div>
-
-    <div class="byr-user-points">
-      <strong id="byrUserPoints">0</strong>
-      <span>puntos</span>
-    </div>
-  </div>
-
-  <div class="byr-user-progress">
-    <div class="byr-user-progress-copy">
-      <span id="byrUserXpCopy">0 / 250 XP</span>
-      <span id="byrUserNextLevel">Siguiente nivel</span>
-    </div>
-
-    <div class="byr-user-progress-track">
-      <div
-        class="byr-user-progress-fill"
-        id="byrUserProgressFill"
-      ></div>
-    </div>
-  </div>
-
-  <div class="byr-user-footer">
-    <span class="byr-user-streak" id="byrUserStreak">
-      🔥 Racha de 1 día
-    </span>
-
-    <span>BYR CLUB</span>
-  </div>
-</aside>
+<body class="games-page" data-root="./">
 
 <div class="byr-level-toast" id="byrLevelToast">
   ¡SUBISTE DE NIVEL!
@@ -275,60 +236,7 @@
 <script src="assets/core/storage.js"></script>
 <script src="assets/core/prizes.js"></script>
 <script src="assets/core/user.js"></script>
-<script>
-  (() => {
-    "use strict";
-
-    const greeting = document.getElementById("byrUserGreeting");
-    const avatar = document.getElementById("byrUserAvatar");
-    const level = document.getElementById("byrUserLevel");
-    const points = document.getElementById("byrUserPoints");
-    const xpCopy = document.getElementById("byrUserXpCopy");
-    const nextLevel = document.getElementById("byrUserNextLevel");
-    const progressFill = document.getElementById(
-      "byrUserProgressFill"
-    );
-    const streak = document.getElementById("byrUserStreak");
-    const levelToast = document.getElementById("byrLevelToast");
-
-    function renderUser() {
-      const state = window.BYRUser.getState();
-      const progression = window.BYRUser.getProgression();
-
-      greeting.textContent = `Hola, ${state.profile.name}`;
-      avatar.textContent = state.profile.avatar;
-      level.textContent = `Nivel ${progression.level}`;
-      points.textContent = state.wallet.points;
-
-      xpCopy.textContent =
-        `${progression.earnedInsideLevel} / ` +
-        `${progression.requiredInsideLevel} XP`;
-
-      nextLevel.textContent = `Nivel ${progression.level + 1}`;
-
-      progressFill.style.width =
-        `${progression.percentage}%`;
-
-      const days = state.progression.streak;
-      streak.textContent =
-        `🔥 Racha de ${days} ${days === 1 ? "día" : "días"}`;
-    }
-
-    window.addEventListener("byr:user-change", renderUser);
-
-    window.addEventListener("byr:level-up", (event) => {
-      levelToast.textContent =
-        `¡SUBISTE AL NIVEL ${event.detail.newLevel}!`;
-
-      levelToast.classList.add("is-visible");
-
-      window.setTimeout(() => {
-        levelToast.classList.remove("is-visible");
-      }, 2600);
-    });
-
-    renderUser();
-  })();
-</script>
+<script src="assets/core/hud.js"></script>
+<script src="assets/core/app-shell.js"></script>
 </body>
 </html>

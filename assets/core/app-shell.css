@@ -2,10 +2,20 @@
    BYR APP SHELL — PREMIUM HUD V2
 ========================================= */
 
+:root {
+  --byr-app-shell-height: 0px;
+}
+
+html {
+  scroll-padding-top:
+    calc(var(--byr-app-shell-height) + 12px);
+}
+
 #byr-app-shell {
   position: sticky;
   top: 0;
   z-index: 9999;
+  isolation: isolate;
 
   width: 100%;
 
@@ -496,6 +506,178 @@
 }
 
 /* =========================================
+   ANIMACIONES DEL HUD
+========================================= */
+
+.byr-app-user__points.is-points-gained {
+  animation:
+    byr-points-gained .72s
+    cubic-bezier(.2, .85, .25, 1);
+}
+
+.byr-app-xp.is-xp-gained {
+  animation:
+    byr-xp-gained .8s
+    cubic-bezier(.2, .85, .25, 1);
+}
+
+.byr-app-user__level.is-rank-up {
+  animation:
+    byr-rank-up 1s
+    cubic-bezier(.2, .9, .2, 1);
+}
+
+.byr-app-user__avatar.is-celebrating {
+  animation:
+    byr-avatar-bounce .65s
+    cubic-bezier(.2, .9, .25, 1);
+}
+
+.byr-app-user__avatar.is-rank-celebrating {
+  animation:
+    byr-avatar-rank 1.05s
+    cubic-bezier(.2, .9, .2, 1);
+}
+
+@keyframes byr-points-gained {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  35% {
+    transform:
+      translateY(-4px)
+      scale(1.08);
+
+    filter:
+      brightness(1.18)
+      drop-shadow(
+        0 0 12px rgba(255, 221, 40, .8)
+      );
+  }
+
+  65% {
+    transform:
+      translateY(1px)
+      scale(.98);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes byr-xp-gained {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.025);
+
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .1),
+      0 0 18px rgba(40, 199, 255, .38);
+  }
+
+  100% {
+    transform: scale(1);
+
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+}
+
+@keyframes byr-rank-up {
+  0% {
+    transform: scale(1);
+  }
+
+  28% {
+    transform:
+      translateY(-4px)
+      scale(1.1)
+      rotate(-2deg);
+
+    border-color:
+      rgba(255, 215, 46, .9);
+
+    box-shadow:
+      0 0 20px rgba(255, 215, 46, .65);
+  }
+
+  52% {
+    transform:
+      translateY(1px)
+      scale(.98)
+      rotate(1deg);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes byr-avatar-bounce {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform:
+      translateY(-5px)
+      rotate(-6deg)
+      scale(1.12);
+  }
+
+  65% {
+    transform:
+      translateY(1px)
+      rotate(3deg)
+      scale(.97);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes byr-avatar-rank {
+  0% {
+    transform: scale(1);
+  }
+
+  25% {
+    transform:
+      translateY(-6px)
+      rotate(-10deg)
+      scale(1.16);
+
+    box-shadow:
+      0 5px 0 #d99f00,
+      0 0 24px rgba(255, 215, 46, .8);
+  }
+
+  50% {
+    transform:
+      rotate(8deg)
+      scale(1.08);
+  }
+
+  75% {
+    transform:
+      rotate(-3deg)
+      scale(1.03);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =========================================
    ACCESIBILIDAD
 ========================================= */
 
@@ -531,6 +713,10 @@
 ========================================= */
 
 @media (max-width: 700px) {
+  #byr-app-shell {
+  max-height: 100dvh;
+}
+
   #byr-app-shell {
     position: sticky;
     top: 0;
@@ -695,4 +881,11 @@
   .byr-app-xp__fill::after {
     animation: none;
   }
+
+  .byr-app-user__points,
+.byr-app-user__level,
+.byr-app-xp,
+.byr-app-user__avatar {
+  animation: none !important;
+}
 }

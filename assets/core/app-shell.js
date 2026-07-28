@@ -8,7 +8,10 @@
   const SHELL_ID = "byr-app-shell";
   const USER_PANEL_ID = "byr-app-user-panel";
 
-  let levelObserver = null;
+let levelObserver = null;
+let globalListenersBound = false;
+let previousUserSnapshot = null;
+let shellResizeObserver = null;
 
   /* =========================================
      RUTAS
@@ -171,6 +174,46 @@
 
     return Math.floor(level);
   }
+
+  function getUserPoints(state) {
+  const points =
+    state?.wallet?.points ??
+    state?.points ??
+    state?.user?.points ??
+    0;
+
+  const numericPoints = Number(points);
+
+  return Number.isFinite(numericPoints)
+    ? numericPoints
+    : 0;
+}
+
+function getUserXp(state) {
+  const xp =
+    state?.progression?.xp ??
+    state?.xp ??
+    state?.user?.xp ??
+    0;
+
+  const numericXp = Number(xp);
+
+  return Number.isFinite(numericXp)
+    ? numericXp
+    : 0;
+}
+
+function createUserSnapshot(state) {
+  const level = getUserLevel(state);
+  const rank = getRankFromLevel(level);
+
+  return {
+    points: getUserPoints(state),
+    xp: getUserXp(state),
+    level,
+    rank: rank.name
+  };
+}
 
   function getRankFromLevel(level) {
     if (level >= 12) {
@@ -437,6 +480,89 @@
     );
   }
 
+  function restartAnimation(element, className) {
+  if (!element) {
+    return;
+  }
+
+  element.classList.remove(className);
+
+  /*
+   * Fuerza al navegador a reiniciar la animación,
+   * incluso si se activa varias veces seguidas.
+   */
+  void element.offsetWidth;
+
+  element.classList.add(className);
+}
+
+function animateUserChanges(
+  shell,
+  previousSnapshot,
+  currentSnapshot
+) {
+  if (!previousSnapshot) {
+    return;
+  }
+
+  const pointsElement =
+    shell.querySelector(".byr-app-user__points");
+
+  const xpElement =
+    shell.querySelector(".byr-app-xp");
+
+  const rankElement =
+    shell.querySelector(".byr-app-user__level");
+
+  const avatarElement =
+    shell.querySelector(".byr-app-user__avatar");
+
+  if (
+    currentSnapshot.points >
+    previousSnapshot.points
+  ) {
+    restartAnimation(
+      pointsElement,
+      "is-points-gained"
+    );
+
+    restartAnimation(
+      avatarElement,
+      "is-celebrating"
+    );
+  }
+
+  if (
+    currentSnapshot.xp >
+    previousSnapshot.xp
+  ) {
+    restartAnimation(
+      xpElement,
+      "is-xp-gained"
+    );
+  }
+
+  const rankChanged =
+    currentSnapshot.rank !==
+    previousSnapshot.rank;
+
+  const levelIncreased =
+    currentSnapshot.level >
+    previousSnapshot.level;
+
+  if (rankChanged || levelIncreased) {
+    restartAnimation(
+      rankElement,
+      "is-rank-up"
+    );
+
+    restartAnimation(
+      avatarElement,
+      "is-rank-celebrating"
+    );
+  }
+}
+
   /* =========================================
      CREACIÓN DEL APP SHELL
   ========================================= */
@@ -485,32 +611,144 @@
      SINCRONIZACIÓN GENERAL
   ========================================= */
 
-  function sync() {
-    const shell =
-      document.getElementById(SHELL_ID);
+function sync() {
+  const shell =
+    document.getElementById(SHELL_ID);
 
-    if (!shell) {
-      return;
-    }
-
-    const state = getUserState();
-
-    updateUserIdentity(shell, state);
-
-    /*
-     * Primero actualizamos puntos, XP, nivel
-     * y barra usando el sistema global.
-     */
-    if (window.BYRHUD?.sync) {
-      window.BYRHUD.sync();
-    }
-
-    /*
-     * Después convertimos el nivel numérico
-     * en el rango visible correspondiente.
-     */
-    updateRank(shell);
+  if (!shell) {
+    return;
   }
+
+  const state = getUserState();
+  const currentSnapshot =
+    createUserSnapshot(state);
+
+  updateUserIdentity(shell, state);
+
+  /*
+   * Actualiza puntos, XP, nivel y barra.
+   */
+  if (window.BYRHUD?.sync) {
+    window.BYRHUD.sync();
+  }
+
+  updateRank(
+    shell,
+    currentSnapshot.level
+  );
+
+  animateUserChanges(
+    shell,
+    previousUserSnapshot,
+    currentSnapshot
+  );
+
+  previousUserSnapshot = {
+    ...currentSnapshot
+  };
+}
+
+  function bindGlobalSyncEvents() {
+  if (globalListenersBound) {
+    return;
+  }
+
+  globalListenersBound = true;
+
+  /*
+   * Actualiza el HUD cuando el usuario vuelve
+   * a esta pestaña o ventana.
+   */
+  window.addEventListener("focus", () => {
+    sync();
+  });
+
+  /*
+   * Actualiza al volver desde otra página usando
+   * los botones Atrás o Adelante del navegador.
+   */
+  window.addEventListener("pageshow", () => {
+    sync();
+  });
+
+  /*
+   * Cuando la pestaña vuelve a estar visible,
+   * comprobamos nuevamente los datos.
+   */
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      sync();
+    }
+  });
+
+  /*
+   * Permite que cualquier juego o sección
+   * avise que cambió el usuario.
+   *
+   * Ejemplo:
+   * window.dispatchEvent(
+   *   new CustomEvent("byr:user-updated")
+   * );
+   */
+  window.addEventListener("byr:user-updated", () => {
+    sync();
+  });
+
+  /*
+   * Sincronización entre diferentes pestañas
+   * abiertas del mismo navegador.
+   */
+  window.addEventListener("storage", () => {
+    sync();
+  });
+  
+  window.addEventListener(
+  "resize",
+  updateShellHeightVariable,
+  { passive: true }
+);
+}
+
+function updateShellHeightVariable() {
+  const shell =
+    document.getElementById(SHELL_ID);
+
+  if (!shell) {
+    return;
+  }
+
+  const shellHeight =
+    Math.ceil(shell.getBoundingClientRect().height);
+
+  document.documentElement.style.setProperty(
+    "--byr-app-shell-height",
+    `${shellHeight}px`
+  );
+}
+
+function observeShellSize() {
+  const shell =
+    document.getElementById(SHELL_ID);
+
+  if (!shell) {
+    return;
+  }
+
+  if (shellResizeObserver) {
+    shellResizeObserver.disconnect();
+  }
+
+  if ("ResizeObserver" in window) {
+    shellResizeObserver =
+      new ResizeObserver(() => {
+        updateShellHeightVariable();
+      });
+
+    shellResizeObserver.observe(shell);
+  }
+
+  updateShellHeightVariable();
+}
 
   /* =========================================
      API PÚBLICA
@@ -542,28 +780,31 @@
      INICIALIZACIÓN
   ========================================= */
 
-  function init() {
-    const shell = createAppShell();
+function init() {
+  const shell = createAppShell();
 
-    if (!shell) {
-      console.warn(
-        "BYR App Shell: no se pudo crear el componente."
-      );
+  if (!shell) {
+    console.warn(
+      "BYR App Shell: no se pudo crear el componente."
+    );
 
-      return;
-    }
-
-    sync();
+    return;
   }
 
-  window.BYRAppShell = {
-    init,
-    sync,
-    createAppShell,
-    setRankFromLevel,
-    refreshNavigation,
-    getRankFromLevel
-  };
+  bindGlobalSyncEvents();
+  observeShellSize();
+  sync();
+}
+
+window.BYRAppShell = {
+  init,
+  sync,
+  refresh: sync,
+  createAppShell,
+  setRankFromLevel,
+  refreshNavigation,
+  getRankFromLevel
+};
 
   if (document.readyState === "loading") {
     document.addEventListener(
