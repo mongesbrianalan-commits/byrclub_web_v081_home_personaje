@@ -537,6 +537,10 @@ const previousLevel =
       return;
     }
 
+    if (window.BYRAchievementEngine?.track) {
+  BYRAchievementEngine.track("scratch");
+}
+
     isClaimed = true;
 
     const result = {
