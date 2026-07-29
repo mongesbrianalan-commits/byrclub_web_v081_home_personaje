@@ -1,0 +1,673 @@
+/* =========================================
+   BYR — PANEL DE MISIONES
+========================================= */
+
+.byr-missions-panel {
+  position: relative;
+
+  width: min(1180px, calc(100% - 32px));
+
+  margin: 56px auto;
+
+  padding: 28px;
+
+  overflow: hidden;
+
+  color: #fff;
+
+  background:
+    linear-gradient(
+      145deg,
+      #123eaa 0%,
+      #092977 65%,
+      #071f60 100%
+    );
+
+  border:
+    2px solid rgba(255, 214, 38, .9);
+
+  border-radius: 30px;
+
+  box-shadow:
+    0 11px 0 #051a50,
+    0 24px 42px rgba(0, 0, 0, .3),
+    inset 0 1px 0 rgba(255, 255, 255, .13);
+}
+
+.byr-missions-panel::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    radial-gradient(
+      rgba(255, 255, 255, .12) 1px,
+      transparent 1px
+    );
+
+  background-size: 22px 22px;
+
+  opacity: .35;
+
+  pointer-events: none;
+}
+
+.byr-missions-panel__decoration {
+  position: absolute;
+
+  top: -110px;
+  right: -80px;
+
+  width: 330px;
+  height: 330px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(40, 198, 255, .2),
+      transparent 67%
+    );
+
+  pointer-events: none;
+}
+
+/* =========================================
+   CABECERA
+========================================= */
+
+.byr-missions-panel__header {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  margin-bottom: 24px;
+}
+
+.byr-missions-panel__eyebrow {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #ffd62b;
+
+  font-size: 12px;
+  font-weight: 900;
+
+  letter-spacing: .08em;
+
+  text-transform: uppercase;
+}
+
+.byr-missions-panel__title {
+  margin: 0;
+
+  color: #fff;
+
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: .95;
+
+  text-transform: uppercase;
+
+  text-shadow:
+    0 5px 0 rgba(4, 23, 79, .7);
+}
+
+.byr-missions-panel__subtitle {
+  margin: 10px 0 0;
+
+  color: rgba(255, 255, 255, .72);
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.byr-missions-panel__summary {
+  flex: 0 0 auto;
+
+  min-width: 138px;
+
+  padding: 15px 18px;
+
+  color: #092b78;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffe859,
+      #ffc61c
+    );
+
+  border-radius: 18px;
+
+  text-align: center;
+
+  box-shadow:
+    0 6px 0 #cc9200;
+}
+
+.byr-missions-panel__summary > strong {
+  font-size: 31px;
+  line-height: 1;
+}
+
+.byr-missions-panel__summary > span {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.byr-missions-panel__summary small {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: .06em;
+
+  text-transform: uppercase;
+}
+
+/* =========================================
+   LISTA
+========================================= */
+
+.byr-missions-panel__list {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 16px;
+}
+
+/* =========================================
+   TARJETA
+========================================= */
+
+.byr-mission-card {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    auto minmax(0, 1fr);
+
+  gap: 13px;
+
+  min-width: 0;
+
+  padding: 16px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .13),
+      rgba(255, 255, 255, .07)
+    );
+
+  border:
+    1px solid rgba(255, 255, 255, .16);
+
+  border-radius: 20px;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .07);
+
+  transition:
+    transform .22s ease,
+    border-color .22s ease,
+    background .22s ease;
+}
+
+.byr-mission-card:hover {
+  transform: translateY(-3px);
+
+  border-color:
+    rgba(255, 215, 39, .65);
+}
+
+.byr-mission-card__icon {
+  width: 50px;
+  height: 50px;
+
+  display: grid;
+
+  place-items: center;
+
+  border: 3px solid #fff;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffe34b,
+      #ffad00
+    );
+
+  font-size: 25px;
+
+  box-shadow:
+    0 4px 0 #bf8100;
+}
+
+.byr-mission-card__body {
+  min-width: 0;
+}
+
+.byr-mission-card__top {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.byr-mission-card__name {
+  display: block;
+
+  color: #fff;
+
+  font-size: 17px;
+  line-height: 1.05;
+}
+
+.byr-mission-card__description {
+  margin: 5px 0 0;
+
+  color: rgba(255, 255, 255, .69);
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.byr-mission-card__status {
+  flex: 0 0 auto;
+
+  color: #ffd62b;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  white-space: nowrap;
+}
+
+/* =========================================
+   PROGRESO
+========================================= */
+
+.byr-mission-card__progress {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr) auto;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 13px;
+}
+
+.byr-mission-card__track {
+  height: 8px;
+
+  overflow: hidden;
+
+  background:
+    rgba(0, 13, 57, .65);
+
+  border:
+    1px solid rgba(255, 255, 255, .12);
+
+  border-radius: 999px;
+
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, .28);
+}
+
+.byr-mission-card__fill {
+  width: 0%;
+  height: 100%;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      #27c9ff,
+      #8be7d9,
+      #ffd528
+    );
+
+  box-shadow:
+    0 0 10px rgba(39, 201, 255, .36);
+
+  transition:
+    width .65s cubic-bezier(.2, .8, .2, 1);
+}
+
+.byr-mission-card__percentage {
+  color: rgba(255, 255, 255, .72);
+
+  font-size: 9px;
+  font-weight: 900;
+}
+
+/* =========================================
+   RECOMPENSAS
+========================================= */
+
+.byr-mission-card__rewards {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 7px;
+
+  margin-top: 11px;
+}
+
+.byr-mission-card__rewards span {
+  padding: 4px 7px;
+
+  color: #092b78;
+
+  background: #fff;
+
+  border-radius: 999px;
+
+  font-size: 9px;
+  font-weight: 900;
+}
+/* =========================================
+   COMPLETADA
+========================================= */
+
+.byr-mission-card.is-completed {
+  border-color:
+    rgba(85, 231, 143, .72);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(50, 197, 112, .24),
+      rgba(19, 109, 72, .16)
+    );
+}
+
+.byr-mission-card.is-completed
+.byr-mission-card__icon {
+  background:
+    linear-gradient(
+      145deg,
+      #62ee9c,
+      #21bd6b
+    );
+
+  box-shadow:
+    0 4px 0 #117c45;
+}
+
+.byr-mission-card.is-completed
+.byr-mission-card__status {
+  color: #70f0a5;
+}
+
+.byr-mission-card.is-updating {
+  animation:
+    byr-mission-update .75s
+    cubic-bezier(.2, .9, .25, 1);
+}
+
+/* =========================================
+   PIE
+========================================= */
+
+.byr-missions-panel__footer {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-top: 20px;
+
+  padding-top: 18px;
+
+  border-top:
+    1px solid rgba(255, 255, 255, .13);
+}
+
+.byr-missions-panel__footer-label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: rgba(255, 255, 255, .65);
+
+  font-size: 10px;
+  font-weight: 900;
+
+  text-transform: uppercase;
+}
+
+.byr-missions-panel__reward-totals {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+}
+
+.byr-missions-panel__reward-totals span {
+  padding: 7px 10px;
+
+  color: #092b78;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffe757,
+      #ffc71b
+    );
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  box-shadow:
+    0 3px 0 #cc9200;
+}
+
+.byr-missions-panel__complete-message {
+  color: #70f0a5;
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+/* =========================================
+   VACÍO
+========================================= */
+
+.byr-missions-panel__empty {
+  grid-column: 1 / -1;
+
+  padding: 35px;
+
+  color: #fff;
+
+  text-align: center;
+}
+
+.byr-missions-panel__empty > span {
+  display: block;
+
+  margin-bottom: 10px;
+
+  font-size: 42px;
+}
+
+/* =========================================
+   ANIMACIONES
+========================================= */
+
+@keyframes byr-mission-update {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform:
+      translateY(-5px)
+      scale(1.04);
+
+    border-color:
+      rgba(255, 215, 39, .92);
+
+    box-shadow:
+      0 0 22px rgba(255, 215, 39, .37);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 950px) {
+  .byr-missions-panel__list {
+    grid-template-columns: 1fr;
+  }
+
+  .byr-mission-card {
+    grid-template-columns:
+      auto minmax(0, 1fr);
+  }
+}
+
+/* =========================================
+   CELULAR
+========================================= */
+
+@media (max-width: 700px) {
+  .byr-missions-panel {
+    width: calc(100% - 20px);
+
+    margin: 34px auto;
+
+    padding: 18px 13px;
+
+    border-radius: 22px;
+
+    box-shadow:
+      0 7px 0 #051a50,
+      0 16px 30px rgba(0, 0, 0, .3);
+  }
+
+  .byr-missions-panel__header {
+    align-items: flex-start;
+
+    gap: 12px;
+
+    margin-bottom: 17px;
+  }
+
+  .byr-missions-panel__title {
+    font-size: 28px;
+  }
+
+  .byr-missions-panel__subtitle {
+    max-width: 220px;
+
+    font-size: 11px;
+  }
+
+  .byr-missions-panel__summary {
+    min-width: 82px;
+
+    padding: 10px 9px;
+
+    border-radius: 13px;
+
+    box-shadow:
+      0 4px 0 #cc9200;
+  }
+
+  .byr-missions-panel__summary > strong {
+    font-size: 22px;
+  }
+
+  .byr-missions-panel__summary > span {
+    font-size: 11px;
+  }
+
+  .byr-mission-card {
+    gap: 10px;
+
+    padding: 13px;
+
+    border-radius: 16px;
+  }
+
+  .byr-mission-card__icon {
+    width: 42px;
+    height: 42px;
+
+    border-width: 2px;
+
+    font-size: 21px;
+  }
+
+  .byr-mission-card__name {
+    font-size: 14px;
+  }
+
+  .byr-mission-card__description {
+    font-size: 10px;
+  }
+
+  .byr-mission-card__status {
+    font-size: 9px;
+  }
+
+  .byr-missions-panel__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* =========================================
+   REDUCIR MOVIMIENTO
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .byr-mission-card,
+  .byr-mission-card__fill {
+    transition: none;
+    animation: none;
+  }
+}

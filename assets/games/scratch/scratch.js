@@ -541,6 +541,11 @@ const previousLevel =
   BYRAchievementEngine.track("scratch");
 }
 
+if (window.BYRMissionEngine?.track) {
+  BYRMissionEngine.track("scratch");
+  BYRMissionEngine.track("game");
+}
+
     isClaimed = true;
 
     const result = {

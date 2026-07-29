@@ -170,6 +170,16 @@ BYRUser.claimPrize(
   "Ruleta diaria"
 );
 
+if (window.BYRAchievementEngine?.track) {
+  window.BYRAchievementEngine.track("roulette");
+}
+
+if (window.BYRMissionEngine?.track) {
+  window.BYRMissionEngine.track("roulette");
+  window.BYRMissionEngine.track("game");
+  window.BYRMissionEngine.track("prize");
+}
+
 localStorage.setItem(STORAGE_KEY, getTodayKey());
 localStorage.setItem(RESULT_KEY, JSON.stringify(result));
 

@@ -505,6 +505,12 @@
       payload
     );
 
+    if (window.BYRMissionEngine?.track) {
+  window.BYRMissionEngine.track(
+    "achievement"
+  );
+}
+
     if (record.rewardGranted) {
       dispatch(
         "byr:achievement-rewarded",

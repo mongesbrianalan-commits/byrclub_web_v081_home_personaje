@@ -1,0 +1,470 @@
+/* =========================================
+   BYR — NOTIFICACIONES DE LOGROS
+========================================= */
+
+.byr-achievement-notifications {
+  position: fixed;
+
+  top:
+    calc(
+      var(--byr-app-shell-height, 0px) +
+      18px
+    );
+
+  right: 18px;
+
+  z-index: 12000;
+
+  width:
+    min(
+      390px,
+      calc(100vw - 32px)
+    );
+
+  pointer-events: none;
+}
+
+/* =========================================
+   TARJETA
+========================================= */
+
+.byr-achievement-toast {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    auto minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 14px;
+
+  width: 100%;
+
+  padding: 17px 44px 17px 17px;
+
+  overflow: hidden;
+
+  color: #fff;
+
+  background:
+    linear-gradient(
+      145deg,
+      #123fae 0%,
+      #092873 72%,
+      #061d59 100%
+    );
+
+  border:
+    2px solid rgba(255, 220, 44, .9);
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 9px 0 #051b54,
+    0 20px 38px rgba(0, 0, 0, .38),
+    inset 0 1px 0 rgba(255, 255, 255, .16);
+
+  opacity: 0;
+
+  transform:
+    translateX(115%)
+    rotate(3deg)
+    scale(.92);
+
+  pointer-events: auto;
+
+  transition:
+    opacity .38s ease,
+    transform .5s
+      cubic-bezier(.18, .9, .25, 1.15);
+}
+
+.byr-achievement-toast.is-visible {
+  opacity: 1;
+
+  transform:
+    translateX(0)
+    rotate(0)
+    scale(1);
+}
+
+.byr-achievement-toast.is-leaving {
+  opacity: 0;
+
+  transform:
+    translateX(115%)
+    rotate(2deg)
+    scale(.95);
+}
+
+/* =========================================
+   DECORACIÓN
+========================================= */
+
+.byr-achievement-toast::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    radial-gradient(
+      rgba(255, 255, 255, .13) 1px,
+      transparent 1px
+    );
+
+  background-size: 18px 18px;
+
+  opacity: .42;
+
+  pointer-events: none;
+}
+
+.byr-achievement-toast::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 5px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #27c8ff,
+      #82e5dc,
+      #ffd52a
+    );
+}
+
+.byr-achievement-toast__shine {
+  position: absolute;
+
+  top: -70%;
+  left: -45%;
+
+  width: 32%;
+  height: 240%;
+
+  background:
+    linear-gradient(
+      110deg,
+      transparent,
+      rgba(255, 255, 255, .3),
+      transparent
+    );
+
+  transform: rotate(12deg);
+
+  animation:
+    byr-achievement-shine
+    1.1s ease .28s both;
+
+  pointer-events: none;
+}
+
+/* =========================================
+   ICONO
+========================================= */
+
+.byr-achievement-toast__icon {
+  position: relative;
+  z-index: 1;
+
+  width: 68px;
+  height: 68px;
+
+  display: grid;
+
+  place-items: center;
+
+  flex: 0 0 auto;
+
+  border:
+    4px solid rgba(255, 255, 255, .95);
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffe550,
+      #ffae00
+    );
+
+  font-size: 34px;
+  line-height: 1;
+
+  box-shadow:
+    0 6px 0 #c88900,
+    0 10px 20px rgba(0, 0, 0, .27);
+
+  animation:
+    byr-achievement-icon
+    .72s cubic-bezier(.2, .9, .25, 1.15)
+    .2s both;
+}
+
+/* =========================================
+   CONTENIDO
+========================================= */
+
+.byr-achievement-toast__content {
+  position: relative;
+  z-index: 1;
+
+  min-width: 0;
+}
+
+.byr-achievement-toast__eyebrow {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #ffd62d;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  letter-spacing: .07em;
+
+  text-transform: uppercase;
+}
+
+.byr-achievement-toast__title {
+  display: block;
+
+  color: #fff;
+
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.byr-achievement-toast__description {
+  margin: 6px 0 0;
+
+  color: rgba(255, 255, 255, .78);
+
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* =========================================
+   RECOMPENSAS
+========================================= */
+
+.byr-achievement-toast__rewards {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 7px;
+
+  margin-top: 10px;
+}
+
+.byr-achievement-toast__reward-item {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  padding: 5px 8px;
+
+  color: #092b79;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffe757,
+      #ffc61a
+    );
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  box-shadow:
+    0 3px 0 #cd9200;
+}
+
+/* =========================================
+   CERRAR
+========================================= */
+
+.byr-achievement-toast__close {
+  position: absolute;
+
+  top: 8px;
+  right: 9px;
+
+  z-index: 3;
+
+  width: 29px;
+  height: 29px;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 0;
+
+  color: rgba(255, 255, 255, .78);
+
+  background:
+    rgba(0, 14, 62, .4);
+
+  border:
+    1px solid rgba(255, 255, 255, .14);
+
+  border-radius: 50%;
+
+  font: inherit;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    color .18s ease,
+    background .18s ease,
+    transform .18s ease;
+}
+
+.byr-achievement-toast__close:hover {
+  color: #fff;
+
+  background:
+    rgba(0, 14, 62, .7);
+
+  transform: scale(1.08);
+}
+
+/* =========================================
+   ANIMACIONES
+========================================= */
+
+@keyframes byr-achievement-shine {
+  from {
+    transform:
+      translateX(0)
+      rotate(12deg);
+  }
+
+  to {
+    transform:
+      translateX(500%)
+      rotate(12deg);
+  }
+}
+
+@keyframes byr-achievement-icon {
+  0% {
+    opacity: 0;
+
+    transform:
+      scale(.4)
+      rotate(-18deg);
+  }
+
+  55% {
+    opacity: 1;
+
+    transform:
+      scale(1.17)
+      rotate(7deg);
+  }
+
+  78% {
+    transform:
+      scale(.94)
+      rotate(-3deg);
+  }
+
+  100% {
+    transform:
+      scale(1)
+      rotate(0);
+  }
+}
+
+/* =========================================
+   CELULAR
+========================================= */
+
+@media (max-width: 700px) {
+  .byr-achievement-notifications {
+    top:
+      calc(
+        var(--byr-app-shell-height, 0px) +
+        10px
+      );
+
+    right: 10px;
+    left: 10px;
+
+    width: auto;
+  }
+
+  .byr-achievement-toast {
+    gap: 10px;
+
+    padding:
+      13px 38px 14px 12px;
+
+    border-radius: 17px;
+  }
+
+  .byr-achievement-toast__icon {
+    width: 52px;
+    height: 52px;
+
+    border-width: 3px;
+
+    font-size: 27px;
+
+    box-shadow:
+      0 4px 0 #c88900;
+  }
+
+  .byr-achievement-toast__eyebrow {
+    font-size: 9px;
+  }
+
+  .byr-achievement-toast__title {
+    font-size: 17px;
+  }
+
+  .byr-achievement-toast__description {
+    font-size: 11px;
+  }
+
+  .byr-achievement-toast__reward-item {
+    padding: 4px 7px;
+
+    font-size: 9px;
+  }
+}
+
+/* =========================================
+   REDUCIR MOVIMIENTO
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .byr-achievement-toast,
+  .byr-achievement-toast__shine,
+  .byr-achievement-toast__icon {
+    animation: none;
+    transition: none;
+  }
+}
