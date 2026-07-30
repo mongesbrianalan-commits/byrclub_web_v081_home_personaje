@@ -113,13 +113,55 @@
      TARJETA
   ========================================= */
 
+function getNotificationEyebrow(
+  notificationType,
+  payload
+) {
+  if (payload?.eyebrow) {
+    return payload.eyebrow;
+  }
+
+  const labels = {
+    achievement: "¡Logro desbloqueado!",
+    mission: "¡Misión completada!",
+    level: "¡Subiste de nivel!",
+    rank: "¡Nuevo rango!",
+    streak: "¡Racha actualizada!",
+    prize: "¡Premio conseguido!",
+    benefit: "¡Beneficio desbloqueado!",
+    success: "¡Excelente!",
+    info: "Novedad de BYR Club",
+    system: "BYR Club"
+  };
+
+  return (
+    labels[notificationType] ||
+    labels.system
+  );
+}
+
   function createNotificationElement(payload) {
-    const achievement =
-      payload?.achievement || {};
+const content =
+  payload?.achievement ||
+  payload?.mission ||
+  payload?.notification ||
+  {};
 
-    const reward =
-      payload?.reward || achievement.reward || {};
+const notificationType =
+  payload?.notificationType ||
+  (
+    payload?.mission
+      ? "mission"
+      : payload?.achievement
+        ? "achievement"
+        : "system"
+  );
 
+const reward =
+  content.reward ||
+  payload?.reward ||
+  {};
+  
     const toast =
       document.createElement("article");
 
@@ -149,21 +191,26 @@
         class="byr-achievement-toast__icon"
         aria-hidden="true"
       >
-        ${achievement.icon || "🏆"}
+        ${content.icon || "🏆"}
       </div>
 
       <div class="byr-achievement-toast__content">
         <span class="byr-achievement-toast__eyebrow">
-          ¡Logro desbloqueado!
-        </span>
+  ${
+    getNotificationEyebrow(
+  notificationType,
+  payload
+)
+  }
+</span>
 
         <strong class="byr-achievement-toast__title">
-          ${achievement.name || "Nuevo logro"}
+          ${content.name || "Nuevo logro"}
         </strong>
 
         <p class="byr-achievement-toast__description">
           ${
-            achievement.description ||
+            content.description ||
             "Completaste un nuevo desafío."
           }
         </p>
@@ -204,9 +251,11 @@
 
   function playAchievementEffects(payload) {
     const reward =
-      payload?.achievement?.reward ||
-      payload?.reward ||
-      {};
+  payload?.achievement?.reward ||
+  payload?.mission?.reward ||
+  payload?.notification?.reward ||
+  payload?.reward ||
+  {};
 
     if (
       window.BYREffects?.points &&
@@ -302,13 +351,17 @@
   }
 
   function show(payload) {
-    if (!payload?.achievement) {
-      console.warn(
-        "BYR Achievement Notifications: falta el logro."
-      );
+    if (
+  !payload?.achievement &&
+  !payload?.mission &&
+  !payload?.notification
+) {
+  console.warn(
+    "BYR Notifications: falta el contenido de la notificación."
+  );
 
-      return false;
-    }
+  return false;
+}
 
     queue.push(payload);
     showNext();
@@ -327,6 +380,16 @@
         show(event.detail);
       }
     );
+
+    window.addEventListener(
+  "byr:mission-completed",
+  (event) => {
+    show({
+      ...event.detail,
+      notificationType: "mission"
+    });
+  }
+);
   }
 
   /* =========================================
@@ -344,15 +407,78 @@
     bindEvents();
   }
 
-  window.BYRAchievementNotifications = {
-    init,
-    show,
-    hide: hideCurrent,
+function showNotification({
+  type = "system",
+  icon = "🍔",
+  name = "BYR Club",
+  description = "",
+  eyebrow = "",
+  reward = {},
+  duration
+} = {}) {
+  return show({
+    notificationType: type,
+    eyebrow,
+    duration,
 
-    getQueueLength() {
-      return queue.length;
+    notification: {
+      icon,
+      name,
+      description,
+      reward
     }
-  };
+  });
+}
+
+  window.BYRAchievementNotifications = {
+  init,
+  show,
+  showNotification,
+  hide: hideCurrent,
+
+  getQueueLength() {
+    return queue.length;
+  }
+};
+window.BYRNotifications = {
+  show: showNotification,
+  hide: hideCurrent,
+
+  success(options = {}) {
+    return showNotification({
+      ...options,
+      type: "success"
+    });
+  },
+
+  level(options = {}) {
+    return showNotification({
+      ...options,
+      type: "level"
+    });
+  },
+
+  rank(options = {}) {
+    return showNotification({
+      ...options,
+      type: "rank"
+    });
+  },
+
+  streak(options = {}) {
+    return showNotification({
+      ...options,
+      type: "streak"
+    });
+  },
+
+  prize(options = {}) {
+    return showNotification({
+      ...options,
+      type: "prize"
+    });
+  }
+};
 
   if (document.readyState === "loading") {
     document.addEventListener(

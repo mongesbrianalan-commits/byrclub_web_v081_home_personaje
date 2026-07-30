@@ -307,3 +307,571 @@
             }
           </span>
         </div>
+                <div
+          class="byr-mission-card__progress"
+        >
+          <div
+            class="byr-mission-card__track"
+            role="progressbar"
+            aria-label="Progreso de ${
+              mission.name || "la misión"
+            }"
+            aria-valuemin="0"
+            aria-valuemax="${target}"
+            aria-valuenow="${progress}"
+          >
+            <div
+              class="byr-mission-card__fill"
+              style="width: ${percentage}%"
+            ></div>
+          </div>
+
+          <span
+            class="byr-mission-card__percentage"
+          >
+            ${percentage}%
+          </span>
+        </div>
+
+        <div
+          class="byr-mission-card__rewards"
+        >
+          <span>
+            🪙 +${formatNumber(
+              mission?.reward?.points
+            )}
+          </span>
+
+          <span>
+            ⭐ +${formatNumber(
+              mission?.reward?.xp
+            )} XP
+          </span>
+        </div>
+      </div>
+    `;
+
+    return card;
+  }
+
+  /* =========================================
+     RENDER DEL PANEL
+  ========================================= */
+
+  function render() {
+    const panel =
+      document.getElementById(
+        PANEL_ID
+      );
+
+    if (!panel) {
+      return;
+    }
+
+    const list =
+      panel.querySelector(
+        `#${LIST_ID}`
+      );
+
+    if (!list) {
+      return;
+    }
+
+    const missions =
+      getDailyMissions();
+
+    list.innerHTML = "";
+
+    if (missions.length === 0) {
+      list.innerHTML = `
+        <div
+          class="byr-missions-panel__empty"
+        >
+          <span aria-hidden="true">
+            🍔
+          </span>
+
+          <strong>
+            Todavía no hay misiones disponibles.
+          </strong>
+
+          <p>
+            Volvé a intentarlo en unos minutos.
+          </p>
+        </div>
+      `;
+
+      updatePanelSummary(
+        panel,
+        []
+      );
+
+      return;
+    }
+
+    missions.forEach((item) => {
+      const card =
+        createMissionCard(item);
+
+      list.appendChild(card);
+    });
+
+    updatePanelSummary(
+      panel,
+      missions
+    );
+  }
+
+  function updatePanelSummary(
+    panel,
+    missions
+  ) {
+    const completed =
+      getCompletedCount(missions);
+
+    const total =
+      missions.length;
+
+    const rewards =
+      getTotalRewards(missions);
+
+    const completedElement =
+      panel.querySelector(
+        "[data-byr-missions-completed]"
+      );
+
+    const totalElement =
+      panel.querySelector(
+        "[data-byr-missions-total]"
+      );
+
+    const pointsElement =
+      panel.querySelector(
+        "[data-byr-missions-points]"
+      );
+
+    const xpElement =
+      panel.querySelector(
+        "[data-byr-missions-xp]"
+      );
+
+    const completeMessage =
+      panel.querySelector(
+        "[data-byr-missions-complete-message]"
+      );
+
+    if (completedElement) {
+      completedElement.textContent =
+        String(completed);
+    }
+
+    if (totalElement) {
+      totalElement.textContent =
+        String(total);
+    }
+
+    if (pointsElement) {
+      pointsElement.textContent =
+        formatNumber(
+          rewards.points
+        );
+    }
+
+    if (xpElement) {
+      xpElement.textContent =
+        formatNumber(
+          rewards.xp
+        );
+    }
+
+    const allCompleted =
+      total > 0 &&
+      completed === total;
+
+    if (completeMessage) {
+      completeMessage.hidden =
+        !allCompleted;
+    }
+
+    panel.classList.toggle(
+      "is-all-completed",
+      allCompleted
+    );
+  }
+
+  /* =========================================
+     ANIMACIÓN DE ACTUALIZACIÓN
+  ========================================= */
+
+  function animateMission(
+    missionId
+  ) {
+    if (!missionId) {
+      return;
+    }
+
+    const escapedMissionId =
+      window.CSS?.escape
+        ? window.CSS.escape(
+            missionId
+          )
+        : missionId;
+
+    const card =
+      document.querySelector(
+        `[data-mission-id="${escapedMissionId}"]`
+      );
+
+    if (!card) {
+      return;
+    }
+
+    card.classList.remove(
+      "is-updating"
+    );
+
+    void card.offsetWidth;
+
+    card.classList.add(
+      "is-updating"
+    );
+
+    window.setTimeout(() => {
+      card.classList.remove(
+        "is-updating"
+      );
+    }, 850);
+  }
+
+  function animateMissions(
+    missionIds
+  ) {
+    if (
+      !Array.isArray(missionIds)
+    ) {
+      return;
+    }
+
+    missionIds.forEach(
+      (missionId, index) => {
+        window.setTimeout(() => {
+          animateMission(
+            missionId
+          );
+        }, index * 90);
+      }
+    );
+  }
+
+  /* =========================================
+     EVENTOS DEL MOTOR
+  ========================================= */
+
+  function handleMissionProgress(
+    event
+  ) {
+    const updates =
+      Array.isArray(
+        event?.detail?.updates
+      )
+        ? event.detail.updates
+        : [];
+
+    const missionIds =
+      updates
+        .map(
+          (update) =>
+            update?.missionId
+        )
+        .filter(Boolean);
+
+    render();
+
+    window.requestAnimationFrame(
+      () => {
+        animateMissions(
+          missionIds
+        );
+      }
+    );
+  }
+
+  function handleMissionCompleted(
+    event
+  ) {
+    const missionId =
+      event?.detail?.mission?.id;
+
+    render();
+
+    window.requestAnimationFrame(
+      () => {
+        animateMission(
+          missionId
+        );
+      }
+    );
+  }
+    /* =========================================
+     EVENTOS
+  ========================================= */
+
+  function bindEvents() {
+    if (eventsBound) {
+      return;
+    }
+
+    eventsBound = true;
+
+    window.addEventListener(
+      "byr:mission-progress",
+      handleMissionProgress
+    );
+
+    window.addEventListener(
+      "byr:mission-completed",
+      handleMissionCompleted
+    );
+
+    window.addEventListener(
+      "byr:daily-missions-created",
+      render
+    );
+
+    window.addEventListener(
+      "byr:missions-reset",
+      render
+    );
+
+    window.addEventListener(
+      "focus",
+      render
+    );
+
+    window.addEventListener(
+      "pageshow",
+      render
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (!document.hidden) {
+          render();
+        }
+      }
+    );
+  }
+
+  /* =========================================
+     MONTAJE
+  ========================================= */
+
+  function mount(target) {
+    const panel = createPanel();
+
+    if (typeof target === "string") {
+      const targetElement =
+        document.querySelector(target);
+
+      if (targetElement) {
+        targetElement.appendChild(
+          panel
+        );
+      }
+    } else if (
+      target instanceof Element
+    ) {
+      target.appendChild(panel);
+    }
+
+    render();
+
+    return panel;
+  }
+
+  function autoMount() {
+    const existing =
+      document.getElementById(
+        PANEL_ID
+      );
+
+    if (existing) {
+      render();
+
+      return existing;
+    }
+
+    const explicitMount =
+      document.querySelector(
+        "[data-byr-missions-mount]"
+      );
+
+    if (explicitMount) {
+      return mount(
+        explicitMount
+      );
+    }
+
+    const main =
+      document.querySelector(
+        "main"
+      );
+
+    if (main) {
+      const panel =
+        createPanel();
+
+      main.appendChild(panel);
+
+      render();
+
+      return panel;
+    }
+
+    return null;
+  }
+
+  /* =========================================
+     API PÚBLICA
+  ========================================= */
+
+  function refresh() {
+    render();
+  }
+
+  function destroy() {
+    const panel =
+      document.getElementById(
+        PANEL_ID
+      );
+
+    if (panel) {
+      panel.remove();
+    }
+  }
+
+  function isMounted() {
+    return Boolean(
+      document.getElementById(
+        PANEL_ID
+      )
+    );
+  }
+
+  function getElement() {
+    return document.getElementById(
+      PANEL_ID
+    );
+  }
+
+  function getMissionElement(
+    missionId
+  ) {
+    if (!missionId) {
+      return null;
+    }
+
+    const escaped =
+      window.CSS?.escape
+        ? window.CSS.escape(
+            missionId
+          )
+        : missionId;
+
+    return document.querySelector(
+      `[data-mission-id="${escaped}"]`
+    );
+  }
+
+  function scrollIntoView(
+    options = {
+      behavior: "smooth",
+      block: "start"
+    }
+  ) {
+    const panel =
+      getElement();
+
+    if (!panel) {
+      return;
+    }
+
+    panel.scrollIntoView(
+      options
+    );
+  }
+
+  /* =========================================
+     OBSERVER
+  ========================================= */
+
+  function observeResize() {
+    if (
+      !(
+        "ResizeObserver" in
+        window
+      )
+    ) {
+      return;
+    }
+
+    const panel =
+      getElement();
+
+    if (!panel) {
+      return;
+    }
+
+    const observer =
+      new ResizeObserver(() => {
+        render();
+      });
+
+    observer.observe(panel);
+  }
+
+  /* =========================================
+     INICIALIZACIÓN
+  ========================================= */
+
+  function init() {
+    if (initialized) {
+      return;
+    }
+
+    initialized = true;
+
+    bindEvents();
+
+    autoMount();
+
+    observeResize();
+
+    render();
+  }
+    window.BYRMissionPanel = {
+    init,
+    mount,
+    render,
+    refresh,
+    destroy,
+    isMounted,
+    getElement,
+    getMissionElement,
+    scrollIntoView
+  };
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      init,
+      { once: true }
+    );
+  } else {
+    init();
+  }
+})();

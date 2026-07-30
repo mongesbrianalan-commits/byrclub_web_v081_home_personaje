@@ -337,7 +337,15 @@ function createUserSnapshot(state) {
           class="byr-app-user__points"
           aria-label="Puntos acumulados"
         >
-          <span
+        <span
+  class="byr-app-points__gain"
+  data-byr-points-gain
+  aria-hidden="true"
+>
+  +0 puntos
+</span>
+        
+        <span
             class="byr-app-user__points-icon"
             aria-hidden="true"
           >
@@ -359,6 +367,13 @@ function createUserSnapshot(state) {
         </div>
 
         <div class="byr-app-xp">
+        <span
+  class="byr-app-xp__gain"
+  data-byr-xp-gain
+  aria-hidden="true"
+>
+  +0 XP
+</span>
           <div class="byr-app-xp__top">
             <span>
               Experiencia
@@ -496,6 +511,96 @@ function createUserSnapshot(state) {
   element.classList.add(className);
 }
 
+function showXpGain(shell, amount) {
+  const numericAmount =
+    Math.max(0, Number(amount) || 0);
+
+  if (numericAmount <= 0) {
+    return;
+  }
+
+  const xpContainer =
+    shell.querySelector(".byr-app-xp");
+
+  const gainElement =
+    shell.querySelector("[data-byr-xp-gain]");
+
+  if (!xpContainer || !gainElement) {
+    return;
+  }
+
+  gainElement.textContent =
+    `+${numericAmount} XP`;
+
+  gainElement.classList.remove(
+    "is-visible"
+  );
+
+  void gainElement.offsetWidth;
+
+  gainElement.classList.add(
+    "is-visible"
+  );
+
+  restartAnimation(
+    xpContainer,
+    "is-xp-gained"
+  );
+
+  window.setTimeout(() => {
+    gainElement.classList.remove(
+      "is-visible"
+    );
+  }, 1750);
+}
+
+function showPointsGain(shell, amount) {
+  const numericAmount =
+    Math.max(0, Number(amount) || 0);
+
+  if (numericAmount <= 0) {
+    return;
+  }
+
+  const pointsContainer =
+    shell.querySelector(
+      ".byr-app-user__points"
+    );
+
+  const gainElement =
+    shell.querySelector(
+      "[data-byr-points-gain]"
+    );
+
+  if (!pointsContainer || !gainElement) {
+    return;
+  }
+
+  gainElement.textContent =
+    `+${numericAmount} puntos`;
+
+  gainElement.classList.remove(
+    "is-visible"
+  );
+
+  void gainElement.offsetWidth;
+
+  gainElement.classList.add(
+    "is-visible"
+  );
+
+  restartAnimation(
+    pointsContainer,
+    "is-points-gained"
+  );
+
+  window.setTimeout(() => {
+    gainElement.classList.remove(
+      "is-visible"
+    );
+  }, 1750);
+}
+
 function animateUserChanges(
   shell,
   previousSnapshot,
@@ -517,30 +622,38 @@ function animateUserChanges(
   const avatarElement =
     shell.querySelector(".byr-app-user__avatar");
 
-  if (
-    currentSnapshot.points >
-    previousSnapshot.points
-  ) {
-    restartAnimation(
-      pointsElement,
-      "is-points-gained"
-    );
+ if (
+  currentSnapshot.points >
+  previousSnapshot.points
+) {
+  const gainedPoints =
+    currentSnapshot.points -
+    previousSnapshot.points;
 
-    restartAnimation(
-      avatarElement,
-      "is-celebrating"
-    );
-  }
+  showPointsGain(
+    shell,
+    gainedPoints
+  );
+
+  restartAnimation(
+    avatarElement,
+    "is-celebrating"
+  );
+}
 
   if (
-    currentSnapshot.xp >
-    previousSnapshot.xp
-  ) {
-    restartAnimation(
-      xpElement,
-      "is-xp-gained"
-    );
-  }
+  currentSnapshot.xp >
+  previousSnapshot.xp
+) {
+  const gainedXp =
+    currentSnapshot.xp -
+    previousSnapshot.xp;
+
+  showXpGain(
+    shell,
+    gainedXp
+  );
+}
 
   const rankChanged =
     currentSnapshot.rank !==
