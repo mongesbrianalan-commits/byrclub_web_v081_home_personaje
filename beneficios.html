@@ -44,21 +44,21 @@
     </section>
 
     <section class="member-strip" aria-label="Resumen de puntos">
-      <div><span>Tu nivel</span><strong>⭐ Nivel 4</strong></div>
-      <div><span>Tus puntos</span><strong>2.020 pts</strong></div>
-      <div class="member-progress"><span>Próximo premio: Doble Cheese</span><div class="benefits-progress"><i style="--progress:80.8%"></i></div><small>2.020 / 2.500 puntos</small></div>
+      <div><span>Tu nivel</span><strong>⭐ Nivel <span data-benef-level>1</span></strong></div>
+      <div><span>Tus puntos</span><strong><span data-benef-points>0</span> pts</strong></div>
+      <div class="member-progress"><span data-benef-next-label>Próximo premio: —</span><div class="benefits-progress"><i data-benef-next-bar style="--progress:0%"></i></div><small data-benef-next-caption>0 / 0 puntos</small></div>
       <button type="button" data-tab-target="hamburguesas">Ver recompensas</button>
     </section>
 
-    <section class="legendary-section reveal-benefit">
+    <section class="legendary-section reveal-benefit" data-reward="legendary" data-points="8000" data-level="6">
       <div class="legendary-copy">
         <span class="legendary-label">👑 Recompensa legendaria</span>
         <h2>Combo Triple Cheese</h2>
         <p>Triple Cheese Burger, papas BYR y Coca-Cola. El premio grande para los que van en serio.</p>
         <div class="legendary-meta"><strong>8.000 pts</strong><span>Exclusivo Nivel 6</span></div>
-        <div class="benefits-progress legendary-progress"><i style="--progress:25.25%"></i></div>
-        <small>Ya recorriste el 25% del camino.</small>
-        <button class="locked-action" type="button">🔒 Seguí sumando</button>
+        <div class="benefits-progress legendary-progress"><i data-reward-bar style="--progress:0%"></i></div>
+        <small data-reward-caption data-unlocked-caption="¡Ya la desbloqueaste! Reclamala en el local.">Ya recorriste el 0% del camino.</small>
+        <button class="locked-action" type="button" data-reward-action data-unlocked-label="🔓 ¡Reclamar Combo Triple Cheese!">🔒 Nivel 6</button>
       </div>
       <div class="legendary-visual"><div class="legendary-rays"></div><img src="assets/rewards/combo-triple.png" alt="Combo Triple Cheese con papas y gaseosa"></div>
     </section>
@@ -74,36 +74,36 @@
 
       <div class="reward-panel active" data-panel="hamburguesas">
         <div class="premium-reward-grid">
-          <article class="premium-reward available reveal-benefit">
+          <article class="premium-reward reveal-benefit" data-reward="cheese-burger" data-points="1800" data-level="1">
             <div class="reward-image"><img src="assets/rewards/cheese-burger.jpg" alt="Cheese Burger"><span class="reward-tag hot">🔥 Más canjeada</span></div>
-            <div class="reward-body"><h3>Cheese Burger</h3><p>El clásico que nunca falla.</p><div class="reward-points"><strong>1.800 pts</strong><span>Disponible</span></div><div class="benefits-progress"><i style="--progress:100%"></i></div><small>Recompensa lista para reclamar.</small><button class="redeem-action">¡Canjear ahora!</button></div>
+            <div class="reward-body"><h3>Cheese Burger</h3><p>El clásico que nunca falla.</p><div class="reward-points"><strong>1.800 pts</strong><span data-reward-status>Te faltan 1.800</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Recompensa lista para reclamar.">Recompensa lista para reclamar.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Canjear ahora!">🔒 Faltan 1.800 pts</button></div>
           </article>
-          <article class="premium-reward reveal-benefit">
+          <article class="premium-reward reveal-benefit" data-reward="doble-cheese" data-points="2500" data-level="1">
             <div class="reward-image"><img src="assets/rewards/doble-cheese.jpg" alt="Doble Cheese Burger"><span class="reward-tag favorite">⭐ Favorita</span></div>
-            <div class="reward-body"><h3>Doble Cheese Burger</h3><p>Más carne, más cheddar, más ganas.</p><div class="reward-points"><strong>2.500 pts</strong><span>Te faltan 480</span></div><div class="benefits-progress"><i style="--progress:80.8%"></i></div><small>Con una visita más puede ser tuya.</small><button class="locked-action">🔒 Ya casi</button></div>
+            <div class="reward-body"><h3>Doble Cheese Burger</h3><p>Más carne, más cheddar, más ganas.</p><div class="reward-points"><strong>2.500 pts</strong><span data-reward-status>Te faltan 2.500</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Con una visita más puede ser tuya.">Con una visita más puede ser tuya.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Canjear ahora!">🔒 Faltan 2.500 pts</button></div>
           </article>
-          <article class="premium-reward reveal-benefit">
+          <article class="premium-reward reveal-benefit" data-reward="cuarto-byr" data-points="3000" data-level="1">
             <div class="reward-image"><img src="assets/rewards/cuarto-byr.jpg" alt="Cuarto de BYR"><span class="reward-tag new">🎉 Nueva</span></div>
-            <div class="reward-body"><h3>Cuarto de BYR</h3><p>El sabor clásico con sello BYR.</p><div class="reward-points"><strong>3.000 pts</strong><span>Te faltan 980</span></div><div class="benefits-progress"><i style="--progress:67.3%"></i></div><small>Estás a dos visitas de desbloquearla.</small><button class="locked-action">🔒 Seguí sumando</button></div>
+            <div class="reward-body"><h3>Cuarto de BYR</h3><p>El sabor clásico con sello BYR.</p><div class="reward-points"><strong>3.000 pts</strong><span data-reward-status>Te faltan 3.000</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Estás a dos visitas de desbloquearla.">Estás a dos visitas de desbloquearla.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Canjear ahora!">🔒 Faltan 3.000 pts</button></div>
           </article>
-          <article class="premium-reward reveal-benefit">
+          <article class="premium-reward reveal-benefit" data-reward="americana" data-points="3800" data-level="1">
             <div class="reward-image"><img src="assets/rewards/americana.jpg" alt="Americana"><span class="reward-tag hot">🔥 Bomba BYR</span></div>
-            <div class="reward-body"><h3>Americana</h3><p>Huevo, panceta, cebolla y BBQ. Una bomba.</p><div class="reward-points"><strong>3.800 pts</strong><span>Te faltan 1.780</span></div><div class="benefits-progress"><i style="--progress:53.1%"></i></div><small>Ya cruzaste la mitad del camino.</small><button class="locked-action">🔒 Seguí sumando</button></div>
+            <div class="reward-body"><h3>Americana</h3><p>Huevo, panceta, cebolla y BBQ. Una bomba.</p><div class="reward-points"><strong>3.800 pts</strong><span data-reward-status>Te faltan 3.800</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Ya cruzaste la mitad del camino.">Ya cruzaste la mitad del camino.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Canjear ahora!">🔒 Faltan 3.800 pts</button></div>
           </article>
-          <article class="premium-reward reveal-benefit">
+          <article class="premium-reward reveal-benefit" data-reward="cannons" data-points="4500" data-level="5">
             <div class="reward-image"><img src="assets/rewards/cannons.jpg" alt="Cannons"><span class="reward-tag exclusive">👑 Exclusiva</span></div>
-            <div class="reward-body"><h3>Cannons</h3><p>Cheddar, panceta y bastones. Mucho BYR.</p><div class="reward-points"><strong>4.500 pts</strong><span>Te faltan 2.480</span></div><div class="benefits-progress"><i style="--progress:44.9%"></i></div><small>Un objetivo grande merece festejo grande.</small><button class="locked-action">🔒 Nivel 5</button></div>
+            <div class="reward-body"><h3>Cannons</h3><p>Cheddar, panceta y bastones. Mucho BYR.</p><div class="reward-points"><strong>4.500 pts</strong><span data-reward-status>Te faltan 4.500</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Un objetivo grande merece festejo grande.">Un objetivo grande merece festejo grande.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Canjear ahora!">🔒 Nivel 5</button></div>
           </article>
-          <article class="premium-reward reveal-benefit">
+          <article class="premium-reward reveal-benefit" data-reward="la-triple" data-points="5200" data-level="5">
             <div class="reward-image"><img src="assets/rewards/la-triple.jpg" alt="La Triple"><span class="reward-tag exclusive">👑 Épica</span></div>
-            <div class="reward-body"><h3>La Triple</h3><p>Solo para los que van en serio.</p><div class="reward-points"><strong>5.200 pts</strong><span>Te faltan 3.180</span></div><div class="benefits-progress"><i style="--progress:38.8%"></i></div><small>Cada visita te acerca a esta bestia.</small><button class="locked-action">🔒 Nivel 5</button></div>
+            <div class="reward-body"><h3>La Triple</h3><p>Solo para los que van en serio.</p><div class="reward-points"><strong>5.200 pts</strong><span data-reward-status>Te faltan 5.200</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Cada visita te acerca a esta bestia.">Cada visita te acerca a esta bestia.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Canjear ahora!">🔒 Nivel 5</button></div>
           </article>
         </div>
       </div>
 
-      <div class="reward-panel" data-panel="papas"><div class="single-reward-wrap"><article class="premium-reward wide available"><div class="reward-image product-cutout"><img src="assets/rewards/papas.png" alt="Porción de papas BYR"><span class="reward-tag hot">🔥 Salen siempre</span></div><div class="reward-body"><h3>Porción de papas BYR</h3><p>El acompañamiento que nunca sobra.</p><div class="reward-points"><strong>900 pts</strong><span>Disponible</span></div><div class="benefits-progress"><i style="--progress:100%"></i></div><small>Podés reclamarla en tu próxima visita.</small><button class="redeem-action">¡Quiero mis papas!</button></div></article></div></div>
-      <div class="reward-panel" data-panel="bebidas"><div class="single-reward-wrap"><article class="premium-reward wide available"><div class="reward-image light-image"><img src="assets/rewards/coca-cola.jpg" alt="Coca-Cola"><span class="reward-tag new">🥤 Refrescante</span></div><div class="reward-body"><h3>Coca-Cola 1 litro</h3><p>Para acompañar tu pedido como corresponde.</p><div class="reward-points"><strong>700 pts</strong><span>Disponible</span></div><div class="benefits-progress"><i style="--progress:100%"></i></div><small>Recompensa lista para reclamar.</small><button class="redeem-action">Canjear bebida</button></div></article></div></div>
-      <div class="reward-panel" data-panel="especiales"><div class="single-reward-wrap"><article class="premium-reward wide legendary-mini"><div class="reward-image product-cutout"><img src="assets/rewards/combo-triple.png" alt="Combo Triple Cheese"><span class="reward-tag exclusive">👑 Legendaria</span></div><div class="reward-body"><h3>Combo Triple Cheese</h3><p>Hamburguesa, papas y gaseosa. El premio máximo.</p><div class="reward-points"><strong>8.000 pts</strong><span>Te faltan 5.980</span></div><div class="benefits-progress"><i style="--progress:25.25%"></i></div><small>Seguí jugando. Seguí comiendo. Seguí sumando.</small><button class="locked-action">🔒 Exclusivo Nivel 6</button></div></article></div></div>
+      <div class="reward-panel" data-panel="papas"><div class="single-reward-wrap"><article class="premium-reward wide" data-reward="papas" data-points="900" data-level="1"><div class="reward-image product-cutout"><img src="assets/rewards/papas.png" alt="Porción de papas BYR"><span class="reward-tag hot">🔥 Salen siempre</span></div><div class="reward-body"><h3>Porción de papas BYR</h3><p>El acompañamiento que nunca sobra.</p><div class="reward-points"><strong>900 pts</strong><span data-reward-status>Te faltan 900</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Podés reclamarla en tu próxima visita.">Podés reclamarla en tu próxima visita.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Quiero mis papas!">🔒 Faltan 900 pts</button></div></article></div></div>
+      <div class="reward-panel" data-panel="bebidas"><div class="single-reward-wrap"><article class="premium-reward wide" data-reward="coca-cola" data-points="700" data-level="1"><div class="reward-image light-image"><img src="assets/rewards/coca-cola.jpg" alt="Coca-Cola"><span class="reward-tag new">🥤 Refrescante</span></div><div class="reward-body"><h3>Coca-Cola 1 litro</h3><p>Para acompañar tu pedido como corresponde.</p><div class="reward-points"><strong>700 pts</strong><span data-reward-status>Te faltan 700</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Recompensa lista para reclamar.">Recompensa lista para reclamar.</small><button class="locked-action" data-reward-action data-unlocked-label="Canjear bebida">🔒 Faltan 700 pts</button></div></article></div></div>
+      <div class="reward-panel" data-panel="especiales"><div class="single-reward-wrap"><article class="premium-reward wide legendary-mini" data-reward="combo-triple" data-points="8000" data-level="6"><div class="reward-image product-cutout"><img src="assets/rewards/combo-triple.png" alt="Combo Triple Cheese"><span class="reward-tag exclusive">👑 Legendaria</span></div><div class="reward-body"><h3>Combo Triple Cheese</h3><p>Hamburguesa, papas y gaseosa. El premio máximo.</p><div class="reward-points"><strong>8.000 pts</strong><span data-reward-status>Te faltan 8.000</span></div><div class="benefits-progress"><i data-reward-bar style="--progress:0%"></i></div><small data-reward-caption data-locked-caption="Seguí jugando. Seguí comiendo. Seguí sumando.">Seguí jugando. Seguí comiendo. Seguí sumando.</small><button class="locked-action" data-reward-action data-unlocked-label="¡Canjear ahora!">🔒 Exclusivo Nivel 6</button></div></article></div></div>
     </section>
   </main>
 

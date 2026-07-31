@@ -1,0 +1,121 @@
+:root{--pts-blue:#0a42d8;--pts-deep:#03124a;--pts-mid:#061b70;--pts-gold:#ffd51f;--pts-sky:#4db5ff}
+
+*{box-sizing:border-box}
+
+.app-page{overflow:hidden;background:radial-gradient(circle at 12% 8%,rgba(52,132,255,.32),transparent 26%),radial-gradient(circle at 90% 14%,rgba(31,83,255,.2),transparent 30%),linear-gradient(180deg,#071d78 0,#04134d 38%,#03124a 100%)}
+
+/* =========================================
+   HERO
+========================================= */
+
+.page-hero{position:relative;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);align-items:center;gap:32px;padding:78px clamp(20px,6vw,90px) 60px;isolation:isolate}
+
+.page-hero .eyebrow{margin-bottom:18px}
+
+.page-hero h1{font-family:"Lilita One";font-size:clamp(3rem,7vw,5.6rem);line-height:.88;margin:0 0 16px;text-transform:uppercase;text-shadow:0 8px 0 rgba(0,8,56,.5)}
+
+.page-hero>div:first-child>p{max-width:560px;font-size:clamp(1.05rem,1.6vw,1.25rem);font-weight:700;line-height:1.45;color:#d8e8ff}
+
+.page-mascot{position:relative;min-height:340px;display:grid;place-items:center}
+
+.page-mascot img{position:relative;z-index:2;width:min(300px,80%);filter:drop-shadow(0 24px 20px rgba(0,0,0,.4));animation:puntosFloat 3.4s ease-in-out infinite}
+
+.character-glow{position:absolute;width:380px;height:380px;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,213,31,.16) 0 7deg,transparent 7deg 17deg);animation:puntosSpin 26s linear infinite}
+
+.character-glow::after{content:"";position:absolute;inset:60px;border-radius:50%;background:radial-gradient(circle,rgba(51,150,255,.55),rgba(10,66,216,.12) 60%,transparent 70%);filter:blur(10px)}
+
+/* =========================================
+   TARJETA DE NIVEL
+========================================= */
+
+.module-section{padding:10px clamp(20px,5vw,90px) 100px;max-width:1320px;margin:auto}
+
+.points-layout{display:grid;grid-template-columns:.85fr 1.15fr;gap:26px;align-items:stretch}
+
+.level-card{position:relative;overflow:hidden;padding:36px 34px;border-radius:32px;background:radial-gradient(circle at 85% 15%,rgba(255,213,31,.16),transparent 40%),linear-gradient(150deg,#0e359e,#06133f);border:2px solid rgba(255,213,31,.42);box-shadow:0 20px 0 rgba(0,0,0,.2),0 30px 55px rgba(0,0,0,.3)}
+
+.level-card .kicker{display:block;margin-bottom:6px}
+
+.level-card h2{font-family:"Lilita One";font-size:clamp(3rem,6vw,4.6rem);line-height:.9;margin:0 0 22px;text-transform:uppercase;color:#fff}
+
+.level-card h2 span{color:var(--pts-gold)}
+
+.points-total{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 18px;margin-bottom:16px;border-radius:16px;background:rgba(2,10,49,.5);border:1px solid rgba(255,255,255,.14)}
+
+.points-total span{font-weight:900;letter-spacing:.06em;text-transform:uppercase;font-size:.78rem;color:#8ed0ff}
+
+.points-total strong{font-family:"Lilita One";font-size:1.9rem;color:var(--pts-gold)}
+
+.level-progress{height:16px;border-radius:99px;background:#010722;border:2px solid rgba(255,255,255,.14);overflow:hidden}
+
+.level-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ffab1b,#ffdf2d 55%,#fff18a);box-shadow:0 0 18px rgba(255,210,30,.5);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+
+.level-card>p:last-child{margin:16px 0 0;font-weight:700;color:#c3d9ff}
+
+.level-card>p:last-child b{color:var(--pts-gold)}
+
+/* =========================================
+   CAMINO DE NIVELES
+========================================= */
+
+.levels-road{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:32px 26px;border-radius:32px;background:linear-gradient(150deg,#0d2e91,#050f3e);border:2px solid rgba(72,157,255,.3);box-shadow:0 20px 0 rgba(0,0,0,.2)}
+
+.levels-road::before{content:"";position:absolute;left:9%;right:9%;top:57px;height:6px;border-radius:99px;background:rgba(255,255,255,.1)}
+
+.level-step{position:relative;z-index:1;text-align:center}
+
+.level-step span{display:grid;place-items:center;width:64px;height:64px;margin:0 auto;border-radius:50%;background:#111b42;border:6px solid #26345e;font-family:"Lilita One";font-size:1.5rem;box-shadow:0 8px 14px rgba(0,0,0,.28);transition:.25s}
+
+.level-step h3{margin:14px 0 4px;font-family:"Lilita One";font-size:1.05rem;text-transform:uppercase;line-height:1.05}
+
+.level-step p{margin:0;font-size:.82rem;font-weight:700;color:#93b5e8}
+
+.level-step.done span{background:linear-gradient(145deg,#58e77b,#1fa350);border-color:#8ef0a8;color:#07331b}
+
+.level-step.current span{width:78px;height:78px;margin-top:-7px;background:linear-gradient(145deg,#fff8aa,#ffab0b);border-color:#fff;color:#071342;box-shadow:0 0 26px rgba(255,211,30,.5)}
+
+.level-step.current h3{color:var(--pts-gold)}
+
+/* =========================================
+   CÓMO SUMAR PUNTOS
+========================================= */
+
+.points-how{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:26px}
+
+.points-how div{padding:20px 16px;text-align:center;border-radius:22px;background:linear-gradient(150deg,rgba(14,51,151,.85),rgba(3,13,55,.92));border:2px solid rgba(255,255,255,.12);box-shadow:0 12px 0 rgba(0,0,0,.18);transition:.22s}
+
+.points-how div:hover{transform:translateY(-6px)}
+
+.points-how b{display:block;font-family:"Lilita One";font-size:2rem;color:var(--pts-gold)}
+
+.points-how span{display:block;margin-top:6px;font-weight:800;font-size:.9rem;color:#c7d9f7}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width:1020px){
+  .points-layout{grid-template-columns:1fr}
+}
+
+@media (max-width:720px){
+  .page-hero{grid-template-columns:1fr;text-align:center;padding:56px 18px 40px}
+  .page-hero>div:first-child>p{margin-left:auto;margin-right:auto}
+  .page-mascot{min-height:260px}
+  .page-mascot img{width:220px}
+  .character-glow{width:280px;height:280px}
+  .module-section{padding-left:16px;padding-right:16px}
+  .level-card{padding:28px 22px}
+  .levels-road{grid-template-columns:repeat(2,1fr);gap:22px 10px}
+  .levels-road::before{display:none}
+  .points-how{grid-template-columns:repeat(2,1fr)}
+}
+
+@keyframes puntosFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+
+@keyframes puntosSpin{to{transform:rotate(360deg)}}
+
+@media (prefers-reduced-motion:reduce){
+  .page-mascot img,.character-glow{animation:none}
+  .level-progress i{transition:none}
+}

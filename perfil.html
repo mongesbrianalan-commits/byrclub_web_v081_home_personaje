@@ -39,34 +39,34 @@
       <div class="profile-hero-copy">
         <span class="profile-kicker">Tu progreso. Tu historia.</span>
         <p class="profile-overline">MIEMBRO BYR CLUB</p>
-        <h1 id="profile-title">¡Hola, <strong>Brian!</strong></h1>
+        <h1 id="profile-title">¡Hola, <strong><span data-profile-name>Brian</span>!</strong></h1>
         <p class="profile-intro">Cada pedido te acerca a nuevos premios, rangos y desafíos. Hoy estás más cerca que nunca de subir de nivel.</p>
         <div class="rank-row">
-          <div class="rank-badge"><span>RANGO ACTUAL</span><strong>👑 Maestro</strong></div>
-          <div class="level-badge"><span>NIVEL</span><strong>4</strong></div>
-          <div class="points-badge"><span>PUNTOS</span><strong>2.450</strong></div>
+          <div class="rank-badge"><span>RANGO ACTUAL</span><strong><span data-profile-rank-icon>👑</span> <span data-profile-rank-name>Maestro</span></strong></div>
+          <div class="level-badge"><span>NIVEL</span><strong data-profile-level>4</strong></div>
+          <div class="points-badge"><span>PUNTOS</span><strong data-profile-points>2.450</strong></div>
         </div>
       </div>
 
       <div class="profile-hero-visual">
         <div class="profile-rays" aria-hidden="true"></div>
-        <div class="mascot-message"><b>¡YA CASI SUBÍS!</b><span>Al Nivel 5</span></div>
+        <div class="mascot-message"><b data-profile-mascot-title>¡YA CASI SUBÍS!</b><span data-profile-mascot-sub>Al Nivel 5</span></div>
         <img src="assets/personaje-byr.png" alt="Mascota de BYR Club celebrando tu progreso">
-        <div class="floating-xp" aria-hidden="true">+250 XP</div>
+        <div class="floating-xp" aria-hidden="true" data-profile-floating-xp>+250 XP</div>
       </div>
     </section>
 
     <section class="xp-command" aria-label="Progreso de nivel">
       <div class="xp-heading">
-        <div><span>PROGRESO DE NIVEL</span><h2>Camino al Nivel 5</h2></div>
-        <strong>82%</strong>
+        <div><span>PROGRESO DE NIVEL</span><h2>Camino al Nivel <span data-profile-next-level>5</span></h2></div>
+        <strong data-profile-xp-percent>0%</strong>
       </div>
-      <div class="xp-track" role="progressbar" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100">
-        <i style="--xp:82%"><span></span></i>
-        <b class="xp-pin">2.450 XP</b>
+      <div class="xp-track" role="progressbar" data-profile-xp-track aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <i data-profile-xp-fill style="--xp:0%"><span></span></i>
+        <b class="xp-pin" data-profile-xp-pin>0 XP</b>
       </div>
-      <div class="xp-scale"><span>2.000</span><strong>Te faltan solo 550 puntos</strong><span>3.000</span></div>
-      <p>Una visita más puede dejarte a un paso del próximo nivel.</p>
+      <div class="xp-scale"><span data-profile-xp-floor>0</span><strong data-profile-xp-remaining>Te faltan 0 XP</strong><span data-profile-xp-ceiling>0</span></div>
+      <p data-profile-xp-caption>Una visita más puede dejarte a un paso del próximo nivel.</p>
     </section>
 
     <section class="profile-content">
@@ -75,19 +75,27 @@
         <h2>Tu recompensa está cerca</h2>
       </div>
 
-      <article class="next-prize-card">
+      <article class="next-prize-card" data-profile-next-prize hidden>
         <div class="next-prize-image">
-          <span class="prize-tag">⭐ FAVORITA</span>
-          <img src="assets/rewards/doble-cheese.jpg" alt="Doble Cheese Burger">
+          <span class="prize-tag" data-profile-prize-tag>⭐ FAVORITA</span>
+          <img data-profile-prize-image src="assets/rewards/doble-cheese.jpg" alt="Doble Cheese Burger">
         </div>
         <div class="next-prize-copy">
           <span class="next-label">PRÓXIMA RECOMPENSA</span>
-          <h3>Doble Cheese</h3>
-          <p>Dos medallones, cheddar bien derretido y todo el sabor BYR. Ya recorriste gran parte del camino.</p>
-          <div class="prize-progress-meta"><strong>82% desbloqueado</strong><span>480 puntos restantes</span></div>
-          <div class="mini-progress"><i style="--xp:82%"></i></div>
-          <div class="prize-motivation"><span>🔥</span><b>Con una visita más, quedás muy cerca.</b></div>
+          <h3 data-profile-prize-name>Doble Cheese</h3>
+          <p data-profile-prize-description>Dos medallones, cheddar bien derretido y todo el sabor BYR. Ya recorriste gran parte del camino.</p>
+          <div class="prize-progress-meta"><strong data-profile-prize-percent>0% desbloqueado</strong><span data-profile-prize-remaining>0 puntos restantes</span></div>
+          <div class="mini-progress"><i data-profile-prize-bar style="--xp:0%"></i></div>
+          <div class="prize-motivation"><span>🔥</span><b data-profile-prize-motivation>Con una visita más, quedás muy cerca.</b></div>
           <a class="premium-action" href="beneficios.html">VER BENEFICIO <span>→</span></a>
+        </div>
+      </article>
+      <article class="next-prize-card" data-profile-all-unlocked hidden>
+        <div class="next-prize-copy" style="padding:60px 46px">
+          <span class="next-label">RECOMPENSAS</span>
+          <h3>¡Desbloqueaste todo!</h3>
+          <p>Ya alcanzaste el nivel y los puntos necesarios para cada recompensa del catálogo. Andá a canjearlas.</p>
+          <a class="premium-action" href="beneficios.html">VER BENEFICIOS <span>→</span></a>
         </div>
       </article>
 
@@ -96,10 +104,10 @@
         <h2>Todo lo que construiste</h2>
       </div>
       <section class="stats-grid" aria-label="Estadísticas del perfil">
-        <article class="stat-card stat-gold"><div class="stat-icon">🏆</div><strong data-count="12">12</strong><span>Premios desbloqueados</span><small>+2 este mes</small></article>
-        <article class="stat-card stat-blue"><div class="stat-icon">🍔</div><strong data-count="8">8</strong><span>Hamburguesas canjeadas</span><small>Tu favorita: Doble Cheese</small></article>
-        <article class="stat-card stat-pink"><div class="stat-icon">📅</div><strong data-count="21">21</strong><span>Visitas</span><small>Racha actual: 3 semanas</small></article>
-        <article class="stat-card stat-green"><div class="stat-icon">⭐</div><strong data-count="8450">8.450</strong><span>Puntos obtenidos</span><small>Desde que te sumaste</small></article>
+        <article class="stat-card stat-gold"><div class="stat-icon">🏆</div><strong data-profile-stat-achievements data-count="0">0</strong><span>Logros desbloqueados</span><small data-profile-stat-achievements-sub>Sobre el total del catálogo</small></article>
+        <article class="stat-card stat-blue"><div class="stat-icon">🍔</div><strong data-profile-stat-redeemed data-count="0">0</strong><span>Premios canjeados</span><small data-profile-stat-favorite>Todavía sin canjes</small></article>
+        <article class="stat-card stat-pink"><div class="stat-icon">📅</div><strong data-profile-stat-visits data-count="0">0</strong><span>Visitas</span><small data-profile-stat-streak>Racha actual: 0 días</small></article>
+        <article class="stat-card stat-green"><div class="stat-icon">⭐</div><strong data-profile-stat-lifetime-points data-count="0">0</strong><span>Puntos obtenidos</span><small>Desde que te sumaste</small></article>
       </section>
 
       <section class="achievements-section">
@@ -107,14 +115,7 @@
           <div><span>VITRINA DE LOGROS</span><h2>Insignias que cuentan tu historia</h2></div>
           <p>Desbloqueá todas para convertirte en Leyenda BYR.</p>
         </div>
-        <div class="achievements-grid">
-          <article class="achievement unlocked"><div class="achievement-glow"></div><div class="medal bronze">🍔</div><b>Primer pedido</b><span>El comienzo de todo</span><small>DESBLOQUEADO</small></article>
-          <article class="achievement unlocked"><div class="achievement-glow"></div><div class="medal silver">10</div><b>10 visitas</b><span>Ya sos de la casa</span><small>DESBLOQUEADO</small></article>
-          <article class="achievement unlocked featured"><div class="achievement-glow"></div><div class="medal gold">★</div><b>Fan de BYR</b><span>Pasión confirmada</span><small>DESBLOQUEADO</small></article>
-          <article class="achievement unlocked"><div class="achievement-glow"></div><div class="medal cheddar">👑</div><b>Maestro del Cheddar</b><span>5 burgers con cheddar</span><small>DESBLOQUEADO</small></article>
-          <article class="achievement unlocked"><div class="achievement-glow"></div><div class="medal fire">🔥</div><b>Campeón del Prode</b><span>Pronóstico perfecto</span><small>DESBLOQUEADO</small></article>
-          <article class="achievement locked"><div class="lock-mark">🔒</div><div class="medal legend">?</div><b>Leyenda BYR</b><span>Alcanzá el Nivel 5</span><small>82% COMPLETADO</small><div class="achievement-progress"><i style="--xp:82%"></i></div></article>
-        </div>
+        <div class="achievements-grid" data-profile-achievements-grid></div>
       </section>
 
       <section class="activity-section">
@@ -123,31 +124,26 @@
           <button class="history-filter" type="button">Últimos movimientos⌄</button>
         </div>
         <div class="activity-layout">
-          <div class="timeline-card">
-            <article class="timeline-item earned"><div class="timeline-icon">+</div><div><span>HOY · 22:14</span><h3>Compra en el local</h3><p>Sumaste puntos por tu pedido BYR.</p></div><strong>+250 pts</strong></article>
-            <article class="timeline-item earned"><div class="timeline-icon">+</div><div><span>HACE 3 DÍAS</span><h3>Combo Triple</h3><p>Bonus especial por combo participante.</p></div><strong>+350 pts</strong></article>
-            <article class="timeline-item spent"><div class="timeline-icon">−</div><div><span>HACE 1 SEMANA</span><h3>Canje: Papas</h3><p>Recompensa retirada en el local.</p></div><strong>−1.200 pts</strong></article>
-            <article class="timeline-item earned"><div class="timeline-icon">+</div><div><span>HACE 2 SEMANAS</span><h3>Desafío semanal</h3><p>Completaste la trivia BYR.</p></div><strong>+180 pts</strong></article>
-          </div>
+          <div class="timeline-card" data-profile-timeline></div>
           <aside class="streak-card">
             <span class="streak-label">RACHA ACTUAL</span>
             <div class="streak-fire">🔥</div>
-            <strong>3 semanas</strong>
-            <p>Visitaste BYR durante tres semanas seguidas.</p>
-            <div class="week-row"><i class="done">L</i><i class="done">M</i><i class="done">X</i><i class="done">J</i><i class="today">V</i><i>S</i><i>D</i></div>
-            <small>Volvé esta semana para mantenerla viva.</small>
+            <strong data-profile-streak-value>0 días</strong>
+            <p data-profile-streak-copy>Visitá BYR Club para empezar tu racha.</p>
+            <div class="week-row" data-profile-week-row></div>
+            <small data-profile-streak-hint>Volvé esta semana para mantenerla viva.</small>
           </aside>
         </div>
       </section>
 
       <section class="rank-roadmap">
         <div class="section-heading"><span>TU CAMINO</span><h2>De Rookie a Leyenda</h2><p>Cada rango trae nuevos desafíos y recompensas exclusivas.</p></div>
-        <div class="rank-line">
-          <article class="rank-step complete"><div>🥉</div><b>Rookie</b><span>Nivel 1</span></article>
-          <article class="rank-step complete"><div>🥈</div><b>Fan</b><span>Nivel 2</span></article>
-          <article class="rank-step complete"><div>🥇</div><b>Experto</b><span>Nivel 3</span></article>
-          <article class="rank-step current"><div>👑</div><b>Maestro</b><span>Nivel 4</span><small>ESTÁS ACÁ</small></article>
-          <article class="rank-step"><div>💎</div><b>Leyenda</b><span>Nivel 5</span></article>
+        <div class="rank-line" data-profile-rank-line>
+          <article class="rank-step" data-rank-threshold="1"><div>🌱</div><b>Novato</b><span>Nivel 1</span><small data-rank-here hidden>ESTÁS ACÁ</small></article>
+          <article class="rank-step" data-rank-threshold="3"><div>⭐</div><b>Fan</b><span>Nivel 3</span><small data-rank-here hidden>ESTÁS ACÁ</small></article>
+          <article class="rank-step" data-rank-threshold="5"><div>🔥</div><b>Experto</b><span>Nivel 5</span><small data-rank-here hidden>ESTÁS ACÁ</small></article>
+          <article class="rank-step" data-rank-threshold="8"><div>🏆</div><b>Maestro</b><span>Nivel 8</span><small data-rank-here hidden>ESTÁS ACÁ</small></article>
+          <article class="rank-step" data-rank-threshold="12"><div>👑</div><b>Leyenda</b><span>Nivel 12</span><small data-rank-here hidden>ESTÁS ACÁ</small></article>
         </div>
       </section>
     </section>
@@ -161,9 +157,13 @@
   <script src="script.js"></script>
   <script src="assets/core/storage.js"></script>
 <script src="assets/core/prizes.js"></script>
+<script src="assets/core/achievements.js"></script>
 <script src="assets/core/user.js"></script>
+<script src="assets/core/achievement-engine.js"></script>
+<script src="assets/core/streak.js"></script>
 <script src="assets/core/hud.js"></script>
 <script src="assets/core/app-shell.js"></script>
+  <script src="perfil.js"></script>
   <script src="perfil-premium.js"></script>
 </body>
 </html>

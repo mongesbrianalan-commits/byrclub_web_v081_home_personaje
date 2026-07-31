@@ -100,6 +100,17 @@
   }
 
   function getProgressionData(state) {
+    const computed = window.BYRUser?.getProgression?.();
+
+    if (computed) {
+      return {
+        xp: computed.totalXp,
+        level: computed.level,
+        xpCurrent: computed.earnedInsideLevel,
+        xpRequired: computed.requiredInsideLevel
+      };
+    }
+
     const progression =
       state?.progression ||
       state?.profile?.progression ||

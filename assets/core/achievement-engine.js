@@ -142,6 +142,13 @@
   }
 
   function getUserLevel(userState) {
+    const computedLevel =
+      window.BYRUser?.getProgression?.()?.level;
+
+    if (Number.isFinite(computedLevel)) {
+      return Math.max(1, Math.floor(computedLevel));
+    }
+
     const level =
       userState?.progression?.level ??
       userState?.level ??

@@ -160,6 +160,13 @@ let shellResizeObserver = null;
   }
 
   function getUserLevel(state) {
+    const computedLevel =
+      window.BYRUser?.getProgression?.()?.level;
+
+    if (Number.isFinite(computedLevel) && computedLevel >= 1) {
+      return Math.floor(computedLevel);
+    }
+
     const possibleLevel =
       state?.progression?.level ??
       state?.level ??

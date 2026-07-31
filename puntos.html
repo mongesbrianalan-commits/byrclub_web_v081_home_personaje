@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="assets/core/hud.css">
 <link rel="stylesheet" href="assets/core/app-shell.css">
+<link rel="stylesheet" href="puntos-premium.css">
 </head>
 
 <body data-root="./">
@@ -48,25 +49,25 @@
       <div class="points-layout">
         <div class="level-card">
           <p class="kicker">Tu progreso</p>
-          <h2>Nivel 3</h2>
-          <div class="points-total"><span>Puntos actuales</span><strong>2.450</strong></div>
-          <div class="level-progress"><i style="width:68%"></i></div>
-          <p>Te faltan <b>550 puntos</b> para llegar al Nivel 4.</p>
+          <h2>Nivel <span data-puntos-level>1</span></h2>
+          <div class="points-total"><span>Puntos actuales</span><strong data-puntos-points>0</strong></div>
+          <div class="level-progress"><i data-puntos-bar style="width:0%"></i></div>
+          <p data-puntos-remaining>Te faltan <b>0 XP</b> para llegar al Nivel 2.</p>
         </div>
         <div class="levels-road">
-          <div class="level-step done"><span>1</span>
+          <div class="level-step" data-level-step="1"><span>1</span>
             <h3>Primer bocado</h3>
             <p>Registro completo</p>
           </div>
-          <div class="level-step done"><span>2</span>
+          <div class="level-step" data-level-step="2"><span>2</span>
             <h3>Fan BYR</h3>
             <p>Papas gratis</p>
           </div>
-          <div class="level-step current"><span>3</span>
+          <div class="level-step" data-level-step="3"><span>3</span>
             <h3>Burger Lover</h3>
             <p>Beneficios exclusivos</p>
           </div>
-          <div class="level-step"><span>4</span>
+          <div class="level-step" data-level-step="4"><span>4</span>
             <h3>BYR Legend</h3>
             <p>Premio sorpresa</p>
           </div>
@@ -93,6 +94,7 @@
 <script src="assets/core/user.js"></script>
 <script src="assets/core/hud.js"></script>
 <script src="assets/core/app-shell.js"></script>
+<script src="puntos.js"></script>
 </body>
 
 </html>
