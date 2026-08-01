@@ -47,6 +47,16 @@
       }
     },
 
+    "cheese-burger": {
+      xp: 35,
+      inventory: {
+        id: "cheese-burger",
+        label: "Cheese Burger gratis",
+        icon: "🧀",
+        type: "reward"
+      }
+    },
+
     "double-points": {
       xp: 30,
       inventory: {

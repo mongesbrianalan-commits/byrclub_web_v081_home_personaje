@@ -87,6 +87,13 @@ const characterImage = document.querySelector(".character-image");
       weight: 6
     },
     {
+      id: "cheese-burger",
+      label: "Cheese Burger gratis",
+      icon: "🧀",
+      xp: 35,
+      weight: 5
+    },
+    {
       id: "badge",
       label: "Insignia exclusiva",
       icon: "💎",

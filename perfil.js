@@ -12,7 +12,7 @@
   ========================================= */
 
   const REWARDS_CATALOG = [
-    { id: "coca-cola", name: "Coca-Cola 1 litro", points: 700, level: 1, image: "assets/rewards/coca-cola.jpg", tag: "🥤 Refrescante", description: "Para acompañar tu pedido como corresponde." },
+    { id: "coca-cola", name: "Coca-Cola 500cc", points: 500, level: 1, image: "assets/rewards/coca-cola.jpg", tag: "🥤 Refrescante", description: "Para acompañar tu pedido como corresponde." },
     { id: "papas", name: "Porción de papas BYR", points: 900, level: 1, image: "assets/rewards/papas.png", tag: "🔥 Salen siempre", description: "El acompañamiento que nunca sobra." },
     { id: "cheese-burger", name: "Cheese Burger", points: 1800, level: 1, image: "assets/rewards/cheese-burger.jpg", tag: "🔥 Más canjeada", description: "El clásico que nunca falla." },
     { id: "doble-cheese", name: "Doble Cheese Burger", points: 2500, level: 1, image: "assets/rewards/doble-cheese.jpg", tag: "⭐ Favorita", description: "Más carne, más cheddar, más ganas." },
@@ -20,7 +20,7 @@
     { id: "americana", name: "Americana", points: 3800, level: 1, image: "assets/rewards/americana.jpg", tag: "🔥 Bomba BYR", description: "Huevo, panceta, cebolla y BBQ. Una bomba." },
     { id: "cannons", name: "Cannons", points: 4500, level: 5, image: "assets/rewards/cannons.jpg", tag: "👑 Exclusiva", description: "Cheddar, panceta y bastones. Mucho BYR." },
     { id: "la-triple", name: "La Triple", points: 5200, level: 5, image: "assets/rewards/la-triple.jpg", tag: "👑 Épica", description: "Solo para los que van en serio." },
-    { id: "combo-triple", name: "Combo Triple Cheese", points: 8000, level: 6, image: "assets/rewards/combo-triple.png", tag: "👑 Legendaria", description: "Hamburguesa, papas y gaseosa. El premio máximo." }
+    { id: "combo-triple", name: "Combo Toddy", points: 8000, level: 6, image: "assets/rewards/combo-triple.png", tag: "👑 Legendaria", description: "Hamburguesa, papas y gaseosa. El premio máximo." }
   ];
 
   function findNextReward(points, level) {

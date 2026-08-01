@@ -46,8 +46,8 @@
     z-index:3;
     left:50%;
     bottom:0;
-    width:min(500px,94%);
-    max-height:540px;
+    width:min(661px,94%);
+    max-height:714px;
     transform:translateX(-50%);
     transform-origin:50% 100%;
     object-fit:contain;
@@ -58,8 +58,8 @@
   .profile-rays{
     left:50%;
     bottom:12px;
-    width:520px;
-    height:520px;
+    width:687px;
+    height:687px;
     transform:translateX(-50%);
     transform-origin:center;
     animation:profileSpinGrounded 30s linear infinite;
@@ -119,8 +119,8 @@
     position:absolute;
     left:50%;
     bottom:0;
-    width:min(430px,82vw);
-    max-height:450px;
+    width:min(569px,82vw);
+    max-height:596px;
     object-position:center bottom;
     transform:translateX(-50%);
     transform-origin:50% 100%;
@@ -137,8 +137,8 @@
 
 @media (max-width:720px){
   .profile-hero-visual{min-height:390px}
-  .profile-hero-visual>img{width:min(350px,92vw);max-height:365px}
-  .profile-rays{bottom:0;width:370px;height:370px}
+  .profile-hero-visual>img{width:min(463px,92vw);max-height:483px}
+  .profile-rays{bottom:0;width:490px;height:490px}
   .mascot-message{right:0;top:4px;max-width:155px;transform:rotate(2deg)}
   .floating-xp{left:2%;bottom:10%}
 }
