@@ -620,6 +620,35 @@ html {
 }
 
 /* =========================================
+   MONEDAS VOLADORAS
+========================================= */
+
+.byr-coin-fly {
+  position: fixed;
+
+  z-index: 10000;
+
+  width: 26px;
+  height: 26px;
+
+  display: grid;
+
+  place-items: center;
+
+  font-size: 20px;
+  line-height: 1;
+
+  pointer-events: none;
+
+  filter:
+    drop-shadow(
+      0 2px 3px rgba(0, 0, 0, .35)
+    );
+
+  will-change: transform, opacity;
+}
+
+/* =========================================
    ANIMACIONES DEL HUD
 ========================================= */
 

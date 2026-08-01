@@ -606,6 +606,119 @@ function showPointsGain(shell, amount) {
       "is-visible"
     );
   }, 1750);
+
+  flyCoinsToPoints(
+    shell,
+    numericAmount,
+    pointsContainer
+  );
+}
+
+/* =========================================
+   MONEDAS VOLADORAS
+========================================= */
+
+function prefersReducedMotion() {
+  return Boolean(
+    window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+  );
+}
+
+function flyCoinsToPoints(
+  shell,
+  amount,
+  targetElement
+) {
+  if (
+    prefersReducedMotion() ||
+    !targetElement?.getBoundingClientRect
+  ) {
+    return;
+  }
+
+  const targetRect =
+    targetElement.getBoundingClientRect();
+
+  const targetX =
+    targetRect.left + targetRect.width / 2;
+
+  const targetY =
+    targetRect.top + targetRect.height / 2;
+
+  const startX = window.innerWidth / 2;
+  const startY = window.innerHeight / 2;
+
+  const coinCount = Math.min(
+    8,
+    Math.max(3, Math.round(amount / 120) + 3)
+  );
+
+  for (let index = 0; index < coinCount; index += 1) {
+    const coin = document.createElement("span");
+
+    coin.className = "byr-coin-fly";
+    coin.textContent = "🪙";
+    coin.setAttribute("aria-hidden", "true");
+
+    const jitterX = (Math.random() - 0.5) * 90;
+    const jitterY = (Math.random() - 0.5) * 40;
+
+    coin.style.left = `${startX + jitterX}px`;
+    coin.style.top = `${startY + jitterY}px`;
+
+    document.body.appendChild(coin);
+
+    const dx = targetX - (startX + jitterX);
+    const dy = targetY - (startY + jitterY);
+
+    const arcLift = -110 - Math.random() * 60;
+
+    const animation = coin.animate(
+      [
+        {
+          transform: "translate(0, 0) scale(.6)",
+          opacity: 0,
+          offset: 0
+        },
+        {
+          transform: "translate(0, 0) scale(1)",
+          opacity: 1,
+          offset: 0.12
+        },
+        {
+          transform:
+            `translate(${dx * 0.55}px, ${dy * 0.4 + arcLift}px) scale(1.05)`,
+          opacity: 1,
+          offset: 0.55
+        },
+        {
+          transform:
+            `translate(${dx}px, ${dy}px) scale(.5)`,
+          opacity: 0,
+          offset: 1
+        }
+      ],
+      {
+        duration: 700 + Math.random() * 220,
+        delay: index * 70,
+        easing: "cubic-bezier(.3,.7,.4,1)",
+        fill: "both"
+      }
+    );
+
+    animation.onfinish = () => {
+      coin.remove();
+
+      if (index === coinCount - 1) {
+        restartAnimation(
+          targetElement,
+          "is-points-gained"
+        );
+      }
+    };
+  }
 }
 
 function animateUserChanges(
