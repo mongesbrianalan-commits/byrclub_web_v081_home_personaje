@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#082b91">
+  <title>Ruleta diaria — BYR Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../../styles.css">
+  <link rel="stylesheet" href="../../../juegos-premium.css">
+  <link rel="stylesheet" href="roulette.css">
+  <link rel="stylesheet" href="../../core/hud.css">
+  <link rel="stylesheet" href="../../core/app-shell.css">
+  <link rel="stylesheet" href="../../core/achievement-notifications.css">
+</head>
+<body class="games-page home-v08" data-root="../../../">
+
+  <div class="page-noise" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="../../../index.html" aria-label="Ir al inicio">
+      <img src="../../logo-byr.png" alt="Logo BYR">
+      <span>CLUB</span>
+    </a>
+    <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="../../../index.html">Inicio</a>
+      <a href="../../../beneficios.html">Beneficios</a>
+      <a href="../../../prodes.html">Prodes</a>
+      <a class="active" href="../../../juegos.html">Juegos</a>
+      <a href="../../../puntos.html">Puntos</a>
+      <a href="../../../perfil.html">Mi perfil</a>
+    </nav>
+    <a class="header-cta" href="../../../index.html#fundadores">Quiero ser fundador</a>
+  </header>
+
+  <main class="games-main">
+    <section class="games-section" style="padding-top:64px">
+      <div class="section-heading games-heading" style="max-width:820px;margin:0 auto 38px">
+        <div><span class="section-pill">Juego 01</span><h2>Ruleta diaria</h2></div>
+        <p>Girá una vez por día y descubrí si ganaste puntos, premios instantáneos o una sorpresa especial.</p>
+      </div>
+
+      <div class="games-hub-grid" style="max-width:860px;margin:0 auto 40px">
+        <article class="game-card game-card-featured available-card roulette-game-card" style="grid-column:1/-1">
+          <div class="card-topline">
+            <span class="status-pill available" id="rouletteStatus">Disponible</span>
+            <span class="frequency">1 giro por día</span>
+          </div>
+
+          <div class="game-visual roulette-visual">
+            <div class="roulette-stage">
+              <div class="wheel-pointer" aria-hidden="true"></div>
+
+              <div class="premium-wheel" id="rouletteWheel" aria-label="Ruleta de premios">
+                <div class="wheel-label label-1"><span>⭐</span><strong>50 pts</strong></div>
+                <div class="wheel-label label-2"><span>🍟</span><strong>Papas</strong></div>
+                <div class="wheel-label label-3"><span>⭐</span><strong>100 pts</strong></div>
+                <div class="wheel-label label-4"><span>🎁</span><strong>Sorpresa</strong></div>
+                <div class="wheel-label label-5"><span>⭐</span><strong>250 pts</strong></div>
+                <div class="wheel-label label-6"><span>🥤</span><strong>Bebida</strong></div>
+                <div class="wheel-label label-7"><span>🍔</span><strong>2x puntos</strong></div>
+                <div class="wheel-label label-8"><span>💎</span><strong>Insignia</strong></div>
+              </div>
+
+              <button class="wheel-center" id="spinWheelButton" type="button" aria-label="Girar la ruleta">
+                <span>GIRAR</span>
+                <small>BYR</small>
+              </button>
+            </div>
+          </div>
+
+          <div class="game-info">
+            <span class="game-number">JUEGO 01</span>
+            <h3>Ruleta diaria</h3>
+            <p>Girá una vez por día y descubrí si ganaste puntos, premios instantáneos o una sorpresa especial.</p>
+            <div class="reward-preview"><span>Podés ganar</span><strong>Puntos · Papas · Bebidas · Premios</strong></div>
+            <div class="roulette-live-status" id="rouletteLiveStatus">
+              <span class="roulette-live-dot"></span>
+              <strong>Tu giro de hoy está disponible</strong>
+            </div>
+            <button class="game-button active-game" id="spinWheelSecondaryButton" type="button">Girar la ruleta</button>
+            <small class="roulette-disclaimer">Versión de prueba: el premio se guarda solamente en este navegador.</small>
+          </div>
+        </article>
+      </div>
+
+      <div style="text-align:center">
+        <a class="premium-action" href="../../../juegos.html" style="display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:15px;background:#ffd51f;color:#071342;font-weight:900;text-decoration:none">← Volver al arcade</a>
+      </div>
+    </section>
+  </main>
+
+  <div class="roulette-modal" id="rouletteModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rouletteResultTitle" tabindex="-1">
+    <div class="roulette-modal-backdrop" data-close-roulette></div>
+    <div class="roulette-modal-card">
+      <button class="roulette-modal-close" type="button" data-close-roulette aria-label="Cerrar resultado">×</button>
+      <div class="result-rays" aria-hidden="true"></div>
+      <span class="result-kicker">Premio desbloqueado</span>
+      <div class="result-icon" id="rouletteResultIcon">🎉</div>
+      <h2 id="rouletteResultTitle">¡GANASTE!</h2>
+      <strong class="result-prize" id="rouletteResultPrize">250 puntos</strong>
+      <p id="rouletteResultDescription">Tus puntos ya están preparados para ser acreditados.</p>
+      <div class="result-code"><span>Código del premio</span><strong id="roulettePrizeCode">BYR-0000</strong></div>
+      <button class="result-primary-button" id="claimPrizeButton" type="button">Reclamar premio</button>
+      <button class="result-secondary-button" type="button" data-close-roulette>Seguir explorando</button>
+    </div>
+  </div>
+  <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+
+  <footer>
+    <a class="footer-brand" href="../../../index.html"><img src="../../logo-byr.png" alt="BYR"><span>Hamburguesería</span></a>
+    <div class="footer-links"><a href="https://www.instagram.com/byr.docksud/" target="_blank" rel="noreferrer">Instagram</a><a href="../../../index.html#fundadores">BYR Club</a><span>Dock Sud, Avellaneda</span></div>
+    <p>© 2026 BYR Club</p>
+  </footer>
+
+  <script src="../../../script.js"></script>
+  <script src="../../core/storage.js"></script>
+  <script src="../../core/prizes.js"></script>
+  <script src="../../core/achievements.js"></script>
+  <script src="../../core/missions.js"></script>
+  <script src="../../core/user.js"></script>
+  <script src="../../core/achievement-engine.js"></script>
+  <script src="../../core/mission-engine.js"></script>
+  <script src="../../core/streak.js"></script>
+  <script src="../../core/achievement-notifications.js"></script>
+  <script src="../../core/hud.js"></script>
+  <script src="../../core/app-shell.js"></script>
+  <script src="roulette.js"></script>
+</body>
+</html>
