@@ -5,17 +5,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a42d8">
-  <title>Prodes — BYR Club</title>
+  <title>Prode — BYR Club</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="assets/core/hud.css">
-<link rel="stylesheet" href="assets/core/app-shell.css">
+  <link rel="stylesheet" href="assets/core/app-shell.css">
+  <link rel="stylesheet" href="prode-premium.css">
 </head>
 
-<body data-root="./">
+<body class="prode-page" data-root="./">
   <div class="page-noise" aria-hidden="true"></div>
   <header class="site-header">
     <a class="brand" href="index.html" aria-label="Ir al inicio">
@@ -27,44 +28,191 @@
     <nav class="nav" aria-label="Navegación principal">
       <a href="index.html">Inicio</a>
       <a href="beneficios.html">Beneficios</a>
-      <a class="active" href="prodes.html">Prodes</a>
+      <a class="active" href="prodes.html">Prode</a>
       <a href="juegos.html">Juegos</a>
       <a href="puntos.html">Puntos</a>
       <a href="perfil.html">Mi perfil</a>
     </nav>
     <a class="header-cta" href="index.html#fundadores">Quiero ser fundador</a>
   </header>
-  <main class="container" style="padding:40px 20px;max-width:1100px;margin:auto;text-align:center">
-    <div class="card hero" style="padding:50px;border-radius:28px">
-      <h1 style="font-size:3rem">🏆 PRODE BYR</h1>
-      <p style="font-size:1.2rem;max-width:700px;margin:20px auto">Se viene una experiencia totalmente nueva. Pronosticá
-        resultados, competí con otros miembros de BYR Club, escalá posiciones en el ranking y ganá premios exclusivos.
-      </p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin:40px 0">
-        <div class="card">
-          <h3>⚽ Pronosticá</h3>
-          <p>Elegí tus resultados antes de cada partido.</p>
-        </div>
-        <div class="card">
-          <h3>🏅 Ranking</h3>
-          <p>Competí con toda la comunidad BYR.</p>
-        </div>
-        <div class="card">
-          <h3>⭐ Puntos</h3>
-          <p>Sumá experiencia y desbloqueá recompensas.</p>
-        </div>
-        <div class="card">
-          <h3>🎁 Premios</h3>
-          <p>Canjeá beneficios exclusivos.</p>
+
+  <main class="prode-main">
+    <span class="prode-preview-flag">Vista previa · datos de ejemplo</span>
+
+    <section class="prode-hero">
+      <div class="prode-hero-copy">
+        <span class="eyebrow">Pronosticá y ganá</span>
+        <h1>PRODE <strong>BYR</strong></h1>
+        <p>Elegí el resultado de cada partido, sumá puntos por cada acierto y escalá posiciones en el ranking de la
+          comunidad BYR.</p>
+        <div class="prode-stat-row">
+          <div><span>Tu posición</span><strong>#12</strong></div>
+          <div><span>Puntos · Fecha 8</span><strong>24</strong></div>
+          <div><span>Aciertos</span><strong>6/10</strong></div>
         </div>
       </div>
-      <div style="font-size:5rem">🏆🍔</div>
-      <button disabled
-        style="margin-top:20px;padding:18px 40px;border:none;border-radius:18px;background:#888;color:#fff;font-size:1.2rem;opacity:.8">MUY
-        PRONTO</button>
-      <p style="margin-top:18px;color:#bbb">Estamos preparando la mejor experiencia de Prode para nuestros clientes.</p>
-    </div>
+      <div class="prode-hero-visual">
+        <img src="assets/personaje-byr-prode.png" alt="Mascota BYR Club con la camiseta del Prode y un trofeo">
+      </div>
+    </section>
+
+    <section class="prode-matches">
+      <div class="section-title-wrap">
+        <p class="kicker">Fecha 8 · Torneo Clausura</p>
+        <h2>Elegí tus resultados</h2>
+        <p class="prode-subcopy">Tenés hasta el minuto 0 de cada partido para cargar o cambiar tu pronóstico.</p>
+      </div>
+
+      <div class="match-grid">
+        <article class="match-card">
+          <div class="match-meta"><span>Vie 21:30</span><span class="match-status open">Abierto</span></div>
+          <div class="match-teams">
+            <div class="team"><span class="team-badge blue">🔵</span><b>Boca</b></div>
+            <div class="match-score-inputs">
+              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de Boca">
+              <span>—</span>
+              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de River">
+            </div>
+            <div class="team"><span class="team-badge white">⚪</span><b>River</b></div>
+          </div>
+          <button class="predict-action" type="button">Confirmar pronóstico</button>
+        </article>
+
+        <article class="match-card">
+          <div class="match-meta"><span>Sáb 17:00</span><span class="match-status open">Abierto</span></div>
+          <div class="match-teams">
+            <div class="team"><span class="team-badge yellow">🟡</span><b>Rosario Central</b></div>
+            <div class="match-score-inputs">
+              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de Rosario Central">
+              <span>—</span>
+              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de Independiente">
+            </div>
+            <div class="team"><span class="team-badge red">🔴</span><b>Independiente</b></div>
+          </div>
+          <button class="predict-action" type="button">Confirmar pronóstico</button>
+        </article>
+
+        <article class="match-card predicted">
+          <div class="match-meta"><span>Sáb 21:00</span><span class="match-status locked">Pronosticado</span></div>
+          <div class="match-teams">
+            <div class="team"><span class="team-badge black">⚫</span><b>Racing</b></div>
+            <div class="match-score-inputs readonly">
+              <span class="score-pill">2</span>
+              <span>—</span>
+              <span class="score-pill">1</span>
+            </div>
+            <div class="team"><span class="team-badge green">🟢</span><b>San Lorenzo</b></div>
+          </div>
+          <button class="predict-action locked" type="button" disabled>Ya pronosticaste</button>
+        </article>
+
+        <article class="match-card played hit">
+          <div class="match-meta"><span>Dom 15:30</span><span class="match-status played">Jugado</span></div>
+          <div class="match-teams">
+            <div class="team"><span class="team-badge purple">🟣</span><b>Estudiantes</b></div>
+            <div class="match-score-inputs readonly">
+              <span class="score-pill">1</span>
+              <span>—</span>
+              <span class="score-pill">0</span>
+            </div>
+            <div class="team"><span class="team-badge sky">🔵</span><b>Gimnasia</b></div>
+          </div>
+          <div class="match-result">
+            <span>Resultado real: 1 — 0</span>
+            <strong class="result-hit">🎯 Resultado exacto · +10 pts</strong>
+          </div>
+        </article>
+
+        <article class="match-card played miss">
+          <div class="match-meta"><span>Dom 20:00</span><span class="match-status played">Jugado</span></div>
+          <div class="match-teams">
+            <div class="team"><span class="team-badge orange">🟠</span><b>Vélez</b></div>
+            <div class="match-score-inputs readonly">
+              <span class="score-pill">1</span>
+              <span>—</span>
+              <span class="score-pill">2</span>
+            </div>
+            <div class="team"><span class="team-badge white">⚪</span><b>Huracán</b></div>
+          </div>
+          <div class="match-result">
+            <span>Resultado real: 0 — 2</span>
+            <strong class="result-miss">❌ No acertaste · 0 pts</strong>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="prode-how">
+      <div class="section-title-wrap">
+        <p class="kicker">Cómo funciona</p>
+        <h2>Sumá puntos en cada fecha</h2>
+      </div>
+      <div class="how-grid">
+        <div class="how-card">
+          <span>🎯</span>
+          <h3>+10 pts</h3>
+          <p>Acertaste el resultado exacto del partido.</p>
+        </div>
+        <div class="how-card">
+          <span>✅</span>
+          <h3>+5 pts</h3>
+          <p>Acertaste el ganador, aunque no el resultado exacto.</p>
+        </div>
+        <div class="how-card">
+          <span>❌</span>
+          <h3>0 pts</h3>
+          <p>No acertaste el pronóstico de ese partido.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="prode-ranking">
+      <div class="section-title-wrap">
+        <p class="kicker">Ranking</p>
+        <h2>Los mejores pronosticadores</h2>
+      </div>
+      <div class="ranking-lock-banner">
+        <span>🔒</span>
+        <p>El ranking en vivo con toda la comunidad BYR llega pronto. Por ahora estás viendo un ejemplo.</p>
+      </div>
+      <div class="ranking-list">
+        <article class="ranking-row"><span class="rank-pos gold">1</span><span class="rank-avatar">🏆</span><b>Lucía
+            G.</b><span class="rank-points">142 pts</span></article>
+        <article class="ranking-row"><span class="rank-pos silver">2</span><span class="rank-avatar">🥈</span><b>Nico
+            R.</b><span class="rank-points">138 pts</span></article>
+        <article class="ranking-row"><span class="rank-pos bronze">3</span><span class="rank-avatar">🥉</span><b>Fede
+            M.</b><span class="rank-points">129 pts</span></article>
+        <article class="ranking-row"><span class="rank-pos">4</span><span class="rank-avatar">🍔</span><b>Sofi
+            V.</b><span class="rank-points">121 pts</span></article>
+        <article class="ranking-row"><span class="rank-pos">5</span><span class="rank-avatar">🍔</span><b>Tomás
+            B.</b><span class="rank-points">115 pts</span></article>
+        <article class="ranking-row you"><span class="rank-pos">12</span><span class="rank-avatar">🍔</span><b>Vos</b><span
+            class="rank-points">86 pts</span></article>
+      </div>
+    </section>
+
+    <section class="prode-history">
+      <div class="section-title-wrap">
+        <p class="kicker">Tu historial</p>
+        <h2>Tus últimos pronósticos</h2>
+      </div>
+      <div class="history-list">
+        <article class="history-row hit"><span class="history-icon">🎯</span>
+          <div><b>Estudiantes 1 — 0 Gimnasia</b><span>Pronosticaste 1 — 0</span></div><strong>+10 pts</strong>
+        </article>
+        <article class="history-row half"><span class="history-icon">✅</span>
+          <div><b>Talleres 2 — 1 Belgrano</b><span>Pronosticaste 3 — 1</span></div><strong>+5 pts</strong>
+        </article>
+        <article class="history-row miss"><span class="history-icon">❌</span>
+          <div><b>Vélez 1 — 2 Huracán</b><span>Pronosticaste 0 — 2</span></div><strong>0 pts</strong>
+        </article>
+        <article class="history-row hit"><span class="history-icon">🎯</span>
+          <div><b>Newell's 0 — 0 Unión</b><span>Pronosticaste 0 — 0</span></div><strong>+10 pts</strong>
+        </article>
+      </div>
+    </section>
   </main>
+
   <footer>
     <a class="footer-brand" href="index.html"><img src="assets/logo-byr.png" alt="BYR" /><span>Hamburguesería</span></a>
     <div class="footer-links"><a href="https://www.instagram.com/byr.docksud/" target="_blank"
@@ -74,10 +222,11 @@
   </footer>
   <script src="script.js"></script>
   <script src="assets/core/storage.js"></script>
-<script src="assets/core/prizes.js"></script>
-<script src="assets/core/user.js"></script>
-<script src="assets/core/hud.js"></script>
-<script src="assets/core/app-shell.js"></script>
+  <script src="assets/core/prizes.js"></script>
+  <script src="assets/core/user.js"></script>
+  <script src="assets/core/hud.js"></script>
+  <script src="assets/core/app-shell.js"></script>
+  <script src="prode-premium.js"></script>
 </body>
 
 </html>

@@ -77,7 +77,7 @@ button{cursor:pointer}
 
 .intro{display:grid;grid-template-columns:.7fr 1.3fr;gap:50px;align-items:center;padding:95px clamp(22px,7vw,110px);background:linear-gradient(180deg,var(--blue-950),#071b6b)}
 .section-heading span,.kicker{font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--yellow)}
-.section-heading h2,.section-title-wrap h2,.experience h2{font-family:"Lilita One";font-size:clamp(3rem,6vw,5.4rem);margin:.05em 0;line-height:.9;text-transform:uppercase}
+.section-heading h2,.section-title-wrap h2,.experience h2{font-family:"Lilita One";font-size:clamp(3rem,6vw,5.4rem);margin:.05em 0;line-height:.9;text-transform:uppercase;overflow-wrap:break-word}
 .section-heading h2{color:#39a8ff;text-shadow:0 6px 0 #063aab}
 .tilted{transform:rotate(-3deg)}
 .intro-copy{font-size:clamp(1.15rem,2vw,1.45rem);font-weight:700;max-width:760px}
