@@ -493,11 +493,11 @@ footer{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:3
 @media (max-width:700px){
   .home-v08 .hero h1 strong{font-size:4.3rem}
   .home-v08 .hero-manifesto{font-size:2rem!important}
-  .home-v08 .hero-visual{min-height:350px}
-  .home-v08 .character-scene{height:350px}
-  .home-v08 .character-art{width:290px;height:330px}
-  .home-v08 .byr-character,.home-v08 .character-rim{max-height:330px}
-  .home-v08 .character-glow{width:270px;height:270px}
+  .home-v08 .hero-visual{min-height:400px}
+  .home-v08 .character-scene{height:400px}
+  .home-v08 .character-art{width:335px;height:380px}
+  .home-v08 .byr-character,.home-v08 .character-rim{max-height:380px}
+  .home-v08 .character-glow{width:310px;height:310px}
   .home-v08 .character-scene .speech-bubble{right:3px;bottom:44px}
   .home-v08 .play-button{width:100%}
 }
@@ -526,30 +526,30 @@ footer{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:3
     transform:translate(18px,-34px);
   }
   .home-v08 .character-scene{
-    width:500px;
-    height:560px;
+    width:575px;
+    height:645px;
     align-items:center;
   }
   .home-v08 .character-art{
-    width:min(465px,100%);
-    height:520px;
+    width:min(535px,100%);
+    height:600px;
   }
   .home-v08 .byr-character,
   .home-v08 .character-rim{
-    max-height:520px;
+    max-height:600px;
   }
   .home-v08 .character-glow{
-    width:430px;
-    height:430px;
+    width:495px;
+    height:495px;
   }
   .home-v08 .character-shadow{
-    width:330px;
-    height:50px;
+    width:380px;
+    height:58px;
     bottom:35px;
   }
   .home-v08 .character-scene::before{
-    width:455px;
-    height:300px;
+    width:523px;
+    height:345px;
   }
   .home-v08 .character-scene .speech-bubble{
     right:-8px;
@@ -563,10 +563,10 @@ footer{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:3
     column-gap:34px;
   }
   .home-v08 .hero-visual{transform:translate(8px,-24px)}
-  .home-v08 .character-scene{width:450px;height:520px}
-  .home-v08 .character-art{width:425px;height:480px}
+  .home-v08 .character-scene{width:518px;height:598px}
+  .home-v08 .character-art{width:490px;height:552px}
   .home-v08 .byr-character,
-  .home-v08 .character-rim{max-height:480px}
+  .home-v08 .character-rim{max-height:552px}
 }
 
 /* =========================================================
