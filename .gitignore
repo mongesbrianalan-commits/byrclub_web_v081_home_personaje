@@ -1,0 +1,21 @@
+# Archivos del sistema operativo
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+._*
+
+# Configuración de editores
+.vscode/
+.idea/
+*.code-workspace
+
+# Ajustes locales de Claude Code
+.claude/
+
+# Archivos temporales
+*.tmp
+*.log
+*~
