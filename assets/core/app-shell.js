@@ -426,6 +426,15 @@ function createUserSnapshot(state) {
     if (nameElement) {
       nameElement.textContent = name;
     }
+
+    const avatar = state?.profile?.avatar;
+
+    const avatarElement =
+      shell.querySelector(".byr-app-user__avatar-icon");
+
+    if (avatarElement && avatar) {
+      avatarElement.textContent = avatar;
+    }
   }
 
   function updateRank(shell, suppliedLevel) {

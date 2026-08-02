@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a42d8">
+  <meta name="description" content="Ingresá a BYR Club para ver tus puntos, beneficios y premios.">
+  <title>Ingresar — BYR Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="assets/core/auth.css">
+</head>
+<body class="home-v08">
+  <div class="page-noise" aria-hidden="true"></div>
+
+  <div class="auth-page">
+    <!-- ================= Panel lateral ================= -->
+    <aside class="auth-aside">
+      <a class="auth-brand" href="index.html" aria-label="Ir al inicio de BYR Club">
+        <img src="assets/logo-byr.png" alt="Logo BYR">
+        <span>CLUB</span>
+      </a>
+      <span class="auth-aside-eyebrow">La comunidad oficial de BYR</span>
+      <h2>Bienvenido<br>al <b>CLUB</b></h2>
+      <p>Sumá puntos con cada compra, jugá todos los días y canjeá beneficios exclusivos para miembros.</p>
+      <img class="auth-mascot" src="assets/personaje-byr-inicio.png" alt="Mascota de BYR Club">
+      <div class="auth-perks">
+        <span>🪙 Puntos</span>
+        <span>🎡 Juegos</span>
+        <span>🎁 Premios</span>
+      </div>
+    </aside>
+
+    <!-- ================= Formularios ================= -->
+    <main class="auth-main">
+      <div class="auth-card">
+
+        <!-- ---------- Vista: Ingresar / Crear cuenta ---------- -->
+        <section class="auth-view is-active" data-view="access">
+          <div class="auth-switch" role="tablist">
+            <button type="button" class="is-active" data-tab="login" role="tab">Ingresar</button>
+            <button type="button" data-tab="register" role="tab">Crear cuenta</button>
+          </div>
+
+          <!-- Login -->
+          <form class="auth-panel is-active" data-panel="login" novalidate>
+            <h1>Hola de nuevo</h1>
+            <p class="auth-sub">Entrá para ver tus puntos y premios.</p>
+
+            <label class="auth-field">
+              <span>Email</span>
+              <input type="email" name="email" autocomplete="email" placeholder="tucorreo@email.com" required>
+            </label>
+            <p class="auth-error" data-error="email"></p>
+
+            <label class="auth-field">
+              <span>Contraseña</span>
+              <input type="password" name="password" autocomplete="current-password" placeholder="••••••" required>
+            </label>
+            <p class="auth-error" data-error="password"></p>
+
+            <button type="submit" class="auth-submit">Ingresar <span>→</span></button>
+            <p class="auth-form-status" role="status"></p>
+
+            <p class="auth-foot">¿No tenés cuenta? <a href="#" data-goto="register">Creá una gratis</a></p>
+          </form>
+
+          <!-- Registro -->
+          <form class="auth-panel" data-panel="register" novalidate hidden>
+            <h1>Sumate al club</h1>
+            <p class="auth-sub">Es gratis y tardás 30 segundos.</p>
+
+            <label class="auth-field">
+              <span>Tu nombre</span>
+              <input type="text" name="name" autocomplete="given-name" placeholder="Ej: Brian" required>
+            </label>
+            <p class="auth-error" data-error="name"></p>
+
+            <label class="auth-field">
+              <span>Email</span>
+              <input type="email" name="email" autocomplete="email" placeholder="tucorreo@email.com" required>
+            </label>
+            <p class="auth-error" data-error="email"></p>
+
+            <label class="auth-field">
+              <span>WhatsApp</span>
+              <input type="tel" name="whatsapp" autocomplete="tel" placeholder="11 5854 5653" required>
+            </label>
+            <p class="auth-error" data-error="whatsapp"></p>
+
+            <label class="auth-field">
+              <span>Contraseña</span>
+              <input type="password" name="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" required>
+            </label>
+            <p class="auth-error" data-error="password"></p>
+
+            <button type="submit" class="auth-submit">Crear mi cuenta <span>→</span></button>
+            <p class="auth-form-status" role="status"></p>
+
+            <p class="auth-foot">¿Ya sos miembro? <a href="#" data-goto="login">Ingresá acá</a></p>
+          </form>
+        </section>
+
+        <!-- ---------- Vista: Onboarding ---------- -->
+        <section class="auth-view" data-view="onboarding">
+          <h1>Elegí tu personaje</h1>
+          <p class="auth-sub">Va a ser tu cara dentro del club. Podés cambiarlo después.</p>
+
+          <div class="onboarding-preview">
+            <div class="onboarding-avatar" data-avatar-preview>🍔</div>
+          </div>
+
+          <div class="avatar-grid" data-avatar-grid role="listbox" aria-label="Elegí tu avatar"></div>
+
+          <label class="auth-field">
+            <span>¿Cómo querés que te llamemos?</span>
+            <input type="text" name="displayName" placeholder="Tu nombre" data-onboarding-name required>
+          </label>
+
+          <button type="button" class="auth-submit" data-onboarding-finish>¡Entrar al club! <span>🎉</span></button>
+          <p class="auth-form-status" role="status" data-onboarding-status></p>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- El orden importa: storage y user antes que auth. -->
+  <script src="assets/core/storage.js"></script>
+  <script src="assets/core/user.js"></script>
+  <script src="assets/core/auth.js"></script>
+  <script src="assets/core/auth-page.js"></script>
+</body>
+</html>

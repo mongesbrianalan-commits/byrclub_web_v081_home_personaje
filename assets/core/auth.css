@@ -1,0 +1,394 @@
+/* =========================================================
+   BYR Club — Pantallas de Ingreso / Registro / Onboarding
+   Usa las variables y fuentes definidas en styles.css.
+========================================================= */
+
+.auth-page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  background:
+    radial-gradient(circle at 80% 15%, #126bff 0, transparent 32%),
+    radial-gradient(circle at 12% 25%, #144bd5 0, transparent 40%),
+    linear-gradient(135deg, #082891 0%, #071a66 60%, #041248 100%);
+  overflow: hidden;
+}
+
+/* ---------- Panel lateral con la mascota ---------- */
+
+.auth-aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+  padding: 60px clamp(28px, 4vw, 70px);
+  overflow: hidden;
+}
+
+.auth-aside::after {
+  content: "";
+  position: absolute;
+  right: -80px;
+  top: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(58, 165, 255, 0.4), transparent 70%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.auth-brand img {
+  width: 84px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.3));
+}
+
+.auth-brand span {
+  font-family: "Lilita One";
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  background: var(--blue-600);
+  padding: 2px 12px 4px;
+  border-radius: 8px;
+  transform: rotate(-4deg);
+  box-shadow: 0 5px 0 #0438a0;
+}
+
+.auth-aside-eyebrow {
+  display: inline-block;
+  align-self: flex-start;
+  background: #fff;
+  color: var(--blue-800);
+  font-weight: 900;
+  padding: 7px 16px;
+  border-radius: 999px;
+  transform: rotate(-2deg);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.16);
+  position: relative;
+  z-index: 2;
+}
+
+.auth-aside h2 {
+  position: relative;
+  z-index: 2;
+  font-family: "Lilita One";
+  font-size: clamp(2.4rem, 4vw, 3.8rem);
+  line-height: 0.95;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 0 8px 0 rgba(0, 17, 86, 0.45), 0 14px 24px rgba(0, 0, 0, 0.25);
+}
+
+.auth-aside h2 b {
+  color: #36a5ff;
+  -webkit-text-stroke: 2px #fff;
+}
+
+.auth-aside p {
+  position: relative;
+  z-index: 2;
+  max-width: 420px;
+  font-weight: 700;
+  font-size: 1.08rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.auth-mascot {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  align-self: center;
+  width: min(340px, 80%);
+  filter: drop-shadow(0 24px 26px rgba(0, 0, 0, 0.4));
+  animation: authFloat 4.5s ease-in-out infinite;
+}
+
+@keyframes authFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-16px) rotate(-2deg); }
+}
+
+.auth-perks {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.auth-perks span {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+/* ---------- Columna del formulario ---------- */
+
+.auth-main {
+  display: grid;
+  place-items: center;
+  padding: 48px clamp(20px, 4vw, 60px);
+  background: var(--blue-950);
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  background: linear-gradient(145deg, rgba(18, 57, 153, 0.94), rgba(5, 25, 92, 0.96));
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 30px;
+  box-shadow: 0 15px 0 rgba(1, 10, 52, 0.5), var(--shadow);
+  padding: 34px clamp(24px, 3.5vw, 38px) 32px;
+}
+
+.auth-card h1 {
+  font-family: "Lilita One";
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.auth-card .auth-sub {
+  margin: 0 0 22px;
+  font-weight: 700;
+  color: #9bd1ff;
+}
+
+/* ---------- Alternador Ingresar / Crear cuenta ---------- */
+
+.auth-switch {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 6px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.auth-switch button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 900;
+  padding: 11px;
+  border-radius: 11px;
+  transition: 0.2s;
+}
+
+.auth-switch button.is-active {
+  background: var(--yellow);
+  color: #111b42;
+  box-shadow: 0 4px 0 #d8a800;
+}
+
+/* ---------- Campos ---------- */
+
+.auth-field {
+  display: block;
+  background: #fff;
+  border-radius: 16px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.auth-field:focus-within {
+  border-color: var(--blue-400);
+}
+
+.auth-field.has-error {
+  border-color: var(--pink);
+}
+
+.auth-field span {
+  display: block;
+  font-weight: 900;
+  font-size: 0.8rem;
+  color: #36549e;
+}
+
+.auth-field input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: #07164d;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.auth-field input::placeholder {
+  color: #9fb0d6;
+}
+
+.auth-error {
+  margin: -8px 0 12px 6px;
+  min-height: 18px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #ffb0c8;
+}
+
+.auth-submit {
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  min-height: 62px;
+  margin-top: 6px;
+  background: var(--yellow);
+  color: #111b42;
+  font-weight: 900;
+  font-size: 1.1rem;
+  box-shadow: 0 7px 0 #d8a800, 0 13px 30px rgba(255, 213, 31, 0.2);
+  transition: 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 0 #d8a800, 0 18px 32px rgba(255, 213, 31, 0.25);
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.auth-form-status {
+  min-height: 22px;
+  margin: 14px 0 0;
+  font-weight: 900;
+  text-align: center;
+}
+
+.auth-form-status.is-error { color: #ffb0c8; }
+.auth-form-status.is-ok { color: var(--green); }
+
+.auth-foot {
+  margin-top: 18px;
+  text-align: center;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.auth-foot a {
+  color: var(--yellow);
+  font-weight: 900;
+}
+
+.auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ---------- Vistas ---------- */
+
+.auth-view { display: none; }
+.auth-view.is-active { display: block; animation: authFade 0.35s ease both; }
+
+@keyframes authFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Onboarding: elección de personaje ---------- */
+
+.onboarding-preview {
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+}
+
+.onboarding-avatar {
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  font-size: 4rem;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 3px solid var(--yellow);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25);
+  transform: rotate(-3deg);
+  transition: transform 0.2s;
+}
+
+.onboarding-avatar.pop { animation: avatarPop 0.4s ease; }
+
+@keyframes avatarPop {
+  0% { transform: rotate(-3deg) scale(1); }
+  40% { transform: rotate(3deg) scale(1.15); }
+  100% { transform: rotate(-3deg) scale(1); }
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.avatar-grid button {
+  aspect-ratio: 1;
+  font-size: 2rem;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: 0.18s;
+}
+
+.avatar-grid button:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.avatar-grid button.is-selected {
+  border-color: var(--yellow);
+  background: rgba(255, 213, 31, 0.18);
+  box-shadow: 0 6px 0 rgba(216, 168, 0, 0.5);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+  .auth-page { grid-template-columns: 1fr; }
+  .auth-aside {
+    padding: 34px clamp(22px, 6vw, 40px) 10px;
+    text-align: center;
+    align-items: center;
+  }
+  .auth-aside-eyebrow, .auth-brand { align-self: center; }
+  .auth-mascot { display: none; }
+  .auth-perks { justify-content: center; }
+  .auth-main { padding: 30px 20px 60px; }
+}
+
+@media (max-width: 480px) {
+  .avatar-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .auth-card { padding: 26px 20px 26px; }
+}
