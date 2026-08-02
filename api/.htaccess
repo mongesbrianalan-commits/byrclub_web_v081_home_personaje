@@ -1,0 +1,9 @@
+# Proteger archivos sensibles de acceso directo por el navegador.
+<FilesMatch "^(config\.php|config\.example\.php)$">
+  Require all denied
+</FilesMatch>
+
+# No servir el esquema SQL ni archivos de credenciales.
+<FilesMatch "\.(sql|env)$">
+  Require all denied
+</FilesMatch>

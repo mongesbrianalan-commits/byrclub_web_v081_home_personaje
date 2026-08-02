@@ -145,8 +145,13 @@
     setLoading(button, true);
     try {
       const session = await window.BYRAuth.login(data);
-      setStatus(panels.login, "¡Listo! Entrando…", "ok");
-      goAfterLogin(session);
+      if (session && session.onboarded === false) {
+        /* Se registró pero no eligió personaje: lo mandamos a terminar. */
+        startOnboarding(session);
+      } else {
+        setStatus(panels.login, "¡Listo! Entrando…", "ok");
+        goAfterLogin(session);
+      }
     } catch (error) {
       setStatus(panels.login, error.message || "No pudimos ingresarte.");
     } finally {

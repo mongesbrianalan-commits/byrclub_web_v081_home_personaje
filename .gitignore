@@ -19,3 +19,6 @@ $RECYCLE.BIN/
 *.tmp
 *.log
 *~
+
+# Credenciales de la base de datos (NUNCA subir)
+api/config.php

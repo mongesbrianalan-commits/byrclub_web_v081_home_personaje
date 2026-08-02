@@ -2,32 +2,24 @@
   "use strict";
 
   /* =========================================================
-     BYRAuth — Sesión de usuario (etapa: SOLO UI / LOCAL)
+     BYRAuth — Sesión de usuario (conectado al backend PHP)
      ---------------------------------------------------------
-     Este módulo maneja la "sesión" del usuario de BYR Club.
+     Ahora habla con la API en /api/ (registro, login, etc.).
+     El servidor es la fuente de verdad (cookie de sesión).
 
-     IMPORTANTE (para el yo del futuro):
-     Hoy TODO vive en el navegador (localStorage). No hay
-     servidor todavía. Las contraseñas se guardan en texto
-     plano SOLO para poder maquetar el flujo; esto NO es
-     seguro y no debe usarse en producción.
-
-     El día que conectemos un backend real (PHP+MySQL,
-     Supabase, Firebase, etc.) solo hay que reescribir las
-     funciones marcadas con  ⇩ BACKEND ⇩  para que hagan
-     fetch() al servidor. Las pantallas (ingresar.html) NO
-     necesitan cambiar, porque ya llaman a estas funciones
-     con async/await.
+     Mantenemos una "pista" liviana en localStorage
+     (byrclub_session_v1) para que el header y el guard sepan
+     de forma instantánea si hay sesión, sin esperar al server.
+     La pista se setea al entrar y se borra al salir.
   ========================================================= */
 
   const SESSION_KEY = "byrclub_session_v1";
-  const ACCOUNTS_KEY = "byrclub_accounts_v1";
+  const API_BASE = "/api/";
 
-  /* Avatares disponibles en el onboarding. */
   const AVATARS = ["🍔", "🍟", "🌭", "🧀", "🥤", "🔥", "👑", "⭐"];
 
   /* ---------------------------------------------------------
-     Utilidades de almacenamiento local
+     Pista de sesión en localStorage
   --------------------------------------------------------- */
 
   function readJSON(key, fallback) {
@@ -35,7 +27,6 @@
       const raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : fallback;
     } catch (error) {
-      console.warn("BYRAuth: no se pudo leer", key, error);
       return fallback;
     }
   }
@@ -43,68 +34,10 @@
   function writeJSON(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-      return true;
     } catch (error) {
-      console.error("BYRAuth: no se pudo guardar", key, error);
-      return false;
+      /* almacenamiento bloqueado: seguimos igual */
     }
   }
-
-  function getAccounts() {
-    const accounts = readJSON(ACCOUNTS_KEY, []);
-    return Array.isArray(accounts) ? accounts : [];
-  }
-
-  function saveAccounts(accounts) {
-    writeJSON(ACCOUNTS_KEY, accounts);
-  }
-
-  function normalizeEmail(email) {
-    return String(email || "").trim().toLowerCase();
-  }
-
-  /* Simula la latencia de una llamada al servidor, así la UI
-     ya muestra sus estados de carga desde ahora. */
-  function delay(ms = 450) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /* ---------------------------------------------------------
-     Validaciones (se reutilizan en las pantallas)
-  --------------------------------------------------------- */
-
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
-  }
-
-  function validateRegistration({ name, email, whatsapp, password }) {
-    const errors = {};
-
-    if (!String(name || "").trim()) {
-      errors.name = "Decinos cómo te llamás.";
-    }
-
-    if (!isValidEmail(email)) {
-      errors.email = "Escribí un email válido.";
-    }
-
-    if (!String(whatsapp || "").trim()) {
-      errors.whatsapp = "Necesitamos tu WhatsApp para avisarte de premios.";
-    }
-
-    if (String(password || "").length < 6) {
-      errors.password = "La contraseña necesita al menos 6 caracteres.";
-    }
-
-    return {
-      ok: Object.keys(errors).length === 0,
-      errors
-    };
-  }
-
-  /* ---------------------------------------------------------
-     Sesión
-  --------------------------------------------------------- */
 
   function getSession() {
     return readJSON(SESSION_KEY, null);
@@ -114,45 +47,40 @@
     return Boolean(getSession());
   }
 
-  function setSession(account) {
-    const session = {
-      email: account.email,
-      name: account.name,
-      avatar: account.avatar || "🍔",
-      onboarded: Boolean(account.onboarded),
+  function setSessionHint(user) {
+    const hint = {
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar || "🍔",
+      onboarded: Boolean(user.onboarded),
       loggedInAt: new Date().toISOString()
     };
-
-    writeJSON(SESSION_KEY, session);
-    syncUserProfile(session);
-    emit("login");
-    return session;
+    writeJSON(SESSION_KEY, hint);
+    return hint;
   }
 
-  /* Vuelca los datos de la cuenta al estado de juego (BYRUser),
-     que es lo que leen el perfil, el header y el HUD. */
-  function syncUserProfile(session) {
-    if (window.BYRUser?.setName && session.name) {
-      window.BYRUser.setName(session.name);
-    }
+  /* Vuelca la respuesta del server: pista + estado de juego. */
+  function applyUser(user) {
+    setSessionHint(user);
 
-    /* Guardamos el avatar directo en el estado, por si el
-       BYRUser todavía no expone un setter dedicado. */
-    if (window.BYRStorage?.load && window.BYRStorage?.save) {
+    if (user.state && window.BYRStorage?.save) {
+      window.BYRStorage.save(user.state);
+    } else if (window.BYRStorage?.load && window.BYRStorage?.save) {
+      /* Sin estado del server: al menos guardamos nombre/avatar. */
       try {
         const state = window.BYRStorage.load();
         state.profile = state.profile || {};
-        if (session.avatar) {
-          state.profile.avatar = session.avatar;
-        }
-        state.profile.email = session.email;
+        state.profile.name = user.name;
+        if (user.avatar) state.profile.avatar = user.avatar;
+        state.profile.email = user.email;
         window.BYRStorage.save(state);
       } catch (error) {
-        console.warn("BYRAuth: no se pudo sincronizar el avatar.", error);
+        /* noop */
       }
     }
 
     window.dispatchEvent(new CustomEvent("byr:user-updated"));
+    emit("login");
   }
 
   function emit(reason) {
@@ -163,116 +91,111 @@
     );
   }
 
+  /* ---------------------------------------------------------
+     Validaciones (rápidas, del lado del cliente; el server
+     también valida)
+  --------------------------------------------------------- */
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim().toLowerCase());
+  }
+
+  function validateRegistration({ name, email, whatsapp, password }) {
+    const errors = {};
+    if (!String(name || "").trim()) errors.name = "Decinos cómo te llamás.";
+    if (!isValidEmail(email)) errors.email = "Escribí un email válido.";
+    if (!String(whatsapp || "").trim()) errors.whatsapp = "Necesitamos tu WhatsApp para avisarte de premios.";
+    if (String(password || "").length < 6) errors.password = "La contraseña necesita al menos 6 caracteres.";
+    return { ok: Object.keys(errors).length === 0, errors };
+  }
+
+  /* ---------------------------------------------------------
+     Cliente HTTP de la API
+  --------------------------------------------------------- */
+
+  async function api(path, { method = "POST", body } = {}) {
+    let res;
+    try {
+      res = await fetch(API_BASE + path, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: "same-origin"
+      });
+    } catch (error) {
+      throw new AuthError(
+        "No pudimos conectar con el servidor. Revisá tu conexión.",
+        "network"
+      );
+    }
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (error) {
+      /* respuesta no-JSON */
+    }
+
+    if (!res.ok) {
+      throw new AuthError(
+        data.error || "Ocurrió un error. Probá de nuevo.",
+        data.code || "error",
+        data.errors || null
+      );
+    }
+
+    return data;
+  }
+
   /* =========================================================
-     ⇩ BACKEND ⇩
-     Estas 3 funciones son las que hay que reescribir el día
-     que exista un servidor. Hoy simulan todo en localStorage.
+     Acciones de sesión
   ========================================================= */
 
-  /* register(): crea la cuenta. */
   async function register(data) {
-    await delay();
-
     const validation = validateRegistration(data);
     if (!validation.ok) {
-      const message = Object.values(validation.errors)[0];
-      throw new AuthError(message, "validation", validation.errors);
-    }
-
-    const email = normalizeEmail(data.email);
-    const accounts = getAccounts();
-
-    if (accounts.some((acc) => acc.email === email)) {
       throw new AuthError(
-        "Ya existe una cuenta con ese email. Probá ingresar.",
-        "email-taken"
+        Object.values(validation.errors)[0],
+        "validation",
+        validation.errors
       );
     }
 
-    const account = {
-      email,
-      name: String(data.name).trim(),
-      whatsapp: String(data.whatsapp).trim(),
-      /* OJO: texto plano solo para la maqueta. En el backend
-         real esto se hashea del lado del servidor. */
-      password: String(data.password),
-      avatar: null,
-      onboarded: false,
-      createdAt: new Date().toISOString()
-    };
-
-    accounts.push(account);
-    saveAccounts(accounts);
-
-    /* Deja la sesión iniciada pero SIN onboarding completo,
-       para que ingresar.html lleve al paso de personaje. */
-    return setSession(account);
+    const { user } = await api("register.php", { body: data });
+    applyUser(user);
+    return getSession();
   }
 
-  /* login(): valida credenciales. */
   async function login({ email, password }) {
-    await delay();
-
-    const normalizedEmail = normalizeEmail(email);
-    const accounts = getAccounts();
-    const account = accounts.find((acc) => acc.email === normalizedEmail);
-
-    if (!account || account.password !== String(password)) {
-      throw new AuthError(
-        "Email o contraseña incorrectos.",
-        "invalid-credentials"
-      );
-    }
-
-    return setSession(account);
+    const { user } = await api("login.php", { body: { email, password } });
+    applyUser(user);
+    return getSession();
   }
 
-  /* logout(): cierra la sesión (no borra la cuenta). */
   async function logout() {
-    localStorage.removeItem(SESSION_KEY);
+    try {
+      await api("logout.php", {});
+    } catch (error) {
+      /* Aunque falle la red, limpiamos localmente. */
+    }
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (error) {
+      /* noop */
+    }
     emit("logout");
     return true;
   }
 
-  /* completeOnboarding(): guarda avatar/nombre elegidos. */
   async function completeOnboarding({ avatar, name }) {
-    await delay(300);
-
-    const session = getSession();
-    if (!session) {
-      throw new AuthError("No hay una sesión activa.", "no-session");
-    }
-
-    const accounts = getAccounts();
-    const account = accounts.find((acc) => acc.email === session.email);
-
-    const cleanName = String(name || session.name).trim();
-    const chosenAvatar = avatar || session.avatar || "🍔";
-
-    if (account) {
-      account.name = cleanName;
-      account.avatar = chosenAvatar;
-      account.onboarded = true;
-      saveAccounts(accounts);
-    }
-
-    const updated = {
-      ...session,
-      name: cleanName,
-      avatar: chosenAvatar,
-      onboarded: true
-    };
-
-    writeJSON(SESSION_KEY, updated);
-    syncUserProfile(updated);
-    emit("onboarding-complete");
-    return updated;
+    const { user } = await api("onboarding.php", { body: { avatar, name } });
+    applyUser(user);
+    return getSession();
   }
 
-  /* =========================================================
-     Error tipado, para que las pantallas puedan diferenciar
-     un problema de validación de uno de credenciales.
-  ========================================================= */
+  /* ---------------------------------------------------------
+     Error tipado
+  --------------------------------------------------------- */
 
   class AuthError extends Error {
     constructor(message, code = "error", details = null) {
@@ -284,7 +207,7 @@
   }
 
   /* ---------------------------------------------------------
-     API pública
+     API pública (misma forma que antes)
   --------------------------------------------------------- */
 
   window.BYRAuth = {
