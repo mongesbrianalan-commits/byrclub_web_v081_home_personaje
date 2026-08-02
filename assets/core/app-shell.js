@@ -861,6 +861,25 @@ function sync() {
     return;
   }
 
+  /*
+   * Sin sesión iniciada no mostramos el panel con datos
+   * personales (nivel, puntos, XP): el header ya ofrece
+   * el botón "Ingresar". Evita que aparezcan datos que
+   * quedaron en localStorage de una sesión anterior.
+   */
+  const loggedIn =
+    Boolean(window.BYRAuth?.isLoggedIn?.());
+
+  shell.classList.toggle(
+    "byr-app-shell--guest",
+    !loggedIn
+  );
+
+  if (!loggedIn) {
+    updateShellHeightVariable();
+    return;
+  }
+
   const state = getUserState();
   const currentSnapshot =
     createUserSnapshot(state);
@@ -933,6 +952,14 @@ function sync() {
    * );
    */
   window.addEventListener("byr:user-updated", () => {
+    sync();
+  });
+
+  /*
+   * Login / logout: al cambiar la sesión mostramos u
+   * ocultamos el panel de usuario.
+   */
+  window.addEventListener("byr:auth-change", () => {
     sync();
   });
 

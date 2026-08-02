@@ -134,7 +134,103 @@ function findNextReward(points, level) {
   return locked[0] || null;
 }
 
+/* =========================================================
+   SESIÓN — sin login no mostramos datos personales
+========================================================= */
+
+function isGuest() {
+  /* Si auth.js no cargó todavía, tratamos como invitado:
+     preferimos NO filtrar datos personales por accidente. */
+  return !window.BYRAuth?.isLoggedIn?.();
+}
+
+const LOGIN_URL = "ingresar.html?next=" + encodeURIComponent("beneficios.html");
+
+function renderMotivation({ guest, points = 0, next = null }) {
+  const card = document.querySelector("[data-motivation-card]");
+
+  if (!card) {
+    return;
+  }
+
+  const lead = card.querySelector("[data-motivation-lead]");
+  const value = card.querySelector("[data-motivation-value]");
+  const tail = card.querySelector("[data-motivation-tail]");
+  const note = card.querySelector("[data-motivation-note]");
+
+  card.classList.toggle("is-guest", Boolean(guest));
+
+  if (guest) {
+    if (lead) lead.textContent = "Sumá puntos con cada compra";
+    if (value) value.textContent = "🍔";
+    if (tail) tail.textContent = "y canjealos por comida real";
+    if (note) note.textContent = "Iniciá sesión para ver tu progreso.";
+    return;
+  }
+
+  if (next) {
+    const needed = Math.max(0, next.cost - points);
+    const name = getRewardName(next.card);
+
+    if (needed > 0) {
+      if (lead) lead.textContent = "Te faltan solo";
+      if (value) value.textContent = formatBenefitPoints(needed);
+      if (tail) tail.textContent = `puntos para ${name}`;
+      if (note) note.textContent = "Con una visita más, puede ser tuya.";
+    } else {
+      if (lead) lead.textContent = "¡Ya podés canjear";
+      if (value) value.textContent = "🎉";
+      if (tail) tail.textContent = `${name}!`;
+      if (note) note.textContent = "Reclamala en el local.";
+    }
+    return;
+  }
+
+  if (lead) lead.textContent = "¡Desbloqueaste";
+  if (value) value.textContent = "todo";
+  if (tail) tail.textContent = "el catálogo de premios!";
+  if (note) note.textContent = "Sos leyenda BYR.";
+}
+
+function renderGuest() {
+  document.querySelectorAll("[data-reward-bar]").forEach(bar => {
+    bar.style.setProperty("--progress", "0%");
+  });
+
+  document.querySelectorAll("[data-reward-status]").forEach(status => {
+    const card = status.closest("[data-reward]");
+    const levelReq = Number(card?.dataset.level) || 1;
+    status.textContent = levelReq > 1 ? `Nivel ${levelReq}` : "Canjeable con puntos";
+  });
+
+  document.querySelectorAll("[data-reward-caption]").forEach(caption => {
+    if (caption.dataset.lockedCaption) {
+      caption.textContent = caption.dataset.lockedCaption;
+    }
+  });
+
+  document.querySelectorAll("[data-reward-action]").forEach(action => {
+    action.classList.remove("redeem-action");
+    action.classList.add("locked-action");
+    action.disabled = false;
+    action.textContent = "Registrate para canjear";
+  });
+
+  document.querySelectorAll(".premium-reward.available").forEach(card => {
+    card.classList.remove("available");
+  });
+
+  renderMotivation({ guest: true });
+}
+
 function renderBeneficios() {
+  document.body.classList.toggle("byr-guest", isGuest());
+
+  if (isGuest()) {
+    renderGuest();
+    return;
+  }
+
   if (!window.BYRUser?.getState) {
     return;
   }
@@ -180,10 +276,18 @@ function renderBeneficios() {
     if (nextBar) nextBar.style.setProperty("--progress", "100%");
     if (nextCaption) nextCaption.textContent = `${formatBenefitPoints(points)} puntos disponibles`;
   }
+
+  renderMotivation({ guest: false, points, next });
 }
 
 function handleRedeem(event) {
   const button = event.currentTarget;
+
+  if (isGuest()) {
+    window.location.href = LOGIN_URL;
+    return;
+  }
+
   const card = button.closest("[data-reward]");
 
   if (!card || button.disabled || !window.BYRUser?.spendPoints) {
@@ -220,5 +324,6 @@ window.addEventListener("focus", renderBeneficios);
 window.addEventListener("pageshow", renderBeneficios);
 window.addEventListener("storage", renderBeneficios);
 window.addEventListener("byr:user-updated", renderBeneficios);
+window.addEventListener("byr:auth-change", renderBeneficios);
 
 renderBeneficios();

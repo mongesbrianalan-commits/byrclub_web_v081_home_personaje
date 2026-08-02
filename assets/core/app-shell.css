@@ -41,6 +41,11 @@ html {
    PANEL DEL USUARIO
 ========================================= */
 
+/* Sin sesión: ocultamos el panel con datos personales. */
+.byr-app-shell--guest #byr-app-user-panel {
+  display: none;
+}
+
 #byr-app-user-panel {
   position: relative;
 
