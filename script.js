@@ -13,19 +13,6 @@ document.querySelectorAll('[data-scroll]').forEach((button) => {
   });
 });
 
-const form = document.getElementById('waitlistForm');
-const status = document.getElementById('formStatus');
-
-form?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const data = Object.fromEntries(new FormData(form).entries());
-  const leads = JSON.parse(localStorage.getItem('byrclub_waitlist') || '[]');
-  leads.push({ ...data, fecha: new Date().toISOString() });
-  localStorage.setItem('byrclub_waitlist', JSON.stringify(leads));
-  status.textContent = `¡Listo, ${data.nombre}! Ya reservaste tu lugar como fundador.`;
-  form.reset();
-});
-
 const cards = document.querySelectorAll('.feature-card');
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry, index) => {

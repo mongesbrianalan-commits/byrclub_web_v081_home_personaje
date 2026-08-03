@@ -122,18 +122,14 @@
     header.querySelector("[data-session-cta]")?.remove();
 
     const session = window.BYRAuth.getSession();
-    const founderCta = header.querySelector(".header-cta");
 
     const container = document.createElement("div");
     container.className = "session-cta";
     container.setAttribute("data-session-cta", "");
 
     if (session) {
-      /* Con sesión: ocultamos el CTA de "fundador" (ya es miembro). */
-      if (founderCta) founderCta.style.display = "none";
       renderLoggedIn(container, session);
     } else {
-      if (founderCta) founderCta.style.display = "";
       renderLoggedOut(container);
     }
 
