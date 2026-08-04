@@ -8,6 +8,12 @@ require_once __DIR__ . '/db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+/* =========================================================
+   Beneficios de socio — montos (fáciles de cambiar acá)
+========================================================= */
+const BYR_WELCOME_BONUS  = 300; // puntos de regalo al crear la cuenta
+const BYR_REFERRAL_BONUS = 300; // puntos para CADA uno (invitado e invitador)
+
 /* Sesión con cookie segura (HttpOnly + SameSite). "secure" solo si hay HTTPS. */
 $byr_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (($_SERVER['SERVER_PORT'] ?? null) == 443);
@@ -80,12 +86,60 @@ function public_user(array $row): array
     $state = !empty($row['state']) ? json_decode($row['state'], true) : null;
 
     return [
-        'email'     => $row['email'],
-        'name'      => $row['name'],
-        'avatar'    => $row['avatar'],
-        'whatsapp'  => $row['whatsapp'] ?? null,
-        'isAdmin'   => (bool) $row['is_admin'],
-        'onboarded' => !empty($row['avatar']),
-        'state'     => $state,
+        'email'        => $row['email'],
+        'name'         => $row['name'],
+        'avatar'       => $row['avatar'],
+        'whatsapp'     => $row['whatsapp'] ?? null,
+        'isAdmin'      => (bool) $row['is_admin'],
+        'onboarded'    => !empty($row['avatar']),
+        'birthdate'    => $row['birthdate'] ?? null,
+        'referralCode' => $row['referral_code'] ?? null,
+        'referredBy'   => isset($row['referred_by']) ? (int) $row['referred_by'] : null,
+        'state'        => $state,
     ];
+}
+
+/**
+ * Suma puntos y/o XP a un estado y deja el movimiento en el historial.
+ * Es la forma "oficial" de otorgar puntos del lado del servidor (bienvenida,
+ * referidos, admin). Modifica $state por referencia.
+ */
+function byr_grant(array &$state, int $points, int $xp, string $reason, string $type = 'bonus'): void
+{
+    $state['wallet']['points']  = ($state['wallet']['points'] ?? 0) + $points;
+    $state['progression']['xp'] = ($state['progression']['xp'] ?? 0) + $xp;
+
+    if (!isset($state['history']) || !is_array($state['history'])) {
+        $state['history'] = [];
+    }
+    array_unshift($state['history'], [
+        'type'   => $type,
+        'points' => $points,
+        'xp'     => $xp,
+        'reason' => $reason,
+        'date'   => date('c'),
+    ]);
+}
+
+/**
+ * Genera un código de invitación único (BYR + 5 caracteres de un alfabeto
+ * sin caracteres ambiguos). Reintenta si choca con uno existente.
+ */
+function byr_generate_referral_code(PDO $pdo): string
+{
+    $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I/L
+    $check = $pdo->prepare('SELECT 1 FROM users WHERE referral_code = ?');
+
+    for ($attempt = 0; $attempt < 12; $attempt++) {
+        $code = 'BYR';
+        for ($i = 0; $i < 5; $i++) {
+            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $check->execute([$code]);
+        if (!$check->fetch()) {
+            return $code;
+        }
+    }
+    // Fallback prácticamente imposible de alcanzar.
+    return 'BYR' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 5));
 }

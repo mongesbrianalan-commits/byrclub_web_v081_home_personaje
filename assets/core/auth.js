@@ -187,8 +187,10 @@
     return true;
   }
 
-  async function completeOnboarding({ avatar, name }) {
-    const { user } = await api("onboarding.php", { body: { avatar, name } });
+  async function completeOnboarding({ avatar, name, birthdate }) {
+    const { user } = await api("onboarding.php", {
+      body: { avatar, name, birthdate: birthdate || "" }
+    });
     applyUser(user);
     return getSession();
   }

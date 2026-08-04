@@ -96,6 +96,12 @@
             </label>
             <p class="auth-error" data-error="password"></p>
 
+            <label class="auth-field">
+              <span>Código de invitación <small>(opcional)</small></span>
+              <input type="text" name="referralCode" autocomplete="off" placeholder="Ej: BYRAB123" data-referral-input>
+              <small class="auth-hint" data-referral-hint hidden>🤝 ¡Viniste invitado! Vos y tu amigo ganan puntos.</small>
+            </label>
+
             <button type="submit" class="auth-submit">Crear mi cuenta <span>→</span></button>
             <p class="auth-form-status" role="status"></p>
 
@@ -117,6 +123,11 @@
           <label class="auth-field">
             <span>¿Cómo querés que te llamemos?</span>
             <input type="text" name="displayName" placeholder="Tu nombre" data-onboarding-name required>
+          </label>
+
+          <label class="auth-field">
+            <span>Tu cumpleaños <small>(para tu regalo de socio 🎂)</small></span>
+            <input type="date" name="birthdate" data-onboarding-birthdate autocomplete="bday">
           </label>
 
           <button type="button" class="auth-submit" data-onboarding-finish>¡Entrar al club! <span>🎉</span></button>

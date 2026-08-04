@@ -86,6 +86,24 @@
     })
   );
 
+  /* Si llegó por un link de invitación (?ref=CODIGO), precargamos el código
+     en el registro, mostramos el aviso y abrimos la pestaña Crear cuenta. */
+  (function prefillReferral() {
+    try {
+      const ref = new URLSearchParams(location.search).get("ref");
+      if (!ref) return;
+      const clean = ref.toUpperCase().replace(/\s+/g, "").slice(0, 12);
+      if (!clean) return;
+      const input = document.querySelector("[data-referral-input]");
+      const hint = document.querySelector("[data-referral-hint]");
+      if (input) input.value = clean;
+      if (hint) hint.hidden = false;
+      if (!existingSession) selectTab("register");
+    } catch (error) {
+      /* noop */
+    }
+  })();
+
   /* ---------------------------------------------------------
      Helpers de UI (errores y estados)
   --------------------------------------------------------- */
@@ -191,6 +209,7 @@
   const avatarGrid = document.querySelector("[data-avatar-grid]");
   const avatarPreview = document.querySelector("[data-avatar-preview]");
   const onboardingNameInput = document.querySelector("[data-onboarding-name]");
+  const onboardingBirthdateInput = document.querySelector("[data-onboarding-birthdate]");
   const finishButton = document.querySelector("[data-onboarding-finish]");
 
   let selectedAvatar = window.BYRAuth.AVATARS[0];
@@ -238,7 +257,8 @@
     try {
       const session = await window.BYRAuth.completeOnboarding({
         avatar: selectedAvatar,
-        name: onboardingNameInput.value
+        name: onboardingNameInput.value,
+        birthdate: onboardingBirthdateInput?.value || ""
       });
       status.textContent = "¡Bienvenido al club! 🎉";
       status.className = "auth-form-status is-ok";

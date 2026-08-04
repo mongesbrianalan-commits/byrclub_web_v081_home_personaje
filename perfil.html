@@ -71,6 +71,14 @@
     </section>
 
     <section class="profile-content">
+      <div class="birthday-banner" data-profile-birthday-banner hidden>
+        <span class="birthday-emoji">🎂</span>
+        <div class="birthday-text">
+          <strong data-birthday-title>¡Feliz cumple!</strong>
+          <span data-birthday-sub>Pasá por el local este mes y reclamá tu regalo de socio.</span>
+        </div>
+      </div>
+
       <div class="section-heading section-heading-left">
         <span>PRÓXIMO OBJETIVO</span>
         <h2>Tu recompensa está cerca</h2>
@@ -109,6 +117,27 @@
         <article class="stat-card stat-blue"><div class="stat-icon">🍔</div><strong data-profile-stat-redeemed data-count="0">0</strong><span>Premios canjeados</span><small data-profile-stat-favorite>Todavía sin canjes</small></article>
         <article class="stat-card stat-pink"><div class="stat-icon">📅</div><strong data-profile-stat-visits data-count="0">0</strong><span>Visitas</span><small data-profile-stat-streak>Racha actual: 0 días</small></article>
         <article class="stat-card stat-green"><div class="stat-icon">⭐</div><strong data-profile-stat-lifetime-points data-count="0">0</strong><span>Puntos obtenidos</span><small>Desde que te sumaste</small></article>
+      </section>
+
+      <section class="referral-section" data-referral-card hidden>
+        <div class="referral-inner">
+          <div class="referral-copy">
+            <span class="referral-kicker">🤝 TRAÉ UN AMIGO</span>
+            <h2>Invitá y ganan los dos</h2>
+            <p>Compartí tu código o tu link. Cuando tu amigo crea la cuenta con él, <strong>vos y tu amigo ganan 300 puntos</strong> cada uno.</p>
+          </div>
+          <div class="referral-actions">
+            <div class="referral-code-box">
+              <span>Tu código</span>
+              <strong data-referral-code>—</strong>
+            </div>
+            <div class="referral-buttons">
+              <button type="button" class="referral-btn" data-referral-copy>📋 Copiar link</button>
+              <a class="referral-btn referral-btn-wa" data-referral-wa target="_blank" rel="noreferrer">💬 WhatsApp</a>
+            </div>
+            <small class="referral-feedback" data-referral-feedback role="status"></small>
+          </div>
+        </div>
       </section>
 
       <section class="achievements-section">
@@ -169,5 +198,6 @@
   <script src="assets/core/state-sync.js"></script>
   <script src="perfil.js"></script>
   <script src="perfil-premium.js"></script>
+  <script src="assets/core/perks-profile.js"></script>
 </body>
 </html>
