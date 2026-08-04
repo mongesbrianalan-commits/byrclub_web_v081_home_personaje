@@ -2,7 +2,7 @@ name: Diagnostico FTP (listar carpetas)
 
 # Solo se lanza a mano desde la pestaña Actions.
 # Lista carpetas puntuales del servidor para saber cual sirve byrclub.com.
-# NO sube ni borra nada. Rapido: no recorre todo el arbol.
+# NO sube ni borra nada. Usa FTPS explicito en puerto 21 (como el deploy).
 on:
   workflow_dispatch:
 
@@ -19,10 +19,13 @@ jobs:
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftps://$FTP_SERVER" <<'EOF'
+          lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftp://$FTP_SERVER" <<'EOF'
           set ssl:verify-certificate no
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
           set net:timeout 15
           set net:max-retries 2
+          set net:reconnect-interval-base 5
           echo "===== [A] RAIZ DEL FTP (donde caemos al conectar) ====="
           cls -l
           echo "===== [B] CONTENIDO DE public_html/ (donde subio el deploy) ====="
