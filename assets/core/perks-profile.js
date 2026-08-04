@@ -114,9 +114,33 @@
     if (title) title.textContent = name ? `¡Feliz cumple, ${name}!` : "¡Feliz cumple!";
     if (sub) {
       sub.textContent =
-        `Tu regalo de socio te espera en el local durante ${MESES[mm - 1]} (tu día es el ${dd}). 🎁`;
+        `Tu hamburguesa de cumpleaños te espera este mes (tu día es el ${dd}). Pedila en tu compra o en el local. 🍔`;
     }
     banner.hidden = false;
+    claimBirthdayVoucher();
+  }
+
+  /* Pide (o recupera) el vale de hamburguesa de cumpleaños y muestra el código. */
+  async function claimBirthdayVoucher() {
+    const codeEl = document.querySelector("[data-birthday-code]");
+    if (!codeEl) return;
+    try {
+      const res = await fetch("api/birthday-claim.php", {
+        method: "POST",
+        credentials: "same-origin"
+      });
+      const data = await res.json();
+      const v = data && data.voucher;
+      if (!v || !v.code) return;
+      if (v.status === "redeemed") {
+        codeEl.textContent = "Ya usaste tu hamburguesa de cumple este año 🍔✓";
+      } else {
+        codeEl.textContent = `Tu código: ${v.code} · mostralo o decilo al pedir`;
+      }
+      codeEl.hidden = false;
+    } catch (error) {
+      /* si falla, el cartel igual queda visible sin código */
+    }
   }
 
   /* ---------------------------------------------------------
@@ -137,6 +161,12 @@
     .birthday-banner .birthday-text { display: flex; flex-direction: column; gap: 2px; }
     .birthday-banner strong { font-family: "Lilita One"; font-size: 1.3rem; }
     .birthday-banner span { color: #fff; font-weight: 700; opacity: .95; }
+    .birthday-code {
+      display: inline-block; margin-top: 8px; padding: 8px 14px;
+      border-radius: 12px; background: rgba(0,0,0,.28);
+      font-family: "Baloo 2", sans-serif !important; font-size: 1rem !important;
+      font-weight: 900; letter-spacing: .02em; color: #fff;
+    }
 
     .referral-section { margin: 34px 0; }
     .referral-inner {
