@@ -59,13 +59,45 @@ if (strlen($digits) < 6) {
 }
 $last = substr($digits, -8); // comparamos por los últimos 8 dígitos (ignora código de país y formato)
 
+/*
+ * Normalizamos el WhatsApp guardado (sacando espacios, guiones, +, paréntesis
+ * y puntos) y buscamos que TERMINE en los últimos 8 dígitos. El patrón del LIKE
+ * se arma en PHP ($last son solo dígitos, sin riesgo de inyección ni comodines)
+ * en vez de con CONCAT, para no depender de cómo PDO liga parámetros dentro de
+ * funciones con prepared statements nativos.
+ */
+$pattern = '%' . $last;
+
 $sql = "SELECT * FROM users
          WHERE whatsapp IS NOT NULL AND whatsapp <> ''
            AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(whatsapp,' ',''),'-',''),'+',''),'(',''),')',''),'.','')
-               LIKE CONCAT('%', ?, '%')";
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$last]);
-$rows = $stmt->fetchAll();
+               LIKE ?";
+
+try {
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$pattern]);
+    $rows = $stmt->fetchAll();
+} catch (PDOException $e) {
+    /*
+     * 42S22 = "Unknown column". Pasa si la base se creó con un esquema viejo
+     * que todavía no tiene la columna `whatsapp` (el CREATE TABLE IF NOT EXISTS
+     * no la agrega a una tabla ya creada). Se soluciona con un ALTER TABLE.
+     */
+    if ($e->getCode() === '42S22') {
+        json_out([
+            'error' => 'La base de datos todavía no tiene la columna de WhatsApp, '
+                     . 'por eso no se puede buscar por número. Buscá por email por ahora; '
+                     . 'hay que agregar esa columna en la base.',
+            'code'  => 'missing-whatsapp-column',
+        ], 500);
+    }
+
+    json_out([
+        'error'  => 'No se pudo buscar por WhatsApp en este momento. Probá con el email.',
+        'code'   => 'db-error',
+        'detail' => $e->getMessage(),
+    ], 500);
+}
 
 if (!$rows) {
     json_out(['error' => 'No hay ninguna cuenta registrada con ese WhatsApp. Probá con el email.', 'code' => 'not-found'], 404);
