@@ -27,6 +27,9 @@ jobs:
           server-dir: /domains/byrclub.com/public_html/
           # Protocolo seguro. Si tu hosting no soporta FTPS, cambiar a: ftp
           protocol: ftps
+          # Timeout por operacion FTP (ms). Subimos a 60s porque el default
+          # de 30s a veces corta con Hostinger lento ("Timeout control socket").
+          timeout: 60000
           # Archivos que NUNCA se tocan en el servidor:
           exclude: |
             **/.git*
