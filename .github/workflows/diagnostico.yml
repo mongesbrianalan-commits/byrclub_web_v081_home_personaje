@@ -1,8 +1,8 @@
 name: Diagnostico FTP (listar carpetas)
 
 # Solo se lanza a mano desde la pestaña Actions.
-# Busca la carpeta REAL que sirve byrclub.com usando rutas absolutas.
-# NO sube ni borra nada.
+# Lista COMPLETA la carpeta real del sitio para saber que se borraria
+# en un sync. NO sube ni borra nada.
 on:
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ jobs:
       - name: Instalar lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Buscar la carpeta real del sitio
+      - name: Listar contenido completo del docroot real
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
@@ -26,17 +26,7 @@ jobs:
           set net:timeout 15
           set net:max-retries 2
           set net:reconnect-interval-base 5
-          echo "===== [P] Donde caemos al conectar (pwd) ====="
-          pwd
-          echo "===== [A] RAIZ ABSOLUTA / ====="
-          cls -l /
-          echo "===== [B] /domains/ ====="
-          cls -l /domains/ || echo "(no existe /domains/)"
-          echo "===== [C] /domains/byrclub.com/ ====="
-          cls -l /domains/byrclub.com/ || echo "(no existe)"
-          echo "===== [D] /domains/byrclub.com/public_html/  <-- candidata a docroot real ====="
-          cls -l /domains/byrclub.com/public_html/ || echo "(no existe)"
-          echo "===== [E] Un nivel arriba de donde caemos (../) ====="
-          cls -l ../ || echo "(no se puede subir)"
+          echo "===== ARBOL COMPLETO de /domains/byrclub.com/public_html/ ====="
+          find --max-depth=4 /domains/byrclub.com/public_html/
           bye
           EOF
