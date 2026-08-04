@@ -95,32 +95,69 @@
      Buscar usuario
   --------------------------------------------------------- */
 
+  const matchesBox = document.querySelector("[data-matches]");
+
   async function findUser() {
-    const email = String(emailInput.value || "").trim();
-    if (!email) {
-      setStatus(findStatus, "Escribí el email del cliente.", "error");
+    const query = String(emailInput.value || "").trim();
+    if (!query) {
+      setStatus(findStatus, "Escribí un email o número de WhatsApp.", "error");
       return;
     }
 
     setStatus(findStatus, "Buscando…", "");
     foundCard.hidden = true;
     awardSection.hidden = true;
+    if (matchesBox) {
+      matchesBox.hidden = true;
+      matchesBox.innerHTML = "";
+    }
 
     try {
-      const { user } = await api("admin/lookup.php", { email });
-      currentEmail = user.email;
-      foundAvatar.textContent = user.avatar || "🍔";
-      foundName.textContent = user.name;
-      foundPoints.textContent = fmt(user.points);
-      foundXp.textContent = fmt(user.xp);
-      foundCard.hidden = false;
-      awardSection.hidden = false;
-      setStatus(findStatus, "", "");
-      pointsInput.focus();
+      const data = await api("admin/lookup.php", { query });
+      if (data.matches) {
+        renderMatches(data.matches);
+        setStatus(findStatus, "Hay varias cuentas con ese número. Elegí cuál:", "");
+        return;
+      }
+      selectFoundUser(data.user);
     } catch (error) {
       currentEmail = null;
       setStatus(findStatus, error.message, "error");
     }
+  }
+
+  function selectFoundUser(user) {
+    currentEmail = user.email;
+    foundAvatar.textContent = user.avatar || "🍔";
+    foundName.textContent = user.name;
+    foundPoints.textContent = fmt(user.points);
+    foundXp.textContent = fmt(user.xp);
+    foundCard.hidden = false;
+    awardSection.hidden = false;
+    setStatus(findStatus, "", "");
+    pointsInput.focus();
+  }
+
+  function renderMatches(list) {
+    if (!matchesBox) {
+      selectFoundUser(list[0]);
+      return;
+    }
+    matchesBox.innerHTML = "";
+    list.forEach((user) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "match-pick";
+      btn.innerHTML =
+        `<b>${escapeHtml(user.name)}</b> · ${fmt(user.points)} pts` +
+        `<small>${escapeHtml(user.whatsapp || "sin WhatsApp")} · ${escapeHtml(user.email)}</small>`;
+      btn.addEventListener("click", () => {
+        matchesBox.hidden = true;
+        selectFoundUser(user);
+      });
+      matchesBox.appendChild(btn);
+    });
+    matchesBox.hidden = false;
   }
 
   /* ---------------------------------------------------------

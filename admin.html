@@ -49,6 +49,12 @@
     .redeem-state { font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
     .redeem-state.pending { color: var(--green); }
     .redeem-state.redeemed { color: #ff9b9b; }
+    .admin-hint-line { margin: 6px 2px 0; font-weight: 700; font-size: .85rem; color: #ffe79a; }
+    .matches-box { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+    .match-pick { text-align: left; width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 14px; padding: 12px 14px; color: #fff; font-weight: 700; cursor: pointer; }
+    .match-pick:hover { background: rgba(255,255,255,.16); }
+    .match-pick b { color: var(--yellow); }
+    .match-pick small { display: block; color: #9bd1ff; font-weight: 700; margin-top: 2px; }
   </style>
 </head>
 <body class="home-v08" data-root="./">
@@ -84,12 +90,15 @@
         <h2>1 · Buscar cliente</h2>
         <div class="admin-row">
           <label class="auth-field">
-            <span>Email del cliente</span>
-            <input type="email" data-find-email placeholder="cliente@email.com" autocomplete="off">
+            <span>Email o WhatsApp del cliente</span>
+            <input type="text" data-find-email placeholder="cliente@email.com  o  11 5854 5653" autocomplete="off">
           </label>
           <button type="button" class="admin-btn-inline" data-find-btn>Buscar</button>
         </div>
+        <p class="admin-hint-line">💡 Para delivery: buscá por el número de teléfono que ves en el pedido.</p>
         <p class="auth-form-status" data-find-status></p>
+
+        <div class="matches-box" data-matches hidden></div>
 
         <div class="found-card" data-found-card hidden>
           <div class="found-card__avatar" data-found-avatar>🍔</div>
