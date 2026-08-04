@@ -1,0 +1,37 @@
+name: Limpieza (borrar carpeta legacy public_html)
+
+# Un solo uso. Borra la carpeta /public_html (legacy, NO servida) donde
+# cayeron por error archivos durante la configuracion del deploy.
+# El sitio real vive en /domains/byrclub.com/public_html/ y NO se toca.
+on:
+  workflow_dispatch:
+
+jobs:
+  limpiar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Borrar /public_html legacy
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftp://$FTP_SERVER" <<'EOF'
+          set ssl:verify-certificate no
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set net:timeout 15
+          set net:max-retries 2
+          echo "===== ANTES: contenido de /public_html/ ====="
+          cls -l /public_html/ || echo "(no existe)"
+          echo "===== Borrando /public_html de forma recursiva ====="
+          rm -r /public_html
+          echo "===== DESPUES: /public_html deberia NO existir ====="
+          cls -l /public_html/ || echo "(OK: /public_html ya no existe)"
+          echo "===== Verificacion: el sitio real sigue intacto ====="
+          cls -l /domains/byrclub.com/public_html/index.html
+          bye
+          EOF
