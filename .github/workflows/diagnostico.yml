@@ -1,8 +1,8 @@
 name: Diagnostico FTP (listar carpetas)
 
 # Solo se lanza a mano desde la pestaña Actions.
-# Lista la estructura del servidor para saber cual es la carpeta
-# real que sirve byrclub.com. NO sube ni borra nada.
+# Lista carpetas puntuales del servidor para saber cual sirve byrclub.com.
+# NO sube ni borra nada. Rapido: no recorre todo el arbol.
 on:
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ jobs:
       - name: Instalar lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Listar arbol de carpetas del FTP
+      - name: Listar carpetas clave del FTP
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
@@ -21,10 +21,17 @@ jobs:
         run: |
           lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftps://$FTP_SERVER" <<'EOF'
           set ssl:verify-certificate no
-          echo ">>>>> RAIZ DEL FTP (donde caemos al conectar):"
+          set net:timeout 15
+          set net:max-retries 2
+          echo "===== [A] RAIZ DEL FTP (donde caemos al conectar) ====="
           cls -l
-          echo ""
-          echo ">>>>> ARBOL COMPLETO (hasta 3 niveles):"
-          find --max-depth=3 /
+          echo "===== [B] CONTENIDO DE public_html/ (donde subio el deploy) ====="
+          cls -l public_html/ || echo "(no existe public_html/)"
+          echo "===== [C] CONTENIDO DE domains/ ====="
+          cls -l domains/ || echo "(no existe domains/)"
+          echo "===== [D] CONTENIDO DE domains/byrclub.com/ ====="
+          cls -l domains/byrclub.com/ || echo "(no existe)"
+          echo "===== [E] CONTENIDO DE domains/byrclub.com/public_html/ ====="
+          cls -l domains/byrclub.com/public_html/ || echo "(no existe)"
           bye
           EOF
