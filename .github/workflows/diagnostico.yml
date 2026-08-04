@@ -1,8 +1,8 @@
 name: Diagnostico FTP (listar carpetas)
 
 # Solo se lanza a mano desde la pestaña Actions.
-# Lista carpetas puntuales del servidor para saber cual sirve byrclub.com.
-# NO sube ni borra nada. Usa FTPS explicito en puerto 21 (como el deploy).
+# Busca la carpeta REAL que sirve byrclub.com usando rutas absolutas.
+# NO sube ni borra nada.
 on:
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ jobs:
       - name: Instalar lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Listar carpetas clave del FTP
+      - name: Buscar la carpeta real del sitio
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
@@ -26,15 +26,17 @@ jobs:
           set net:timeout 15
           set net:max-retries 2
           set net:reconnect-interval-base 5
-          echo "===== [A] RAIZ DEL FTP (donde caemos al conectar) ====="
-          cls -l
-          echo "===== [B] CONTENIDO DE public_html/ (donde subio el deploy) ====="
-          cls -l public_html/ || echo "(no existe public_html/)"
-          echo "===== [C] CONTENIDO DE domains/ ====="
-          cls -l domains/ || echo "(no existe domains/)"
-          echo "===== [D] CONTENIDO DE domains/byrclub.com/ ====="
-          cls -l domains/byrclub.com/ || echo "(no existe)"
-          echo "===== [E] CONTENIDO DE domains/byrclub.com/public_html/ ====="
-          cls -l domains/byrclub.com/public_html/ || echo "(no existe)"
+          echo "===== [P] Donde caemos al conectar (pwd) ====="
+          pwd
+          echo "===== [A] RAIZ ABSOLUTA / ====="
+          cls -l /
+          echo "===== [B] /domains/ ====="
+          cls -l /domains/ || echo "(no existe /domains/)"
+          echo "===== [C] /domains/byrclub.com/ ====="
+          cls -l /domains/byrclub.com/ || echo "(no existe)"
+          echo "===== [D] /domains/byrclub.com/public_html/  <-- candidata a docroot real ====="
+          cls -l /domains/byrclub.com/public_html/ || echo "(no existe)"
+          echo "===== [E] Un nivel arriba de donde caemos (../) ====="
+          cls -l ../ || echo "(no se puede subir)"
           bye
           EOF
