@@ -67,12 +67,36 @@
   .benefit span{font-weight:700; font-size:3.5vw; color:#cfe6ff; line-height:1.15}
   .b1 .ic{background:var(--yellow)} .b2 .ic{background:var(--pink)}
   .b3 .ic{background:var(--green)} .b4 .ic{background:var(--cyan)} .b5 .ic{background:var(--purple)}
+
+  /* Placa 0 · apertura */
+  #c0{justify-content:center; gap:1vh}
+  .intro-title{font-family:"Lilita One"; display:flex; flex-direction:column; align-items:center; gap:2vh; line-height:.9}
+  .intro-byr{width:56vw; filter:drop-shadow(0 1.4vh 1.8vh rgba(0,0,0,.32))}
+  .intro-title .pill{font-size:15vw; letter-spacing:.05em; color:#fff; background:var(--blue-600);
+    padding:1.2vw 5vw 2.4vw; border-radius:3.4vw; transform:rotate(-3deg); box-shadow:0 1.5vw 0 #0438a0}
+  .intro-ready{font-family:"Lilita One"; font-size:11vw; color:#fff; margin-top:4vh;
+    text-shadow:0 1vw 0 rgba(0,0,0,.25)}
+  .intro-ready b{color:var(--cyan)}
+  .intro-mascot{width:44vw; margin-top:3vh}
 </style>
 </head>
 <body>
 
+  <!-- ===== PLACA 0 · APERTURA ===== -->
+  <section class="canvas" id="c0">
+    <div class="burst"></div>
+    <div class="doodle star" style="top:14vh; left:9vw; transform:rotate(-12deg)"></div>
+    <div class="doodle star" style="top:20vh; right:10vw; width:4.5vw;height:4.5vw; transform:rotate(18deg)"></div>
+    <div class="doodle cross" style="bottom:20vh; left:11vw">×</div>
+    <div class="doodle cross" style="top:17vh; right:20vw; font-size:7vw">×</div>
+
+    <div class="intro-title"><img class="intro-byr" src="assets/logo-byr.png" alt="BYR"><span class="pill">CLUB</span></div>
+    <p class="intro-ready">¿Estás <b>listo?</b></p>
+    <img class="intro-mascot" src="assets/personaje-byr-juegos.png" alt="Personaje BYR jugando al arcade">
+  </section>
+
   <!-- ===== PLACA 1 · INVITACION ===== -->
-  <section class="canvas" id="c1">
+  <section class="canvas hidden" id="c1">
     <div class="burst"></div>
     <div class="doodle star" style="top:12vh; left:7vw; transform:rotate(-12deg)"></div>
     <div class="doodle star" style="top:18vh; right:8vw; width:4.5vw;height:4.5vw; transform:rotate(18deg)"></div>
@@ -110,14 +134,15 @@
   </section>
 
 <script>
-  var current = 1;
+  var current = 0;
   window.showSlide = function(n){
     current = n;
+    document.getElementById('c0').classList.toggle('hidden', n!==0);
     document.getElementById('c1').classList.toggle('hidden', n!==1);
     document.getElementById('c2').classList.toggle('hidden', n!==2);
   };
-  // Tocar en cualquier lado alterna entre placa 1 y 2.
-  document.body.addEventListener('click', function(){ showSlide(current===1?2:1); });
+  // Tocar en cualquier lado avanza a la siguiente placa (0 -> 1 -> 2 -> 0).
+  document.body.addEventListener('click', function(){ showSlide((current+1)%3); });
 </script>
 </body>
 </html>
