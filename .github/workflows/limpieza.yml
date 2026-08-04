@@ -27,10 +27,17 @@ jobs:
           set net:max-retries 2
           echo "===== ANTES: contenido de /public_html/ ====="
           cls -l /public_html/ || echo "(no existe)"
-          echo "===== Borrando /public_html de forma recursiva ====="
-          rm -r /public_html
-          echo "===== DESPUES: /public_html deberia NO existir ====="
-          cls -l /public_html/ || echo "(OK: /public_html ya no existe)"
+          echo "===== Vaciando /public_html (la carpeta en si no se puede borrar) ====="
+          rm -r /public_html/public_html
+          rm -r /public_html/api
+          rm -r /public_html/assets
+          glob rm -f /public_html/*.txt
+          glob rm -f /public_html/*.html
+          glob rm -f /public_html/*.css
+          glob rm -f /public_html/*.js
+          rm -f /public_html/.ftp-deploy-sync-state.json
+          echo "===== DESPUES: /public_html deberia quedar VACIA ====="
+          cls -la /public_html/ || echo "(vacia)"
           echo "===== Verificacion: el sitio real sigue intacto ====="
           cls -l /domains/byrclub.com/public_html/index.html
           bye
