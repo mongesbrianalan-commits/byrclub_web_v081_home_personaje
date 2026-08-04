@@ -73,19 +73,20 @@
 
     <div data-byr-missions-mount></div>
 
-    <section class="daily-status" aria-label="Estado diario de juegos">
+    <!-- Se rellena con datos reales en juegos-daily.js. Oculta por defecto:
+         solo se muestra con sesión iniciada, para no mostrar datos personales
+         ni parpadear con valores de ejemplo. -->
+    <section class="daily-status" aria-label="Estado diario de juegos" data-juegos-daily-status style="display:none">
       <div class="streak-card">
         <div class="streak-fire">🔥</div>
-        <div><span>Racha actual</span><strong>3 días seguidos</strong></div>
-        <div class="streak-days" aria-label="Progreso semanal">
-          <i class="done">L</i><i class="done">M</i><i class="done">M</i><i>J</i><i>V</i><i>S</i><i>D</i>
-        </div>
-        <small>Volvé mañana para mantener la racha.</small>
+        <div><span>Racha actual</span><strong data-juegos-streak-value>—</strong></div>
+        <div class="streak-days" aria-label="Progreso semanal" data-juegos-week-row></div>
+        <small data-juegos-streak-hint>Entrá cada día para mantener la racha.</small>
       </div>
       <div class="daily-score-card">
-        <span>Puntos ganados jugando</span>
-        <strong>1.280</strong>
-        <small>Esta temporada</small>
+        <span>Tus puntos</span>
+        <strong data-juegos-points>—</strong>
+        <small>Acumulados en tu cuenta</small>
       </div>
       <div class="daily-chance-card">
         <span>Tu próxima oportunidad</span>
@@ -235,5 +236,6 @@
 <script src="assets/core/auth.js"></script>
 <script src="assets/core/session-ui.js"></script>
 <script src="assets/core/state-sync.js"></script>
+<script src="assets/core/juegos-daily.js"></script>
 </body>
 </html>
