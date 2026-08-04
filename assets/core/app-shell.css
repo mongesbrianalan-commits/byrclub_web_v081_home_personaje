@@ -456,7 +456,7 @@ html {
   overflow: visible;
   min-width: 0;
 
-  padding: 7px 10px;
+  padding: 10px 13px;
 
   border:
     1px solid rgba(255, 255, 255, .15);
@@ -534,26 +534,29 @@ html {
 
   justify-content: space-between;
 
+  align-items: baseline;
+
   gap: 10px;
 
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 
   color: rgba(255, 255, 255, .93);
 
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
 .byr-app-xp__top strong {
   color: #fff;
 
+  font-size: 15px;
   font-weight: 900;
 }
 
 .byr-app-xp__track {
   position: relative;
 
-  height: 7px;
+  height: 12px;
 
   overflow: hidden;
 
@@ -1104,13 +1107,13 @@ html {
 }
 
   .byr-app-xp__top {
-    margin-bottom: 3px;
+    margin-bottom: 5px;
 
-    font-size: 7px;
+    font-size: 11px;
   }
 
   .byr-app-xp__track {
-    height: 6px;
+    height: 10px;
   }
 }
 
