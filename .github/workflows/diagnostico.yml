@@ -27,6 +27,6 @@ jobs:
           set net:max-retries 2
           set net:reconnect-interval-base 5
           echo "===== ARBOL COMPLETO de /domains/byrclub.com/public_html/ ====="
-          find --max-depth=4 /domains/byrclub.com/public_html/
+          find -d 4 /domains/byrclub.com/public_html/
           bye
           EOF
