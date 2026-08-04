@@ -32,6 +32,16 @@
     .admin-note { background: rgba(255,213,31,.12); border: 1px solid rgba(255,213,31,.3); border-radius: 14px; padding: 12px 16px; font-weight: 700; color: #ffe79a; }
     .admin-gate { text-align: center; padding: 60px 20px; }
     .admin-gate h1 { font-family: "Lilita One"; font-size: 2rem; text-transform: uppercase; }
+    .bday-head { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+    .bday-head .auth-field { margin-bottom: 0; }
+    .bday-list { display: flex; flex-direction: column; gap: 8px; }
+    .bday-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 16px; padding: 12px 14px; }
+    .bday-item__day { flex: 0 0 auto; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 12px; background: var(--pink); box-shadow: 0 4px 0 #b02b5e; font-family: "Lilita One"; font-size: 1.3rem; }
+    .bday-item__info { flex: 1; min-width: 0; }
+    .bday-item__name { font-weight: 900; }
+    .bday-item__wa { font-weight: 700; color: #9bd1ff; font-size: .9rem; }
+    .bday-wa-btn { flex: 0 0 auto; text-decoration: none; background: #25d366; color: #fff; font-weight: 900; border-radius: 12px; padding: 9px 14px; box-shadow: 0 4px 0 #128c3e; }
+    .bday-empty { color: #9bd1ff; font-weight: 700; padding: 8px 2px; }
   </style>
 </head>
 <body class="home-v08" data-root="./">
@@ -104,6 +114,19 @@
       </div>
 
       <p class="admin-note">💡 Los puntos quedan guardados en la cuenta del cliente al instante y los ve en su perfil.</p>
+
+      <div class="admin-block" style="margin-top:34px">
+        <h2>🎂 Cumpleaños del mes</h2>
+        <div class="bday-head">
+          <label class="auth-field">
+            <span>Mes</span>
+            <select data-bday-month></select>
+          </label>
+          <button type="button" class="admin-btn-inline" data-bday-refresh>Ver</button>
+        </div>
+        <p class="auth-form-status" data-bday-status></p>
+        <div class="bday-list" data-bday-list></div>
+      </div>
     </section>
   </main>
 

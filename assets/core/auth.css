@@ -247,6 +247,18 @@
   color: #ffb0c8;
 }
 
+.auth-hint {
+  display: block;
+  margin: 6px 0 2px 2px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #9bd1ff;
+}
+
+.auth-hint.is-gift {
+  color: #ffd97a;
+}
+
 .auth-submit {
   width: 100%;
   border: 0;

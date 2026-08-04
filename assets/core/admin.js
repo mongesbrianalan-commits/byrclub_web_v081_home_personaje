@@ -185,5 +185,88 @@
   });
   awardBtn.addEventListener("click", award);
 
-  checkAdmin();
+  /* ---------------------------------------------------------
+     Cumpleaños del mes
+  --------------------------------------------------------- */
+
+  const MESES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  const bdayMonth = document.querySelector("[data-bday-month]");
+  const bdayRefresh = document.querySelector("[data-bday-refresh]");
+  const bdayStatus = document.querySelector("[data-bday-status]");
+  const bdayList = document.querySelector("[data-bday-list]");
+
+  function initBirthdays() {
+    if (!bdayMonth) return;
+    const current = new Date().getMonth() + 1;
+    bdayMonth.innerHTML = "";
+    MESES.forEach((label, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i + 1);
+      opt.textContent = label;
+      if (i + 1 === current) opt.selected = true;
+      bdayMonth.appendChild(opt);
+    });
+    bdayRefresh?.addEventListener("click", loadBirthdays);
+    bdayMonth.addEventListener("change", loadBirthdays);
+    loadBirthdays();
+  }
+
+  async function loadBirthdays() {
+    const month = parseInt(bdayMonth.value, 10) || new Date().getMonth() + 1;
+    setStatus(bdayStatus, "Cargando…", "");
+    bdayList.innerHTML = "";
+    try {
+      const res = await fetch(`${API}admin/birthdays.php?month=${month}`, {
+        credentials: "same-origin"
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo cargar.");
+      renderBirthdays(data.birthdays || [], month);
+      setStatus(bdayStatus, "", "");
+    } catch (error) {
+      setStatus(bdayStatus, error.message, "error");
+    }
+  }
+
+  function renderBirthdays(list, month) {
+    if (!list.length) {
+      bdayList.innerHTML =
+        `<p class="bday-empty">Nadie cumple en ${MESES[month - 1]} (o todavía no cargaron su fecha).</p>`;
+      return;
+    }
+    bdayList.innerHTML = "";
+    list.forEach((p) => {
+      const item = document.createElement("div");
+      item.className = "bday-item";
+
+      const digits = String(p.whatsapp || "").replace(/\D/g, "");
+      const waBtn = digits
+        ? `<a class="bday-wa-btn" href="https://wa.me/${digits}" target="_blank" rel="noreferrer">💬</a>`
+        : "";
+
+      item.innerHTML = `
+        <div class="bday-item__day">${p.day}</div>
+        <div class="bday-item__info">
+          <div class="bday-item__name">${escapeHtml(p.avatar || "🍔")} ${escapeHtml(p.name || "—")}</div>
+          <div class="bday-item__wa">${escapeHtml(p.whatsapp || "sin WhatsApp")}</div>
+        </div>
+        ${waBtn}
+      `;
+      bdayList.appendChild(item);
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  checkAdmin().then(() => {
+    if (panel && !panel.hidden) initBirthdays();
+  });
 })();
