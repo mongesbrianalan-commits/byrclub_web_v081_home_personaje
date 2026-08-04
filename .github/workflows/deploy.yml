@@ -1,0 +1,36 @@
+name: Deploy a hosting (FTP)
+
+# Se ejecuta cada vez que se sube (push) un cambio a la rama main.
+# Tambien se puede lanzar a mano desde la pestaña "Actions" de GitHub.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el codigo del repo
+        uses: actions/checkout@v4
+
+      - name: Subir por FTP al hosting
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Carpeta destino en el servidor (debe terminar con / ).
+          # Ej: public_html/  o  public_html/byrclub/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # Protocolo seguro. Si tu hosting no soporta FTPS, cambiar a: ftp
+          protocol: ftps
+          # Archivos que NUNCA se tocan en el servidor:
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .github/**
+            api/config.php
+            **/.ftp-deploy-sync-state.json
