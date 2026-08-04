@@ -30,6 +30,9 @@
   const STORAGE_KEY = "byrclub_roulette_last_spin";
   const RESULT_KEY = "byrclub_roulette_last_result";
   const SPIN_DURATION = 5200;
+  const SPIN_URL = "/api/roulette/spin.php";
+  const ME_URL = "/api/me.php";
+  let playedToday = false;
   let currentRotation = 0;
   let isSpinning = false;
   let currentPrize = null;
@@ -42,11 +45,34 @@
   }
 
   function hasPlayedToday() {
-    return localStorage.getItem(STORAGE_KEY) === getTodayKey();
+    return playedToday;
   }
 
-  function generatePrizeCode() {
-    return `BYR-${Math.floor(1000 + Math.random() * 9000)}`;
+  /* Estado inicial del giro diario: pista de localStorage y luego la
+     verdad del servidor (rouletteSpunToday, sin problemas de zona horaria). */
+  async function initDailyState() {
+    playedToday = localStorage.getItem(STORAGE_KEY) === getTodayKey();
+    updateDailyState();
+    try {
+      const res = await fetch(ME_URL, { credentials: "same-origin" });
+      const data = await res.json();
+      if (data && data.user) {
+        playedToday = Boolean(data.user.rouletteSpunToday);
+        if (playedToday) {
+          localStorage.setItem(STORAGE_KEY, getTodayKey());
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        updateDailyState();
+      }
+    } catch (error) {
+      /* si falla la red, queda la pista de localStorage */
+    }
+  }
+
+  function restoreSpinButtons() {
+    spinSecondaryButton.textContent = "Girar la ruleta";
+    spinMainButton.querySelector("span").textContent = "GIRAR";
   }
 
   function setButtonsDisabled(disabled) {
@@ -73,11 +99,6 @@
     spinMainButton.querySelector("span").textContent = "MAÑANA";
     spinSecondaryButton.textContent = "Volvé mañana";
     setButtonsDisabled(true);
-  }
-
-  function choosePrizeIndex() {
-    const weightedPrizes = [0, 0, 0, 1, 2, 2, 2, 3, 4, 5, 6, 7];
-    return weightedPrizes[Math.floor(Math.random() * weightedPrizes.length)];
   }
 
   function playTick() {
@@ -136,15 +157,47 @@
     return currentRotation + fullSpins * 360 + deltaToTarget + randomInsideSegment;
   }
 
-  function spinWheel() {
+  async function spinWheel() {
     if (isSpinning || hasPlayedToday()) return;
     isSpinning = true;
     setButtonsDisabled(true);
     spinSecondaryButton.textContent = "Girando...";
     spinMainButton.querySelector("span").textContent = "...";
 
-    const prizeIndex = choosePrizeIndex();
-    currentPrize = prizes[prizeIndex];
+    /* El servidor decide el premio, acredita puntos y genera el código.
+       Así no se puede falsear ni volver a girar borrando el navegador. */
+    let data;
+    try {
+      const res = await fetch(SPIN_URL, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" }
+      });
+      data = await res.json();
+      if (!res.ok) {
+        isSpinning = false;
+        if (data && data.code === "already-spun") {
+          playedToday = true;
+          updateDailyState();
+        } else {
+          restoreSpinButtons();
+          setButtonsDisabled(false);
+          liveStatus.innerHTML = '<span class="roulette-live-dot"></span><strong>' +
+            ((data && data.error) || "No pudimos girar. Probá de nuevo.") + "</strong>";
+        }
+        return;
+      }
+    } catch (error) {
+      isSpinning = false;
+      restoreSpinButtons();
+      setButtonsDisabled(false);
+      liveStatus.innerHTML = '<span class="roulette-live-dot"></span><strong>Sin conexión. Probá de nuevo.</strong>';
+      return;
+    }
+
+    const prizeIndex = data.prize.index;
+    currentPrize = data.prize;
+    const prizeCodeValue = data.code || null;
     const targetRotation = calculateTargetRotation(prizeIndex);
     currentRotation = targetRotation;
     wheel.querySelectorAll(".wheel-label").forEach((label) => label.classList.remove("winning-label"));
@@ -156,36 +209,28 @@
       wheel.classList.remove("is-spinning");
       stopTickSound();
       highlightWinningSegment(prizeIndex);
-const result = {
-  prize: currentPrize,
-  code: generatePrizeCode(),
-  date: new Date().toISOString()
-};
 
-BYRUser.claimPrize(
-  {
-    ...currentPrize,
-    code: result.code
-  },
-  "Ruleta diaria"
-);
+      /* El estado (puntos, XP, inventario) ya lo calculó y guardó el servidor. */
+      if (data.state && window.BYRStorage?.save) {
+        window.BYRStorage.save(data.state);
+      }
+      if (window.BYRAppShell?.sync) window.BYRAppShell.sync();
+      window.dispatchEvent(new CustomEvent("byr:user-updated"));
 
-if (window.BYRAchievementEngine?.track) {
-  window.BYRAchievementEngine.track("roulette");
-}
+      if (window.BYRAchievementEngine?.track) window.BYRAchievementEngine.track("roulette");
+      if (window.BYRMissionEngine?.track) {
+        window.BYRMissionEngine.track("roulette");
+        window.BYRMissionEngine.track("game");
+        window.BYRMissionEngine.track("prize");
+      }
 
-if (window.BYRMissionEngine?.track) {
-  window.BYRMissionEngine.track("roulette");
-  window.BYRMissionEngine.track("game");
-  window.BYRMissionEngine.track("prize");
-}
+      playedToday = true;
+      localStorage.setItem(STORAGE_KEY, getTodayKey());
+      localStorage.setItem(RESULT_KEY, JSON.stringify({ prize: currentPrize, code: prizeCodeValue, date: new Date().toISOString() }));
 
-localStorage.setItem(STORAGE_KEY, getTodayKey());
-localStorage.setItem(RESULT_KEY, JSON.stringify(result));
-
-isSpinning = false;
+      isSpinning = false;
       updateDailyState();
-      window.setTimeout(() => openResultModal(currentPrize, result.code), 720);
+      window.setTimeout(() => openResultModal(currentPrize, prizeCodeValue), 720);
     }, SPIN_DURATION + 120);
   }
 
@@ -193,8 +238,16 @@ isSpinning = false;
     resultIcon.textContent = prize.icon;
     resultPrize.textContent = prize.label;
     resultDescription.textContent = prize.description;
-    prizeCode.textContent = code || generatePrizeCode();
-    claimButton.textContent = "Reclamar premio";
+
+    const codeBlock = document.getElementById("rouletteCodeBlock");
+    if (code) {
+      prizeCode.textContent = code;
+      if (codeBlock) codeBlock.hidden = false;
+      claimButton.textContent = "Lo canjeo en el local";
+    } else {
+      if (codeBlock) codeBlock.hidden = true;
+      claimButton.textContent = "¡Genial!";
+    }
     claimButton.disabled = false;
     claimButton.classList.remove("claimed");
     modal.classList.add("is-open");
@@ -232,11 +285,7 @@ isSpinning = false;
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && modal.classList.contains("is-open")) closeResultModal();
   });
-  claimButton.addEventListener("click", () => {
-    claimButton.textContent = "Premio guardado ✓";
-    claimButton.disabled = true;
-    claimButton.classList.add("claimed");
-  });
+  claimButton.addEventListener("click", closeResultModal);
 
 
   function isLocalDevelopment() {
@@ -259,6 +308,7 @@ isSpinning = false;
     panel.querySelector("#resetRouletteDevButton").addEventListener("click", () => {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(RESULT_KEY);
+      playedToday = false;
       wheel.style.transform = "rotate(0deg)";
       currentRotation = 0;
       currentPrize = null;
@@ -275,6 +325,6 @@ isSpinning = false;
     });
   }
 
-  updateDailyState();
+  initDailyState();
   createDeveloperControls();
 })();

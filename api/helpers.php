@@ -95,6 +95,8 @@ function public_user(array $row): array
         'birthdate'    => $row['birthdate'] ?? null,
         'referralCode' => $row['referral_code'] ?? null,
         'referredBy'   => isset($row['referred_by']) ? (int) $row['referred_by'] : null,
+        'lastRouletteSpin' => $row['last_roulette_spin'] ?? null,
+        'rouletteSpunToday' => (($row['last_roulette_spin'] ?? null) === date('Y-m-d')),
         'state'        => $state,
     ];
 }
@@ -142,4 +144,26 @@ function byr_generate_referral_code(PDO $pdo): string
     }
     // Fallback prácticamente imposible de alcanzar.
     return 'BYR' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 5));
+}
+
+/**
+ * Genera un código de vale de premio único (formato BYR-XXXXXX con un
+ * alfabeto sin caracteres ambiguos). Reintenta si choca.
+ */
+function byr_generate_redemption_code(PDO $pdo): string
+{
+    $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I/L
+    $check = $pdo->prepare('SELECT 1 FROM redemptions WHERE code = ?');
+
+    for ($attempt = 0; $attempt < 12; $attempt++) {
+        $code = 'BYR-';
+        for ($i = 0; $i < 6; $i++) {
+            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $check->execute([$code]);
+        if (!$check->fetch()) {
+            return $code;
+        }
+    }
+    return 'BYR-' . strtoupper(substr(bin2hex(random_bytes(5)), 0, 6));
 }

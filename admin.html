@@ -42,6 +42,13 @@
     .bday-item__wa { font-weight: 700; color: #9bd1ff; font-size: .9rem; }
     .bday-wa-btn { flex: 0 0 auto; text-decoration: none; background: #25d366; color: #fff; font-weight: 900; border-radius: 12px; padding: 9px 14px; box-shadow: 0 4px 0 #128c3e; }
     .bday-empty { color: #9bd1ff; font-weight: 700; padding: 8px 2px; }
+    .redeem-card { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 18px; padding: 16px 18px; margin-top: 8px; }
+    .redeem-prize { font-family: "Lilita One"; font-size: 1.5rem; line-height: 1; }
+    .redeem-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 14px; font-weight: 800; color: #9bd1ff; }
+    .redeem-meta b { color: #fff; }
+    .redeem-state { font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+    .redeem-state.pending { color: var(--green); }
+    .redeem-state.redeemed { color: #ff9b9b; }
   </style>
 </head>
 <body class="home-v08" data-root="./">
@@ -114,6 +121,26 @@
       </div>
 
       <p class="admin-note">💡 Los puntos quedan guardados en la cuenta del cliente al instante y los ve en su perfil.</p>
+
+      <div class="admin-block" style="margin-top:34px">
+        <h2>🎟️ Validar premio de ruleta</h2>
+        <div class="admin-row">
+          <label class="auth-field">
+            <span>Código del vale</span>
+            <input type="text" data-redeem-code placeholder="BYR-XXXXXX" autocomplete="off" style="text-transform:uppercase">
+          </label>
+          <button type="button" class="admin-btn-inline" data-redeem-find>Buscar</button>
+        </div>
+        <p class="auth-form-status" data-redeem-status></p>
+        <div class="redeem-card" data-redeem-card hidden>
+          <div class="redeem-prize" data-redeem-prize>—</div>
+          <div class="redeem-meta">
+            <span>Cliente: <b data-redeem-customer>—</b></span>
+            <span class="redeem-state" data-redeem-state>—</span>
+          </div>
+          <button type="button" class="auth-submit" data-redeem-confirm>Marcar como canjeado ✓</button>
+        </div>
+      </div>
 
       <div class="admin-block" style="margin-top:34px">
         <h2>🎂 Cumpleaños del mes</h2>

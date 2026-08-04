@@ -266,6 +266,84 @@
     }[c]));
   }
 
+  /* ---------------------------------------------------------
+     Validar / canjear premios de la ruleta
+  --------------------------------------------------------- */
+
+  const redeemCode = document.querySelector("[data-redeem-code]");
+  const redeemFind = document.querySelector("[data-redeem-find]");
+  const redeemStatus = document.querySelector("[data-redeem-status]");
+  const redeemCard = document.querySelector("[data-redeem-card]");
+  const redeemPrize = document.querySelector("[data-redeem-prize]");
+  const redeemCustomer = document.querySelector("[data-redeem-customer]");
+  const redeemState = document.querySelector("[data-redeem-state]");
+  const redeemConfirm = document.querySelector("[data-redeem-confirm]");
+
+  let currentRedeemCode = null;
+
+  function showRedemption(r) {
+    redeemPrize.textContent = `${r.prize}`;
+    redeemCustomer.textContent = r.customer;
+    const pending = r.status === "pending";
+    redeemState.textContent = pending ? "Pendiente" : "Ya canjeado";
+    redeemState.className = "redeem-state " + (pending ? "pending" : "redeemed");
+    redeemConfirm.hidden = !pending;
+    redeemConfirm.disabled = !pending;
+    redeemConfirm.textContent = "Marcar como canjeado ✓";
+    redeemCard.hidden = false;
+  }
+
+  async function findRedemption() {
+    const code = String(redeemCode.value || "").trim().toUpperCase();
+    if (!code) {
+      setStatus(redeemStatus, "Escribí un código.", "error");
+      return;
+    }
+    setStatus(redeemStatus, "Buscando…", "");
+    redeemCard.hidden = true;
+    try {
+      const { redemption } = await api("admin/redeem-lookup.php", { code });
+      currentRedeemCode = redemption.code;
+      showRedemption(redemption);
+      setStatus(redeemStatus, "", "");
+    } catch (error) {
+      currentRedeemCode = null;
+      setStatus(redeemStatus, error.message, "error");
+    }
+  }
+
+  async function confirmRedeem() {
+    if (!currentRedeemCode) return;
+    redeemConfirm.disabled = true;
+    redeemConfirm.textContent = "Canjeando…";
+    try {
+      const res = await api("admin/redeem.php", { code: currentRedeemCode });
+      redeemState.textContent = "Ya canjeado";
+      redeemState.className = "redeem-state redeemed";
+      redeemConfirm.hidden = true;
+      setStatus(redeemStatus, `✅ Canje confirmado: ${res.prize} de ${res.customer}.`, "ok");
+    } catch (error) {
+      setStatus(redeemStatus, error.message, "error");
+      redeemConfirm.disabled = false;
+      redeemConfirm.textContent = "Marcar como canjeado ✓";
+      /* Si ya estaba canjeado, refrescamos el estado mostrado. */
+      redeemState.textContent = "Ya canjeado";
+      redeemState.className = "redeem-state redeemed";
+      redeemConfirm.hidden = true;
+    }
+  }
+
+  if (redeemFind) redeemFind.addEventListener("click", findRedemption);
+  if (redeemCode) {
+    redeemCode.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        findRedemption();
+      }
+    });
+  }
+  if (redeemConfirm) redeemConfirm.addEventListener("click", confirmRedeem);
+
   checkAdmin().then(() => {
     if (panel && !panel.hidden) initBirthdays();
   });
