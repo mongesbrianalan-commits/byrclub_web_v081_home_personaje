@@ -21,9 +21,10 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          # Carpeta destino en el servidor (debe terminar con / ).
-          # Ej: public_html/  o  public_html/byrclub/
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # Carpeta REAL que sirve byrclub.com (ruta absoluta, confirmada por
+          # diagnostico FTP). OJO: al conectar caemos en /public_html, que NO
+          # es la carpeta servida; la verdadera esta un nivel mas alla.
+          server-dir: /domains/byrclub.com/public_html/
           # Protocolo seguro. Si tu hosting no soporta FTPS, cambiar a: ftp
           protocol: ftps
           # Archivos que NUNCA se tocan en el servidor:
