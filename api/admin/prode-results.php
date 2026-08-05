@@ -49,7 +49,7 @@ try {
         'season'   => byr_prode_season(),
         'from'     => $from,
         'to'       => $to,
-        'timezone' => 'UTC',
+        'timezone' => BYR_PRODE_TZ,
     ]);
 } catch (RuntimeException $e) {
     json_out(['error' => $e->getMessage(), 'code' => 'api-error'], 502);
