@@ -26,4 +26,7 @@ return [
     'apifootball_key'    => '',    // TU API KEY (dejar vacío desactiva el sync)
     'prode_league'       => 128,   // Primera División Argentina
     'prode_season'       => 2026,
+
+    // Premio para el ganador de cada fecha del Prode (podés cambiarlo cuando quieras).
+    'prode_prize'        => 'Hamburguesa gratis (Doble Cheese con papas)',
 ];

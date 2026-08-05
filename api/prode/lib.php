@@ -41,6 +41,13 @@ function byr_prode_season(): int
     return (int) (byr_config()['prode_season'] ?? (int) date('Y'));
 }
 
+/** Premio para el ganador de cada fecha (configurable en config.php). */
+function byr_prode_prize(): string
+{
+    $prize = trim((string) (byr_config()['prode_prize'] ?? ''));
+    return $prize !== '' ? $prize : 'Hamburguesa gratis (Doble Cheese con papas)';
+}
+
 /**
  * Llama a la API de API-Football y devuelve el array `response`.
  * Lanza RuntimeException si no hay key o si la API falla.
@@ -227,7 +234,7 @@ function byr_prode_close_round_if_complete(PDO $pdo, int $roundId): array
     $winner = null;
     if ($best && (int) $best['pts'] > 0) {
         $code  = byr_generate_redemption_code($pdo);
-        $label = 'Ganador ' . $round['name'] . ' — Prode BYR';
+        $label = byr_prode_prize() . ' · Ganador ' . $round['name'];
         $pdo->prepare(
             'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status)
              VALUES (?, ?, "prode-winner", ?, "Prode BYR", "pending")'
