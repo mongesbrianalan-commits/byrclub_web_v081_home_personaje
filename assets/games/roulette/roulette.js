@@ -11,8 +11,28 @@
   const resultPrize = document.getElementById("rouletteResultPrize");
   const resultDescription = document.getElementById("rouletteResultDescription");
   const prizeCode = document.getElementById("roulettePrizeCode");
+  const prizeCodeCopy = document.getElementById("rouletteCodeCopy");
   const claimButton = document.getElementById("claimPrizeButton");
   const confettiLayer = document.getElementById("confettiLayer");
+
+  if (prizeCodeCopy) {
+    prizeCodeCopy.addEventListener("click", () => {
+      const code = prizeCode.textContent;
+      const done = () => {
+        prizeCodeCopy.textContent = "¡Copiado!";
+        prizeCodeCopy.classList.add("copied");
+        window.setTimeout(() => {
+          prizeCodeCopy.textContent = "Copiar";
+          prizeCodeCopy.classList.remove("copied");
+        }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done).catch(done);
+      } else {
+        done();
+      }
+    });
+  }
 
   if (!wheel || !spinMainButton || !spinSecondaryButton || !modal) return;
 

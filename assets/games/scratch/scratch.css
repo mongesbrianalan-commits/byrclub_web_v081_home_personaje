@@ -908,6 +908,79 @@ a {
   font-weight: 900;
 }
 
+.win-code {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #072a72;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+.win-code[hidden] {
+  display: none;
+}
+.win-code > span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #8fc0ff;
+  text-transform: uppercase;
+}
+.win-code-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin: 10px 0 9px;
+}
+.win-code-row strong {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 8px;
+  border-radius: 12px;
+  background: #02163f;
+  border: 2px dashed rgba(255, 211, 30, 0.55);
+  font-family: "Courier New", monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+  color: #ffd94a;
+  overflow-x: auto;
+  user-select: all;
+}
+.win-code-copy {
+  flex-shrink: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--scratch-yellow, #ffd51f);
+  color: #072a72;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #d5a900;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.win-code-copy:hover {
+  transform: translateY(-2px);
+}
+.win-code-copy:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #d5a900;
+}
+.win-code-copy.copied {
+  background: #36d98b;
+  box-shadow: 0 4px 0 #1c8a44;
+  color: #06251a;
+}
+.win-code small {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #bcd8ff;
+}
+
 .win-button {
   display: inline-flex;
   padding: 14px 24px;

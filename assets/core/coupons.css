@@ -1,0 +1,48 @@
+/* =========================================================
+   BYR Club — "Mis cupones" (vales de premio del socio)
+   Estilo alineado con perfil-premium.css (tema azul + dorado).
+========================================================= */
+.coupons-section{max-width:1320px;margin:0 auto 95px}
+.coupons-heading{display:flex;justify-content:space-between;align-items:end;gap:25px}
+.coupons-heading p{max-width:360px;text-align:right;font-weight:700;color:#b7cff4}
+
+.coupons-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:4px}
+
+.coupon-card{position:relative;display:flex;flex-direction:column;gap:16px;padding:22px 22px 20px;border-radius:24px;
+  background:radial-gradient(circle at 82% 12%,rgba(255,211,30,.16),transparent 42%),linear-gradient(155deg,#0e359e,#06133f);
+  border:2px solid rgba(255,211,30,.55);box-shadow:0 14px 0 rgba(0,0,0,.18),0 22px 40px rgba(0,0,0,.26);overflow:hidden}
+.coupon-card.is-redeemed{border-color:rgba(255,255,255,.14);background:linear-gradient(155deg,#0b1f52,#050d31);filter:saturate(.55);opacity:.72;box-shadow:0 12px 0 rgba(0,0,0,.16)}
+
+.coupon-top{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px}
+.coupon-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;background:rgba(255,255,255,.09);font-size:1.9rem;flex-shrink:0}
+.coupon-meta{min-width:0}
+.coupon-meta b{display:block;font-family:"Lilita One",sans-serif;font-size:1.32rem;line-height:1;text-transform:uppercase}
+.coupon-meta span{display:block;margin-top:5px;font-size:.78rem;font-weight:800;color:#9dc2f2}
+
+.coupon-status{align-self:start;padding:5px 11px;border-radius:999px;font-size:.68rem;font-weight:900;letter-spacing:.05em;white-space:nowrap}
+.is-available .coupon-status{background:var(--profile-green,#53e87d);color:#06251a}
+.is-redeemed .coupon-status{background:rgba(255,255,255,.14);color:#c6d4ee}
+
+.coupon-code-row{display:flex;align-items:stretch;gap:10px}
+.coupon-code{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:13px 12px;border-radius:14px;
+  background:#02092d;border:2px dashed rgba(255,211,30,.5);
+  font-family:"Courier New",ui-monospace,monospace;font-size:1.42rem;font-weight:700;letter-spacing:.12em;color:#ffd94a;
+  user-select:all;overflow-x:auto}
+.is-redeemed .coupon-code{border-color:rgba(255,255,255,.2);color:#aebfe0}
+
+.coupon-copy{flex-shrink:0;padding:0 18px;border:0;border-radius:14px;background:var(--profile-gold,#ffd31e);color:#071342;
+  font-weight:900;font-size:.9rem;cursor:pointer;box-shadow:0 5px 0 #a87800;transition:transform .15s,box-shadow .15s}
+.coupon-copy:hover{transform:translateY(-2px);box-shadow:0 7px 0 #a87800}
+.coupon-copy:active{transform:translateY(2px);box-shadow:0 2px 0 #a87800}
+.coupon-copy.copied{background:var(--profile-green,#53e87d);box-shadow:0 5px 0 #1c8a44}
+
+.coupon-redeemed-at{margin:-4px 2px 0;font-size:.76rem;font-weight:800;color:#9fb4dc}
+
+.coupons-empty,.coupons-error{margin-top:6px;padding:26px 22px;border-radius:22px;text-align:center;font-weight:700;
+  background:linear-gradient(150deg,rgba(11,42,133,.6),rgba(3,12,51,.7));border:2px dashed rgba(255,255,255,.16)}
+.coupons-empty{color:#bcd3f6}
+.coupons-error{color:#ffc9c9;border-color:rgba(255,120,120,.4)}
+.coupons-empty a{color:#ffd94a;font-weight:900}
+
+@media(max-width:1120px){.coupons-grid{grid-template-columns:repeat(2,1fr)}.coupons-heading{display:block}.coupons-heading p{text-align:left;margin-top:8px}}
+@media(max-width:720px){.coupons-grid{grid-template-columns:1fr}}

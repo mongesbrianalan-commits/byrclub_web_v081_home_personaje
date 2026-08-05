@@ -41,6 +41,9 @@ const characterImage = document.querySelector(".character-image");
   const winPrizeIcon = document.getElementById("winPrizeIcon");
   const winPrizeTitle = document.getElementById("winPrizeTitle");
   const winPrizeXp = document.getElementById("winPrizeXp");
+  const winCode = document.getElementById("scratchWinCode");
+  const winCodeValue = document.getElementById("scratchWinCodeValue");
+  const winCodeCopy = document.getElementById("scratchWinCodeCopy");
   const confetti = document.getElementById("confetti");
 
   const scratchPrizes = [
@@ -106,6 +109,7 @@ const characterImage = document.querySelector(".character-image");
   let isDrawing = false;
   let isRevealed = false;
   let isClaimed = false;
+  let isClaiming = false;
   let lastPoint = null;
   let progressCheckTimer = null;
   let lastScratchSoundAt = 0;
@@ -150,6 +154,34 @@ const characterImage = document.querySelector(".character-image");
       .toUpperCase();
 
     return `SCR-${Date.now().toString().slice(-5)}-${randomPart}`;
+  }
+
+  /* Premios que se retiran en el local (llevan vale con código). Los de puntos
+     y la insignia no necesitan código. */
+  const REDEEMABLE_SCRATCH_IDS = new Set([
+    "fries",
+    "drink",
+    "surprise",
+    "cheese-burger"
+  ]);
+
+  /* Para los premios canjeables pedimos el código AL SERVIDOR: así queda
+     registrado en la base y el admin lo puede validar (antes el código se
+     generaba solo en el navegador y no existía en la base). Si el servidor no
+     responde, se usa el código local como fallback para no trabar el juego. */
+  async function requestServerCode(prizeId) {
+    try {
+      const res = await fetch("/api/redemptions/create.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ prizeId, source: "scratch" })
+      });
+      const data = await res.json();
+      return data && data.code ? data.code : null;
+    } catch (error) {
+      return null;
+    }
   }
 
   function generateTicketNumber() {
@@ -511,12 +543,24 @@ window.setTimeout(() => {
     statusText.textContent = "¡Lo encontraste! Ahora reclamá tu premio.";
   }
 
-  function claimPrize() {
-    if (!isRevealed || isClaimed || hasPlayedToday()) {
+  async function claimPrize() {
+    if (!isRevealed || isClaimed || isClaiming || hasPlayedToday()) {
       return;
     }
+    isClaiming = true;
+    claimButton.disabled = true;
 
-    const prizeCode = generatePrizeCode();
+    // Por defecto usamos un código local; para los premios canjeables lo
+    // reemplazamos por el que emite el servidor (validable por el admin).
+    let prizeCode = generatePrizeCode();
+    if (REDEEMABLE_SCRATCH_IDS.has(selectedPrize.id)) {
+      statusText.textContent = "Generando tu código…";
+      const serverCode = await requestServerCode(selectedPrize.id);
+      if (serverCode) {
+        prizeCode = serverCode;
+      }
+    }
+
 const previousState = window.BYRUser?.getState
   ? BYRUser.getState()
   : null;
@@ -541,6 +585,8 @@ const previousLevel =
     if (!claimed) {
       statusText.textContent =
         "No se pudo registrar el premio. Revisá la consola.";
+      isClaiming = false;
+      claimButton.disabled = false;
       return;
     }
 
@@ -630,12 +676,23 @@ if (window.BYRHUD && window.BYRUser?.getState) {
   }
 }
 
-    showWinOverlay();
+    showWinOverlay(prizeCode);
   }
 
-  function showWinOverlay() {
+  function showWinOverlay(code) {
     winPrizeIcon.textContent = selectedPrize.icon;
     winPrizeTitle.textContent = selectedPrize.label;
+
+    // Mostramos el código solo para los premios que se retiran en el local.
+    if (winCode) {
+      const redeemable = REDEEMABLE_SCRATCH_IDS.has(selectedPrize.id) && code;
+      if (redeemable) {
+        winCodeValue.textContent = code;
+        winCode.hidden = false;
+      } else {
+        winCode.hidden = true;
+      }
+    }
     winPrizeXp.textContent = `+${selectedPrize.xp} XP sumados`;
 
     winOverlay.classList.add("is-visible");
@@ -762,6 +819,25 @@ if (window.BYRHUD && window.BYRUser?.getState) {
   claimButton.addEventListener("click", claimPrize);
   resetButton.addEventListener("click", resetScratch);
   closeWinOverlay.addEventListener("click", closeOverlay);
+
+  if (winCodeCopy) {
+    winCodeCopy.addEventListener("click", () => {
+      const code = winCodeValue.textContent;
+      const done = () => {
+        winCodeCopy.textContent = "¡Copiado!";
+        winCodeCopy.classList.add("copied");
+        window.setTimeout(() => {
+          winCodeCopy.textContent = "Copiar";
+          winCodeCopy.classList.remove("copied");
+        }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done).catch(done);
+      } else {
+        done();
+      }
+    });
+  }
 
   winOverlay.addEventListener("click", (event) => {
     if (event.target === winOverlay) {

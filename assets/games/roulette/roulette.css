@@ -42,3 +42,11 @@
 @media(max-width:620px){
   .roulette-dev-panel{right:10px;bottom:10px;left:10px;justify-content:space-between}
 }
+
+/* Código del premio con botón de copiar (modal de resultado). */
+.result-code-row{display:flex;align-items:stretch;gap:9px;margin:5px 0 3px}
+.result-code-row strong{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:9px 8px;border-radius:11px;background:rgba(0,0,0,.28);overflow-x:auto;user-select:all}
+.result-code-copy{flex-shrink:0;padding:0 15px;border:0;border-radius:11px;background:#ffd51f;color:#071342;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #9d7300;transition:transform .15s,box-shadow .15s}
+.result-code-copy:hover{transform:translateY(-2px)}
+.result-code-copy:active{transform:translateY(2px);box-shadow:0 1px 0 #9d7300}
+.result-code-copy.copied{background:#55df87;box-shadow:0 4px 0 #1c8a44}

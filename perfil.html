@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="assets/core/hud.css">
 <link rel="stylesheet" href="assets/core/app-shell.css">
   <link rel="stylesheet" href="perfil-premium.css">
+  <link rel="stylesheet" href="assets/core/coupons.css">
 </head>
 <body class="profile-premium-page">
   <body class="profile-page home-v08" data-root="./">
@@ -80,6 +81,16 @@
           <strong class="birthday-code" data-birthday-code hidden></strong>
         </div>
       </div>
+
+      <section class="coupons-section" data-coupons-section>
+        <div class="section-heading section-heading-left coupons-heading">
+          <div><span>TUS PREMIOS PARA CANJEAR</span><h2>Mis cupones</h2></div>
+          <p>Mostrá el código en el local para reclamar tu premio. Queda guardado acá aunque cierres la app.</p>
+        </div>
+        <div class="coupons-grid" data-coupons-grid aria-live="polite"></div>
+        <p class="coupons-empty" data-coupons-empty hidden>Todavía no tenés cupones. Girá la <a href="assets/games/roulette/roulette.html">ruleta</a> o jugá a la <a href="assets/games/scratch/scratch.html">raspadita</a> para ganar premios canjeables.</p>
+        <p class="coupons-error" data-coupons-error hidden>No pudimos cargar tus cupones en este momento. Probá recargar la página.</p>
+      </section>
 
       <div class="section-heading section-heading-left">
         <span>PRÓXIMO OBJETIVO</span>
@@ -198,6 +209,7 @@
   <script src="assets/core/auth.js"></script>
   <script src="assets/core/session-ui.js"></script>
   <script src="assets/core/state-sync.js"></script>
+  <script src="assets/core/coupons.js"></script>
   <script src="perfil.js"></script>
   <script src="perfil-premium.js"></script>
   <script src="assets/core/perks-profile.js"></script>
