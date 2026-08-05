@@ -10,8 +10,14 @@ require_once __DIR__ . '/lib.php';
 $id  = require_auth();
 $pdo = db();
 
+/* Tomamos la fecha más reciente que TENGA partidos (así una fecha vacía que
+   haya quedado creada por error no tapa a la que sí tiene partidos). Se
+   priorizan las abiertas y, dentro de esas, la de id más alto. */
 $round = $pdo->query(
-    "SELECT * FROM prode_rounds ORDER BY (status = 'open') DESC, id DESC LIMIT 1"
+    "SELECT r.* FROM prode_rounds r
+      WHERE EXISTS (SELECT 1 FROM prode_matches m WHERE m.round_id = r.id)
+      ORDER BY (r.status = 'open') DESC, r.id DESC
+      LIMIT 1"
 )->fetch();
 
 if (!$round) {
