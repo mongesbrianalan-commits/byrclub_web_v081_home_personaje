@@ -117,3 +117,84 @@ function byr_prode_is_locked(string $kickoffUtc): bool
 {
     return gmdate('Y-m-d H:i:s') >= $kickoffUtc;
 }
+
+/**
+ * Puntúa todos los pronósticos de un partido ya jugado (con su resultado).
+ * Devuelve cuántos pronósticos se puntuaron.
+ */
+function byr_prode_score_match(PDO $pdo, int $matchId, int $realH, int $realA): int
+{
+    $preds = $pdo->prepare('SELECT id, home_pred, away_pred FROM prode_predictions WHERE match_id = ?');
+    $preds->execute([$matchId]);
+    $upd = $pdo->prepare('UPDATE prode_predictions SET points = ? WHERE id = ?');
+    $n = 0;
+    foreach ($preds->fetchAll() as $p) {
+        $pts = byr_prode_score((int) $p['home_pred'], (int) $p['away_pred'], $realH, $realA);
+        $upd->execute([$pts, (int) $p['id']]);
+        $n++;
+    }
+    return $n;
+}
+
+/**
+ * Si YA se jugaron todos los partidos de la fecha, la cierra y le da un cupón
+ * al mejor pronosticador (premio al ganador). Idempotente: no premia dos veces.
+ * Devuelve ['closed' => bool, 'winner' => array|null].
+ */
+function byr_prode_close_round_if_complete(PDO $pdo, int $roundId): array
+{
+    $round = $pdo->prepare('SELECT * FROM prode_rounds WHERE id = ?');
+    $round->execute([$roundId]);
+    $round = $round->fetch();
+    if (!$round) {
+        return ['closed' => false, 'winner' => null];
+    }
+
+    $counts = $pdo->prepare(
+        "SELECT COUNT(*) AS total, SUM(status = 'finished') AS finished FROM prode_matches WHERE round_id = ?"
+    );
+    $counts->execute([$roundId]);
+    $c = $counts->fetch();
+    $total    = (int) $c['total'];
+    $finished = (int) $c['finished'];
+
+    if ($total === 0 || $finished < $total) {
+        return ['closed' => false, 'winner' => null];
+    }
+    if ($round['prize_awarded']) {
+        return ['closed' => true, 'winner' => null]; // ya estaba premiada
+    }
+
+    $top = $pdo->prepare(
+        'SELECT p.user_id, u.name, COALESCE(SUM(p.points),0) AS pts,
+                SUM(CASE WHEN p.points = 10 THEN 1 ELSE 0 END) AS exacts
+           FROM prode_predictions p
+           JOIN prode_matches m ON m.id = p.match_id
+           JOIN users u ON u.id = p.user_id
+          WHERE m.round_id = ? AND p.points IS NOT NULL
+          GROUP BY p.user_id, u.name
+          ORDER BY pts DESC, exacts DESC, p.user_id ASC
+          LIMIT 1'
+    );
+    $top->execute([$roundId]);
+    $best = $top->fetch();
+
+    $winner = null;
+    if ($best && (int) $best['pts'] > 0) {
+        $code  = byr_generate_redemption_code($pdo);
+        $label = 'Ganador ' . $round['name'] . ' — Prode BYR';
+        $pdo->prepare(
+            'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status)
+             VALUES (?, ?, "prode-winner", ?, "Prode BYR", "pending")'
+        )->execute([(int) $best['user_id'], $code, $label]);
+        $winner = [
+            'userId' => (int) $best['user_id'],
+            'name'   => $best['name'],
+            'points' => (int) $best['pts'],
+            'code'   => $code,
+        ];
+    }
+
+    $pdo->prepare('UPDATE prode_rounds SET status = "closed", prize_awarded = 1 WHERE id = ?')->execute([$roundId]);
+    return ['closed' => true, 'winner' => $winner];
+}

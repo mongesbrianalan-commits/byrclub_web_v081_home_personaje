@@ -66,7 +66,6 @@ foreach ($fixtures as $f) {
 
 $finishedShort = ['FT', 'AET', 'PEN'];
 $updMatch = $pdo->prepare('UPDATE prode_matches SET status = "finished", home_goals = ?, away_goals = ? WHERE id = ?');
-$scorePred = $pdo->prepare('UPDATE prode_predictions SET points = ? WHERE id = ?');
 
 $matchesFinished = 0;
 $predsScored     = 0;
@@ -76,8 +75,7 @@ foreach ($matches as $m) {
         $matchesFinished++;
         continue; // ya estaba puntuado
     }
-    $fid = (int) $m['api_fixture_id'];
-    $f   = $byId[$fid] ?? null;
+    $f = $byId[(int) $m['api_fixture_id']] ?? null;
     if (!$f) {
         continue;
     }
@@ -90,54 +88,17 @@ foreach ($matches as $m) {
     $ra = (int) ($f['goals']['away'] ?? 0);
     $updMatch->execute([$rh, $ra, (int) $m['id']]);
     $matchesFinished++;
-
-    $preds = $pdo->prepare('SELECT id, home_pred, away_pred FROM prode_predictions WHERE match_id = ?');
-    $preds->execute([(int) $m['id']]);
-    foreach ($preds->fetchAll() as $p) {
-        $pts = byr_prode_score((int) $p['home_pred'], (int) $p['away_pred'], $rh, $ra);
-        $scorePred->execute([$pts, (int) $p['id']]);
-        $predsScored++;
-    }
+    $predsScored += byr_prode_score_match($pdo, (int) $m['id'], $rh, $ra);
 }
 
-/* ¿Se jugaron todos? → cerramos la fecha y premiamos al ganador. */
-$allFinished = ($matchesFinished === count($matches));
-$winner      = null;
-
-if ($allFinished && !$round['prize_awarded']) {
-    $top = $pdo->prepare(
-        'SELECT p.user_id, u.name, COALESCE(SUM(p.points),0) AS pts,
-                SUM(CASE WHEN p.points = 10 THEN 1 ELSE 0 END) AS exacts
-           FROM prode_predictions p
-           JOIN prode_matches m ON m.id = p.match_id
-           JOIN users u ON u.id = p.user_id
-          WHERE m.round_id = ? AND p.points IS NOT NULL
-          GROUP BY p.user_id, u.name
-          ORDER BY pts DESC, exacts DESC, p.user_id ASC
-          LIMIT 1'
-    );
-    $top->execute([$roundId]);
-    $best = $top->fetch();
-
-    if ($best && (int) $best['pts'] > 0) {
-        $code = byr_generate_redemption_code($pdo);
-        $label = 'Ganador ' . $round['name'] . ' — Prode BYR';
-        $ins = $pdo->prepare(
-            'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status)
-             VALUES (?, ?, "prode-winner", ?, "Prode BYR", "pending")'
-        );
-        $ins->execute([(int) $best['user_id'], $code, $label]);
-        $winner = ['userId' => (int) $best['user_id'], 'name' => $best['name'], 'points' => (int) $best['pts'], 'code' => $code];
-    }
-
-    $pdo->prepare('UPDATE prode_rounds SET status = "closed", prize_awarded = 1 WHERE id = ?')->execute([$roundId]);
-}
+/* ¿Se jugaron todos? → cierra la fecha y premia al ganador. */
+$closed = byr_prode_close_round_if_complete($pdo, $roundId);
 
 json_out([
     'ok'              => true,
     'matchesFinished' => $matchesFinished,
     'matchesTotal'    => count($matches),
     'predsScored'     => $predsScored,
-    'roundClosed'     => $allFinished,
-    'winner'          => $winner,   // null si empató en 0 o ya estaba premiada
+    'roundClosed'     => $closed['closed'],
+    'winner'          => $closed['winner'],
 ]);

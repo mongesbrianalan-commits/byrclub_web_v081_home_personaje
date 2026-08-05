@@ -446,6 +446,139 @@
   if (prodeSyncBtn) prodeSyncBtn.addEventListener("click", prodeSync);
   if (prodeResultsBtn) prodeResultsBtn.addEventListener("click", prodeResults);
 
+  /* ---------------------------------------------------------
+     Prode — carga manual (partidos y resultados)
+  --------------------------------------------------------- */
+
+  const pmRound = document.querySelector("[data-pm-round]");
+  const pmHome = document.querySelector("[data-pm-home]");
+  const pmAway = document.querySelector("[data-pm-away]");
+  const pmDate = document.querySelector("[data-pm-date]");
+  const pmTime = document.querySelector("[data-pm-time]");
+  const pmAddBtn = document.querySelector("[data-pm-add]");
+  const pmStatus = document.querySelector("[data-pm-status]");
+
+  const pmatchRoundId = document.querySelector("[data-pmatch-round-id]");
+  const pmatchLoadBtn = document.querySelector("[data-pmatch-load]");
+  const pmatchStatus = document.querySelector("[data-pmatch-status]");
+  const pmatchList = document.querySelector("[data-pmatch-list]");
+
+  async function prodeAddMatch() {
+    const roundName = String(pmRound.value || "").trim();
+    const home = String(pmHome.value || "").trim();
+    const away = String(pmAway.value || "").trim();
+    const date = pmDate.value;
+    const time = pmTime.value;
+    if (!roundName || !home || !away) {
+      setStatus(pmStatus, "Completá la fecha, el local y el visitante.", "error");
+      return;
+    }
+    if (!date || !time) {
+      setStatus(pmStatus, "Elegí el día y la hora del partido.", "error");
+      return;
+    }
+    pmAddBtn.disabled = true;
+    setStatus(pmStatus, "Agregando…", "");
+    try {
+      const d = await api("admin/prode-add-match.php", { roundName, home, away, date, time });
+      setStatus(pmStatus, `✅ ${d.home} vs ${d.away} (${d.kickoffLabel}) · partido ID ${d.matchId} · fecha ID ${d.roundId}.`, "ok");
+      if (pmatchRoundId) pmatchRoundId.value = d.roundId;
+      pmHome.value = "";
+      pmAway.value = "";
+      pmHome.focus();
+    } catch (error) {
+      setStatus(pmStatus, error.message, "error");
+    } finally {
+      pmAddBtn.disabled = false;
+    }
+  }
+
+  async function prodeLoadMatches() {
+    const roundId = parseInt(pmatchRoundId.value, 10) || 0;
+    if (roundId <= 0) {
+      setStatus(pmatchStatus, "Poné el ID de la fecha (te lo da la carga del partido).", "error");
+      return;
+    }
+    setStatus(pmatchStatus, "Cargando…", "");
+    pmatchList.innerHTML = "";
+    try {
+      const d = await api("admin/prode-round-matches.php", { roundId });
+      renderProdeMatches(d.matches || []);
+      setStatus(pmatchStatus, (d.matches && d.matches.length) ? `Fecha "${d.round}"` : "Esa fecha todavía no tiene partidos.", "");
+    } catch (error) {
+      setStatus(pmatchStatus, error.message, "error");
+    }
+  }
+
+  function renderProdeMatches(matches) {
+    pmatchList.innerHTML = "";
+    matches.forEach((m) => {
+      const row = document.createElement("div");
+      row.className = "admin-row";
+      row.style.cssText = "align-items:flex-end;gap:10px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.12);padding-top:12px;margin-top:12px";
+
+      const info = document.createElement("div");
+      info.style.cssText = "flex:1 1 200px;font-weight:800";
+      info.innerHTML = `<div>${escapeHtml(m.home)} vs ${escapeHtml(m.away)}</div>` +
+        `<small style="color:#9fb4dc">#${m.id} · ${escapeHtml(m.kickoffLabel || "")} · ${m.status === "finished" ? "Jugado" : "Pendiente"}</small>`;
+
+      const hg = document.createElement("input");
+      hg.type = "number"; hg.min = "0"; hg.placeholder = "0";
+      hg.style.cssText = "width:56px;text-align:center";
+      if (m.homeGoals !== null && m.homeGoals !== undefined) hg.value = m.homeGoals;
+
+      const sep = document.createElement("span");
+      sep.textContent = "—"; sep.style.alignSelf = "center";
+
+      const ag = document.createElement("input");
+      ag.type = "number"; ag.min = "0"; ag.placeholder = "0";
+      ag.style.cssText = "width:56px;text-align:center";
+      if (m.awayGoals !== null && m.awayGoals !== undefined) ag.value = m.awayGoals;
+
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "admin-btn-inline";
+      btn.textContent = m.status === "finished" ? "Actualizar" : "Cargar resultado";
+
+      const st = document.createElement("small");
+      st.style.cssText = "display:block;width:100%;margin-top:4px;font-weight:700";
+
+      btn.addEventListener("click", async () => {
+        if (hg.value === "" || ag.value === "") {
+          st.textContent = "Cargá ambos goles.";
+          st.style.color = "#ffd35a";
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = "Guardando…";
+        try {
+          const r = await api("admin/prode-set-result.php", {
+            matchId: m.id, homeGoals: Number(hg.value), awayGoals: Number(ag.value)
+          });
+          let msg = `✅ Resultado cargado · ${r.scored} pronósticos puntuados.`;
+          if (r.roundClosed) {
+            msg += r.winner
+              ? ` 🏆 Ganador: ${r.winner.name} (${r.winner.points} pts) · cupón ${r.winner.code}.`
+              : " Fecha cerrada.";
+          }
+          st.textContent = msg;
+          st.style.color = "#7bffa0";
+        } catch (error) {
+          st.textContent = error.message;
+          st.style.color = "#ff8f9a";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Actualizar";
+        }
+      });
+
+      row.append(info, hg, sep, ag, btn, st);
+      pmatchList.append(row);
+    });
+  }
+
+  if (pmAddBtn) pmAddBtn.addEventListener("click", prodeAddMatch);
+  if (pmatchLoadBtn) pmatchLoadBtn.addEventListener("click", prodeLoadMatches);
+
   checkAdmin().then(() => {
     if (panel && !panel.hidden) initBirthdays();
   });
