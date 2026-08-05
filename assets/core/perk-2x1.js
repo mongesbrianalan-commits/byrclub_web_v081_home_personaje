@@ -26,7 +26,7 @@
     codeValue.textContent = code;
     codeBox.hidden = false;
     activateBtn.hidden = true;
-    subEl.textContent = "Mostrá este código en el local para tu 2x1. Queda guardado en Mis cupones.";
+    subEl.textContent = "Mostrá este código en el local: Doble Cheese con papas 2x1. Queda guardado en Mis cupones.";
   }
 
   async function load() {

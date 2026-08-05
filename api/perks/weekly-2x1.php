@@ -21,8 +21,8 @@ $id  = require_auth();
 $pdo = db();
 
 const BYR_2X1_PRIZE_ID = '2x1-wed';
-const BYR_2X1_LABEL    = '2x1 de socio';
-const BYR_2X1_SOURCE   = '2x1 miércoles';
+const BYR_2X1_LABEL    = '2x1 Doble Cheese con papas';
+const BYR_2X1_SOURCE   = 'Miércoles de socio';
 
 $tz  = new DateTimeZone('America/Argentina/Buenos_Aires');
 $now = new DateTime('now', $tz);
