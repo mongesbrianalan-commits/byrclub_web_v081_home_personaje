@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a42d8">
+  <title>Ranking — BYR Club</title>
+  <script src="assets/core/auth-guard.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="assets/core/hud.css">
+  <link rel="stylesheet" href="assets/core/app-shell.css">
+  <link rel="stylesheet" href="ranking-premium.css">
+</head>
+
+<body class="home-v08" data-root="./">
+  <div class="page-noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Ir al inicio">
+      <img src="assets/logo-byr.png" alt="Logo BYR" />
+      <span>CLUB</span>
+    </a>
+    <button class="menu-toggle" aria-label="Abrir menú"
+      aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="index.html">Inicio</a>
+      <a href="beneficios.html">Beneficios</a>
+      <a href="prodes.html">Prodes</a>
+      <a href="juegos.html">Juegos</a>
+      <a href="puntos.html">Puntos</a>
+      <a class="active" href="ranking.html">Ranking</a>
+      <a href="perfil.html">Mi perfil</a>
+    </nav>
+  </header>
+
+  <main class="app-page">
+    <section class="ranking-page">
+      <div class="ranking-hero">
+        <p class="kicker">Ranking</p>
+        <h1>La comunidad BYR</h1>
+        <p>El ranking se ordena por <b>nivel y XP</b>, que sube con tu
+          participación. Canjear tus puntos por beneficios <b>no</b> te hace
+          bajar de puesto.</p>
+      </div>
+
+      <p class="ranking-state" data-ranking-state hidden></p>
+
+      <div class="ranking-list" data-ranking-list></div>
+
+      <div class="ranking-you-out" data-ranking-you-out hidden></div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="footer-brand" href="index.html"><img src="assets/logo-byr.png" alt="BYR" /><span>Hamburguesería</span></a>
+    <div class="footer-links"><a href="https://www.instagram.com/byr.docksud/" target="_blank"
+        rel="noreferrer">Instagram</a><a href="index.html">BYR Club</a><span>Dock Sud, Avellaneda</span>
+    </div>
+    <p>© 2026 BYR Club</p>
+  </footer>
+
+  <script src="script.js"></script>
+  <script src="assets/core/storage.js"></script>
+  <script src="assets/core/prizes.js"></script>
+  <script src="assets/core/user.js"></script>
+  <script src="assets/core/hud.js"></script>
+  <script src="assets/core/app-shell.js"></script>
+  <script src="assets/core/auth.js"></script>
+  <script src="assets/core/session-ui.js"></script>
+  <script src="assets/core/state-sync.js"></script>
+  <script src="ranking.js"></script>
+</body>
+
+</html>

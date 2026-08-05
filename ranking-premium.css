@@ -1,0 +1,145 @@
+/* =========================================================
+   Ranking de la comunidad — estilos
+   Basado en el ranking de Prode (prode-premium.css) para
+   mantener el mismo look en todo el sitio.
+========================================================= */
+:root {
+  --rk-blue: #0a42d8;
+  --rk-deep: #03124a;
+  --rk-gold: #ffd51f;
+  --rk-sky: #4db5ff;
+}
+
+.ranking-page {
+  padding: 10px clamp(20px, 5vw, 90px) 70px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.ranking-hero {
+  text-align: center;
+  padding: 30px 0 6px;
+}
+
+.ranking-hero .kicker {
+  color: var(--rk-sky);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 900;
+  font-size: .8rem;
+  margin: 0;
+}
+
+.ranking-hero h1 {
+  font-family: "Lilita One";
+  font-size: clamp(2rem, 6vw, 3rem);
+  margin: 6px 0 8px;
+}
+
+.ranking-hero p {
+  margin: 0 auto;
+  max-width: 540px;
+  color: #b8cef5;
+  font-weight: 600;
+}
+
+/* Estado (cargando / error / vacío) */
+.ranking-state {
+  margin-top: 26px;
+  text-align: center;
+  color: #b8cef5;
+  font-weight: 700;
+}
+.ranking-state.error { color: #ff9bb0; }
+
+/* Lista */
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 40px 44px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(14, 51, 151, .85), rgba(3, 13, 55, .92));
+  border: 2px solid rgba(255, 255, 255, .1);
+}
+
+/* La fila del usuario que mira el ranking */
+.ranking-row.you {
+  border-color: rgba(255, 213, 31, .6);
+  background: linear-gradient(150deg, rgba(60, 80, 20, .4), rgba(3, 13, 55, .92));
+}
+
+.rank-pos {
+  font-family: "Lilita One";
+  font-size: 1.2rem;
+  text-align: center;
+  color: #9fd4ff;
+}
+.rank-pos.gold { color: var(--rk-gold); }
+.rank-pos.silver { color: #d8e2ef; }
+.rank-pos.bronze { color: #e0a25c; }
+
+.rank-avatar {
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.rank-id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rank-id b {
+  font-family: "Lilita One";
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-id small {
+  color: #8ecbff;
+  font-weight: 700;
+  font-size: .78rem;
+}
+
+.rank-level {
+  font-family: "Lilita One";
+  font-size: 1.05rem;
+  color: var(--rk-gold);
+  white-space: nowrap;
+}
+
+/* Bloque "tu posición" cuando quedás fuera del Top */
+.ranking-you-out {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(255, 255, 255, .18);
+}
+.ranking-you-out .ranking-row { margin-top: 0; }
+.ranking-you-caption {
+  text-align: center;
+  color: #b8cef5;
+  font-weight: 800;
+  font-size: .85rem;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+@media (max-width: 560px) {
+  .ranking-row {
+    grid-template-columns: 30px 34px 1fr auto;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .rank-id b { font-size: 1rem; }
+}

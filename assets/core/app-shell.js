@@ -75,6 +75,10 @@ let shellResizeObserver = null;
           Puntos
         </a>
 
+        <a href="${rootPath}ranking.html">
+          Ranking
+        </a>
+
         <a href="${rootPath}perfil.html">
           Mi perfil
         </a>
