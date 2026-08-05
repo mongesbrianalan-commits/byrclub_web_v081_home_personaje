@@ -18,6 +18,17 @@ if (!$me || !$me['is_admin']) {
     json_out(['error' => 'No tenés permisos para hacer esto.'], 403);
 }
 
+/* Chequeo temprano: si falta la tabla, avisamos claro (en vez de un 500 sin
+   detalle). Se soluciona corriendo la migración 2026-08-prode-teams.sql. */
+try {
+    $pdo->query('SELECT 1 FROM prode_teams LIMIT 1');
+} catch (PDOException $e) {
+    json_out([
+        'error' => 'Falta la tabla de equipos. Corré la migración 2026-08-prode-teams.sql en phpMyAdmin y volvé a probar.',
+        'code'  => 'no-table',
+    ], 500);
+}
+
 /* La temporada actual no está en el plan gratis; 2024 sí y trae los mismos
    clubes. Si algún día pagás el plan, se puede subir este valor. */
 $TEAMS_SEASON = 2024;
