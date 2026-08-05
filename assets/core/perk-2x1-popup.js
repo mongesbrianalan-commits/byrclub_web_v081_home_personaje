@@ -128,7 +128,7 @@
   function renderCodeView(card, code) {
     const p = card.querySelector(".byr2x1-copy-target");
     if (p) {
-      p.textContent = "Mostrá este código en el local. Ya quedó guardado en Mis cupones.";
+      p.textContent = "Mostralo en el local o pasá el código al pedir por delivery. Ya quedó guardado en Mis cupones.";
     }
     const actions = card.querySelector(".byr2x1-actions");
     actions.innerHTML = "";
@@ -194,7 +194,7 @@
       <button type="button" class="byr2x1-close" aria-label="Cerrar">×</button>
       <span class="byr2x1-emoji" aria-hidden="true">🍔</span>
       <h2>¡Hoy es miércoles!</h2>
-      <p class="byr2x1-copy-target">Como socio tenés tu <strong>2x1</strong>: pedí una Doble Cheese con papas y llevate otra igual gratis.</p>
+      <p class="byr2x1-copy-target">Como socio tenés tu <strong>2x1</strong>: pedí una Doble Cheese con papas y llevate otra igual gratis. En el local o por delivery.</p>
       <div class="byr2x1-actions"></div>
     `;
     overlay.append(card);
