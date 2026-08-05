@@ -46,3 +46,32 @@
 
 @media(max-width:1120px){.coupons-grid{grid-template-columns:repeat(2,1fr)}.coupons-heading{display:block}.coupons-heading p{text-align:left;margin-top:8px}}
 @media(max-width:720px){.coupons-grid{grid-template-columns:1fr}}
+
+/* =========================================================
+   2x1 de socio (banner de los miércoles)
+========================================================= */
+.perk2x1-banner{max-width:1320px;margin:0 auto 34px;display:flex;align-items:center;gap:20px;padding:22px 26px;border-radius:24px;
+  background:radial-gradient(circle at 90% 10%,rgba(255,211,30,.35),transparent 45%),linear-gradient(135deg,#ff5ba8,#7a3bd8 60%,#0a42d8);
+  border:2px solid rgba(255,211,30,.7);box-shadow:0 14px 0 rgba(0,0,0,.18),0 26px 46px rgba(0,0,0,.3)}
+.perk2x1-banner[hidden]{display:none}
+.perk2x1-emoji{font-size:3rem;line-height:1;flex-shrink:0;filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}
+.perk2x1-body{flex:1;min-width:0}
+.perk2x1-body>strong{display:block;font-family:"Lilita One",sans-serif;font-size:1.7rem;line-height:1;text-transform:uppercase;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.perk2x1-body>span{display:block;margin-top:7px;font-weight:800;color:#ffe9f5}
+
+.perk2x1-code{display:flex;align-items:stretch;gap:10px;margin-top:13px;max-width:420px}
+.perk2x1-code>strong{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:11px 10px;border-radius:13px;
+  background:#02092d;border:2px dashed rgba(255,211,30,.6);
+  font-family:"Courier New",monospace;font-size:1.35rem;font-weight:700;letter-spacing:.12em;color:#ffd94a;overflow-x:auto;user-select:all}
+.perk2x1-copy{flex-shrink:0;padding:0 16px;border:0;border-radius:13px;background:#ffd51f;color:#071342;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #a87800;transition:transform .15s,box-shadow .15s}
+.perk2x1-copy:hover{transform:translateY(-2px)}
+.perk2x1-copy:active{transform:translateY(2px);box-shadow:0 1px 0 #a87800}
+.perk2x1-copy.copied{background:#53e87d;box-shadow:0 4px 0 #1c8a44;color:#06251a}
+
+.perk2x1-activate{flex-shrink:0;padding:15px 24px;border:0;border-radius:16px;background:#ffd51f;color:#071342;font-family:"Lilita One",sans-serif;font-size:1.15rem;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 0 #a87800;transition:transform .15s,box-shadow .15s}
+.perk2x1-activate:hover{transform:translateY(-3px);box-shadow:0 9px 0 #a87800}
+.perk2x1-activate:active{transform:translateY(2px);box-shadow:0 3px 0 #a87800}
+.perk2x1-activate:disabled{opacity:.7;cursor:default;box-shadow:0 6px 0 #a87800}
+.perk2x1-activate[hidden]{display:none}
+
+@media(max-width:720px){.perk2x1-banner{flex-direction:column;text-align:center;align-items:stretch}.perk2x1-code{max-width:none}.perk2x1-activate{width:100%}}
