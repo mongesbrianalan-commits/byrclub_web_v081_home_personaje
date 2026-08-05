@@ -518,9 +518,51 @@
       row.style.cssText = "align-items:flex-end;gap:10px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.12);padding-top:12px;margin-top:12px";
 
       const info = document.createElement("div");
-      info.style.cssText = "flex:1 1 200px;font-weight:800";
-      info.innerHTML = `<div>${escapeHtml(m.home)} vs ${escapeHtml(m.away)}</div>` +
-        `<small style="color:#9fb4dc">#${m.id} · ${escapeHtml(m.kickoffLabel || "")} · ${m.status === "finished" ? "Jugado" : "Pendiente"}</small>`;
+      info.style.cssText = "flex:1 1 280px";
+
+      const teamRow = document.createElement("div");
+      teamRow.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap";
+      const homeIn = teamNameInput(m.home);
+      const vs = document.createElement("span");
+      vs.textContent = "vs"; vs.style.fontWeight = "800";
+      const awayIn = teamNameInput(m.away);
+      const saveTeams = document.createElement("button");
+      saveTeams.type = "button"; saveTeams.className = "admin-btn-inline";
+      saveTeams.textContent = "Guardar equipos";
+      saveTeams.style.cssText = "padding:7px 12px";
+      teamRow.append(homeIn, vs, awayIn, saveTeams);
+
+      const meta = document.createElement("small");
+      meta.style.cssText = "display:block;margin-top:5px;color:#9fb4dc";
+      meta.textContent = `#${m.id} · ${m.kickoffLabel || ""} · ${m.status === "finished" ? "Jugado" : "Pendiente"}`;
+
+      const editSt = document.createElement("small");
+      editSt.style.cssText = "display:block;margin-top:2px;font-weight:700";
+
+      info.append(teamRow, meta, editSt);
+
+      saveTeams.addEventListener("click", async () => {
+        const home = String(homeIn.value || "").trim();
+        const away = String(awayIn.value || "").trim();
+        if (!home || !away) {
+          editSt.textContent = "Completá ambos equipos.";
+          editSt.style.color = "#ffd35a";
+          return;
+        }
+        saveTeams.disabled = true;
+        saveTeams.textContent = "Guardando…";
+        try {
+          const r = await api("admin/prode-edit-match.php", { matchId: m.id, home, away });
+          editSt.textContent = `✅ Guardado · escudos: local ${r.homeLogo ? "✓" : "✗"} · visitante ${r.awayLogo ? "✓" : "✗"}`;
+          editSt.style.color = "#7bffa0";
+        } catch (error) {
+          editSt.textContent = error.message;
+          editSt.style.color = "#ff8f9a";
+        } finally {
+          saveTeams.disabled = false;
+          saveTeams.textContent = "Guardar equipos";
+        }
+      });
 
       const hg = document.createElement("input");
       hg.type = "number"; hg.min = "0"; hg.placeholder = "0";
@@ -576,6 +618,31 @@
     });
   }
 
+  function teamNameInput(value) {
+    const i = document.createElement("input");
+    i.type = "text";
+    i.value = value || "";
+    i.setAttribute("list", "prode-teams-datalist");
+    i.style.cssText = "width:150px;text-align:left;padding:6px 8px";
+    return i;
+  }
+
+  async function loadProdeTeamsDatalist() {
+    const dl = document.getElementById("prode-teams-datalist");
+    if (!dl) return;
+    try {
+      const d = await api("admin/prode-teams-list.php", {});
+      dl.innerHTML = "";
+      (d.teams || []).forEach((name) => {
+        const o = document.createElement("option");
+        o.value = name;
+        dl.appendChild(o);
+      });
+    } catch (error) {
+      /* silencioso */
+    }
+  }
+
   const teamsSyncBtn = document.querySelector("[data-prode-teams-sync]");
   const teamsSyncStatus = document.querySelector("[data-prode-teams-status]");
 
@@ -598,6 +665,9 @@
   if (pmatchLoadBtn) pmatchLoadBtn.addEventListener("click", prodeLoadMatches);
 
   checkAdmin().then(() => {
-    if (panel && !panel.hidden) initBirthdays();
+    if (panel && !panel.hidden) {
+      initBirthdays();
+      loadProdeTeamsDatalist();
+    }
   });
 })();

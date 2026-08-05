@@ -202,9 +202,10 @@
         <div class="admin-row">
           <label class="auth-field" style="flex:1 1 180px"><span>Nombre de la fecha</span><input type="text" data-pm-round placeholder="Fecha 2 (Pendiente)" autocomplete="off"></label>
         </div>
+        <datalist id="prode-teams-datalist"></datalist>
         <div class="admin-row">
-          <label class="auth-field"><span>Local</span><input type="text" data-pm-home placeholder="Boca" autocomplete="off"></label>
-          <label class="auth-field"><span>Visitante</span><input type="text" data-pm-away placeholder="River" autocomplete="off"></label>
+          <label class="auth-field"><span>Local</span><input type="text" data-pm-home list="prode-teams-datalist" placeholder="Boca Juniors" autocomplete="off"></label>
+          <label class="auth-field"><span>Visitante</span><input type="text" data-pm-away list="prode-teams-datalist" placeholder="River Plate" autocomplete="off"></label>
         </div>
         <div class="admin-row">
           <label class="auth-field"><span>Día</span><input type="date" data-pm-date></label>
