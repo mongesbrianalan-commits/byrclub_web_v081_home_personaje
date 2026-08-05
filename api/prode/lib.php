@@ -118,19 +118,64 @@ function byr_prode_is_locked(string $kickoffUtc): bool
     return gmdate('Y-m-d H:i:s') >= $kickoffUtc;
 }
 
+/* XP que suma al perfil BYR por acertar en el Prode (aparte del puntaje
+   propio del Prode). No toca los puntos canjeables. */
+const BYR_PRODE_XP_EXACT  = 20; // resultado exacto
+const BYR_PRODE_XP_WINNER = 10; // acertó el ganador/empate
+
+/** XP de perfil que corresponde a un puntaje de Prode. */
+function byr_prode_xp_for(int $points): int
+{
+    if ($points >= 10) {
+        return BYR_PRODE_XP_EXACT;
+    }
+    if ($points >= 5) {
+        return BYR_PRODE_XP_WINNER;
+    }
+    return 0;
+}
+
+/** Suma XP al perfil BYR de un socio (sin puntos canjeables). */
+function byr_prode_grant_xp(PDO $pdo, int $userId, int $xp, string $reason): void
+{
+    if ($xp <= 0) {
+        return;
+    }
+    $stmt = $pdo->prepare('SELECT name, avatar, state FROM users WHERE id = ?');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        return;
+    }
+    $state = !empty($row['state']) ? json_decode($row['state'], true) : null;
+    if (!is_array($state)) {
+        $state = default_state($row['name'], $row['avatar']);
+    }
+    byr_grant($state, 0, $xp, $reason, 'prode');
+    $pdo->prepare('UPDATE users SET state = ? WHERE id = ?')
+        ->execute([json_encode($state, JSON_UNESCAPED_UNICODE), $userId]);
+}
+
 /**
- * Puntúa todos los pronósticos de un partido ya jugado (con su resultado).
- * Devuelve cuántos pronósticos se puntuaron.
+ * Puntúa todos los pronósticos de un partido ya jugado (con su resultado) y
+ * suma XP al perfil BYR por cada acierto. El XP se otorga SOLO la primera vez
+ * que se puntúa el pronóstico (points estaba NULL), para no duplicarlo si se
+ * recarga/actualiza el resultado. Devuelve cuántos pronósticos se puntuaron.
  */
 function byr_prode_score_match(PDO $pdo, int $matchId, int $realH, int $realA): int
 {
-    $preds = $pdo->prepare('SELECT id, home_pred, away_pred FROM prode_predictions WHERE match_id = ?');
+    $preds = $pdo->prepare('SELECT id, user_id, home_pred, away_pred, points FROM prode_predictions WHERE match_id = ?');
     $preds->execute([$matchId]);
     $upd = $pdo->prepare('UPDATE prode_predictions SET points = ? WHERE id = ?');
     $n = 0;
     foreach ($preds->fetchAll() as $p) {
         $pts = byr_prode_score((int) $p['home_pred'], (int) $p['away_pred'], $realH, $realA);
+        $wasUnscored = ($p['points'] === null);
         $upd->execute([$pts, (int) $p['id']]);
+
+        if ($wasUnscored) {
+            byr_prode_grant_xp($pdo, (int) $p['user_id'], byr_prode_xp_for($pts), 'Prode: pronóstico acertado');
+        }
         $n++;
     }
     return $n;
