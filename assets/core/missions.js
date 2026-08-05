@@ -36,20 +36,6 @@
     },
 
     {
-      id: "daily-scratch",
-      name: "Probá tu suerte",
-      description: "Jugá la raspadita diaria.",
-      icon: "🎟️",
-      event: "scratch",
-      target: 1,
-      difficulty: "easy",
-      reward: {
-        points: 50,
-        xp: 30
-      }
-    },
-
-    {
       id: "daily-roulette",
       name: "Que gire la suerte",
       description: "Realizá un giro en la ruleta.",
