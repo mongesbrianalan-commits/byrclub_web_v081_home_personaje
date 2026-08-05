@@ -163,6 +163,30 @@
         <p class="auth-form-status" data-bday-status></p>
         <div class="bday-list" data-bday-list></div>
       </div>
+
+      <div class="admin-block" style="margin-top:34px">
+        <h2>⚽ Prode — cargar la fecha</h2>
+        <div class="admin-row">
+          <label class="auth-field" style="flex:1 1 200px">
+            <span>Nombre de la fecha</span>
+            <input type="text" data-prode-name placeholder="Fecha 8" autocomplete="off">
+          </label>
+        </div>
+        <div class="admin-row">
+          <label class="auth-field"><span>Desde</span><input type="date" data-prode-from></label>
+          <label class="auth-field"><span>Hasta</span><input type="date" data-prode-to></label>
+          <button type="button" class="admin-btn-inline" data-prode-sync>Sincronizar partidos</button>
+        </div>
+        <p class="auth-form-status" data-prode-sync-status></p>
+
+        <h2 style="margin-top:24px">📊 Cargar resultados y puntuar</h2>
+        <div class="admin-row">
+          <label class="auth-field"><span>ID de la fecha</span><input type="number" data-prode-round-id placeholder="1" min="1"></label>
+          <button type="button" class="admin-btn-inline" data-prode-results>Traer resultados</button>
+        </div>
+        <p class="auth-form-status" data-prode-results-status></p>
+        <p class="admin-note">💡 Sincronizá los partidos <b>antes</b> de que empiece la fecha. Cuando se jueguen, tocá “Traer resultados” para puntuar automáticamente; si ya se jugaron todos, se cierra la fecha y el ganador recibe un cupón.</p>
+      </div>
     </section>
   </main>
 

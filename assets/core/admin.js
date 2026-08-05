@@ -381,6 +381,71 @@
   }
   if (redeemConfirm) redeemConfirm.addEventListener("click", confirmRedeem);
 
+  /* ---------------------------------------------------------
+     Prode — sincronizar fecha y cargar resultados
+  --------------------------------------------------------- */
+
+  const prodeName = document.querySelector("[data-prode-name]");
+  const prodeFrom = document.querySelector("[data-prode-from]");
+  const prodeTo = document.querySelector("[data-prode-to]");
+  const prodeSyncBtn = document.querySelector("[data-prode-sync]");
+  const prodeSyncStatus = document.querySelector("[data-prode-sync-status]");
+  const prodeRoundId = document.querySelector("[data-prode-round-id]");
+  const prodeResultsBtn = document.querySelector("[data-prode-results]");
+  const prodeResultsStatus = document.querySelector("[data-prode-results-status]");
+
+  async function prodeSync() {
+    const name = String(prodeName.value || "").trim();
+    const from = prodeFrom.value;
+    const to = prodeTo.value;
+    if (!name) {
+      setStatus(prodeSyncStatus, "Poné un nombre para la fecha.", "error");
+      return;
+    }
+    if (!from || !to) {
+      setStatus(prodeSyncStatus, "Elegí las fechas desde y hasta.", "error");
+      return;
+    }
+    prodeSyncBtn.disabled = true;
+    setStatus(prodeSyncStatus, "Sincronizando con la API…", "");
+    try {
+      const data = await api("admin/prode-sync.php", { name, from, to });
+      setStatus(prodeSyncStatus, `✅ ${data.synced} partidos cargados en "${data.round}" (ID ${data.roundId}).`, "ok");
+      if (prodeRoundId) prodeRoundId.value = data.roundId;
+    } catch (error) {
+      setStatus(prodeSyncStatus, error.message, "error");
+    } finally {
+      prodeSyncBtn.disabled = false;
+    }
+  }
+
+  async function prodeResults() {
+    const roundId = parseInt(prodeRoundId.value, 10) || 0;
+    if (roundId <= 0) {
+      setStatus(prodeResultsStatus, "Poné el ID de la fecha (te lo da el sync).", "error");
+      return;
+    }
+    prodeResultsBtn.disabled = true;
+    setStatus(prodeResultsStatus, "Trayendo resultados…", "");
+    try {
+      const data = await api("admin/prode-results.php", { roundId });
+      let msg = `✅ ${data.matchesFinished}/${data.matchesTotal} partidos jugados · ${data.predsScored} pronósticos puntuados.`;
+      if (data.roundClosed) {
+        msg += data.winner
+          ? ` 🏆 Ganador: ${data.winner.name} (${data.winner.points} pts). Cupón: ${data.winner.code}.`
+          : " Fecha cerrada (sin ganador con puntos).";
+      }
+      setStatus(prodeResultsStatus, msg, "ok");
+    } catch (error) {
+      setStatus(prodeResultsStatus, error.message, "error");
+    } finally {
+      prodeResultsBtn.disabled = false;
+    }
+  }
+
+  if (prodeSyncBtn) prodeSyncBtn.addEventListener("click", prodeSync);
+  if (prodeResultsBtn) prodeResultsBtn.addEventListener("click", prodeResults);
+
   checkAdmin().then(() => {
     if (panel && !panel.hidden) initBirthdays();
   });

@@ -17,4 +17,13 @@ return [
     'db_user'    => 'REEMPLAZAR_USUARIO_DB',
     'db_pass'    => 'REEMPLAZAR_CONTRASENA_DB',
     'db_charset' => 'utf8mb4',
+
+    /*
+     * Prode — API-Football (api-sports.io). Registrate gratis en
+     * https://www.api-football.com/ , copiá tu API key y pegala acá.
+     * league 128 = Primera División Argentina. season = año de la temporada.
+     */
+    'apifootball_key'    => '',    // TU API KEY (dejar vacío desactiva el sync)
+    'prode_league'       => 128,   // Primera División Argentina
+    'prode_season'       => 2026,
 ];

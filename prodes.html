@@ -38,9 +38,9 @@
   </header>
 
   <main class="prode-main">
-    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 24px;padding:16px 22px;border-radius:18px;background:linear-gradient(120deg,var(--yellow),#ffb020);color:#3a2400;box-shadow:0 7px 0 rgba(0,0,0,.18)">
-      <strong style="font-family:'Lilita One';font-size:1.3rem">🔜 Prodes está en camino</strong>
-      <span style="font-weight:800">Pronto vas a poder pronosticar partidos reales y ganar puntos. Lo de abajo es una vista previa con datos de ejemplo.</span>
+    <div data-prode-banner hidden style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 24px;padding:16px 22px;border-radius:18px;background:linear-gradient(120deg,var(--yellow),#ffb020);color:#3a2400;box-shadow:0 7px 0 rgba(0,0,0,.18)">
+      <strong style="font-family:'Lilita One';font-size:1.3rem">🔜 Todavía no hay fecha activa</strong>
+      <span style="font-weight:800">Apenas se cargue la próxima fecha vas a poder pronosticar los partidos y sumar puntos. ¡Volvé pronto!</span>
     </div>
 
     <section class="prode-hero">
@@ -50,9 +50,9 @@
         <p>Elegí el resultado de cada partido, sumá puntos por cada acierto y escalá posiciones en el ranking de la
           comunidad BYR.</p>
         <div class="prode-stat-row">
-          <div><span>Tu posición</span><strong>#12</strong></div>
-          <div><span>Puntos · Fecha 8</span><strong>24</strong></div>
-          <div><span>Aciertos</span><strong>6/10</strong></div>
+          <div><span>Tu posición</span><strong data-prode-position>—</strong></div>
+          <div><span>Tus puntos</span><strong data-prode-points>0</strong></div>
+          <div><span>Aciertos exactos</span><strong data-prode-hits>0/0</strong></div>
         </div>
       </div>
       <div class="prode-hero-visual">
@@ -62,88 +62,15 @@
 
     <section class="prode-matches">
       <div class="section-title-wrap">
-        <p class="kicker">Fecha 8 · Torneo Clausura</p>
+        <p class="kicker" data-prode-round-name>Cargando fecha…</p>
         <h2>Elegí tus resultados</h2>
-        <p class="prode-subcopy">Tenés hasta el minuto 0 de cada partido para cargar o cambiar tu pronóstico.</p>
+        <p class="prode-subcopy">Tenés hasta el arranque de cada partido para cargar o cambiar tu pronóstico.</p>
       </div>
 
-      <div class="match-grid">
-        <article class="match-card">
-          <div class="match-meta"><span>Vie 21:30</span><span class="match-status open">Abierto</span></div>
-          <div class="match-teams">
-            <div class="team"><span class="team-badge blue">🔵</span><b>Boca</b></div>
-            <div class="match-score-inputs">
-              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de Boca">
-              <span>—</span>
-              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de River">
-            </div>
-            <div class="team"><span class="team-badge white">⚪</span><b>River</b></div>
-          </div>
-          <button class="predict-action" type="button">Confirmar pronóstico</button>
-        </article>
-
-        <article class="match-card">
-          <div class="match-meta"><span>Sáb 17:00</span><span class="match-status open">Abierto</span></div>
-          <div class="match-teams">
-            <div class="team"><span class="team-badge yellow">🟡</span><b>Rosario Central</b></div>
-            <div class="match-score-inputs">
-              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de Rosario Central">
-              <span>—</span>
-              <input type="number" min="0" max="20" placeholder="0" aria-label="Goles de Independiente">
-            </div>
-            <div class="team"><span class="team-badge red">🔴</span><b>Independiente</b></div>
-          </div>
-          <button class="predict-action" type="button">Confirmar pronóstico</button>
-        </article>
-
-        <article class="match-card predicted">
-          <div class="match-meta"><span>Sáb 21:00</span><span class="match-status locked">Pronosticado</span></div>
-          <div class="match-teams">
-            <div class="team"><span class="team-badge black">⚫</span><b>Racing</b></div>
-            <div class="match-score-inputs readonly">
-              <span class="score-pill">2</span>
-              <span>—</span>
-              <span class="score-pill">1</span>
-            </div>
-            <div class="team"><span class="team-badge green">🟢</span><b>San Lorenzo</b></div>
-          </div>
-          <button class="predict-action locked" type="button" disabled>Ya pronosticaste</button>
-        </article>
-
-        <article class="match-card played hit">
-          <div class="match-meta"><span>Dom 15:30</span><span class="match-status played">Jugado</span></div>
-          <div class="match-teams">
-            <div class="team"><span class="team-badge purple">🟣</span><b>Estudiantes</b></div>
-            <div class="match-score-inputs readonly">
-              <span class="score-pill">1</span>
-              <span>—</span>
-              <span class="score-pill">0</span>
-            </div>
-            <div class="team"><span class="team-badge sky">🔵</span><b>Gimnasia</b></div>
-          </div>
-          <div class="match-result">
-            <span>Resultado real: 1 — 0</span>
-            <strong class="result-hit">🎯 Resultado exacto · +10 pts</strong>
-          </div>
-        </article>
-
-        <article class="match-card played miss">
-          <div class="match-meta"><span>Dom 20:00</span><span class="match-status played">Jugado</span></div>
-          <div class="match-teams">
-            <div class="team"><span class="team-badge orange">🟠</span><b>Vélez</b></div>
-            <div class="match-score-inputs readonly">
-              <span class="score-pill">1</span>
-              <span>—</span>
-              <span class="score-pill">2</span>
-            </div>
-            <div class="team"><span class="team-badge white">⚪</span><b>Huracán</b></div>
-          </div>
-          <div class="match-result">
-            <span>Resultado real: 0 — 2</span>
-            <strong class="result-miss">❌ No acertaste · 0 pts</strong>
-          </div>
-        </article>
-      </div>
+      <div class="match-grid" data-prode-matches></div>
+      <p data-prode-empty hidden style="text-align:center;font-weight:800;color:#b7cff4;padding:20px">
+        No hay partidos cargados para esta fecha todavía.
+      </p>
     </section>
 
     <section class="prode-how">
@@ -175,45 +102,19 @@
         <p class="kicker">Ranking</p>
         <h2>Los mejores pronosticadores</h2>
       </div>
-      <div class="ranking-lock-banner">
+      <div class="ranking-lock-banner" data-prode-ranking-empty hidden>
         <span>🔒</span>
-        <p>El ranking en vivo con toda la comunidad BYR llega pronto. Por ahora estás viendo un ejemplo.</p>
+        <p>El ranking se arma cuando se jueguen los primeros partidos. ¡Cargá tus pronósticos para entrar!</p>
       </div>
-      <div class="ranking-list">
-        <article class="ranking-row"><span class="rank-pos gold">1</span><span class="rank-avatar">🏆</span><b>Lucía
-            G.</b><span class="rank-points">142 pts</span></article>
-        <article class="ranking-row"><span class="rank-pos silver">2</span><span class="rank-avatar">🥈</span><b>Nico
-            R.</b><span class="rank-points">138 pts</span></article>
-        <article class="ranking-row"><span class="rank-pos bronze">3</span><span class="rank-avatar">🥉</span><b>Fede
-            M.</b><span class="rank-points">129 pts</span></article>
-        <article class="ranking-row"><span class="rank-pos">4</span><span class="rank-avatar">🍔</span><b>Sofi
-            V.</b><span class="rank-points">121 pts</span></article>
-        <article class="ranking-row"><span class="rank-pos">5</span><span class="rank-avatar">🍔</span><b>Tomás
-            B.</b><span class="rank-points">115 pts</span></article>
-        <article class="ranking-row you"><span class="rank-pos">12</span><span class="rank-avatar">🍔</span><b>Vos</b><span
-            class="rank-points">86 pts</span></article>
-      </div>
+      <div class="ranking-list" data-prode-ranking></div>
     </section>
 
-    <section class="prode-history">
+    <section class="prode-history" data-prode-history-section hidden>
       <div class="section-title-wrap">
         <p class="kicker">Tu historial</p>
-        <h2>Tus últimos pronósticos</h2>
+        <h2>Tus pronósticos de la fecha</h2>
       </div>
-      <div class="history-list">
-        <article class="history-row hit"><span class="history-icon">🎯</span>
-          <div><b>Estudiantes 1 — 0 Gimnasia</b><span>Pronosticaste 1 — 0</span></div><strong>+10 pts</strong>
-        </article>
-        <article class="history-row half"><span class="history-icon">✅</span>
-          <div><b>Talleres 2 — 1 Belgrano</b><span>Pronosticaste 3 — 1</span></div><strong>+5 pts</strong>
-        </article>
-        <article class="history-row miss"><span class="history-icon">❌</span>
-          <div><b>Vélez 1 — 2 Huracán</b><span>Pronosticaste 0 — 2</span></div><strong>0 pts</strong>
-        </article>
-        <article class="history-row hit"><span class="history-icon">🎯</span>
-          <div><b>Newell's 0 — 0 Unión</b><span>Pronosticaste 0 — 0</span></div><strong>+10 pts</strong>
-        </article>
-      </div>
+      <div class="history-list" data-prode-history></div>
     </section>
   </main>
 

@@ -22,6 +22,7 @@ const BYR_PRIZE_ICONS = [
     'double-points' => '🍔',
     'cheese-burger' => '🧀',
     '2x1-wed'       => '🍔',
+    'prode-winner'  => '🏆',
 ];
 
 $stmt = $pdo->prepare(
