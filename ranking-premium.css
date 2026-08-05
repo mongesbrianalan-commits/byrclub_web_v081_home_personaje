@@ -43,6 +43,27 @@
   font-weight: 600;
 }
 
+/* Contador de usuarios registrados */
+.ranking-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 4px auto 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 213, 31, .12);
+  border: 1px solid rgba(255, 213, 31, .4);
+  color: #ffe9a3;
+  font-weight: 700;
+  font-size: .95rem;
+}
+.ranking-count__icon { font-size: 1.15rem; }
+.ranking-count strong {
+  font-family: "Lilita One";
+  color: var(--rk-gold);
+  font-size: 1.15rem;
+}
+
 /* Estado (cargando / error / vacío) */
 .ranking-state {
   margin-top: 26px;

@@ -10,6 +10,13 @@
   const listEl = document.querySelector("[data-ranking-list]");
   const stateEl = document.querySelector("[data-ranking-state]");
   const youOutEl = document.querySelector("[data-ranking-you-out]");
+  const countEl = document.querySelector("[data-ranking-count]");
+  const countValueEl = document.querySelector("[data-ranking-count-value]");
+  const countLabelEl = document.querySelector("[data-ranking-count-label]");
+
+  // Cada cuánto se vuelve a consultar el ranking para mantenerlo al día
+  // (el sitio es estático, no hay "push" en vivo; esto es lo más cercano).
+  const REFRESH_MS = 60000;
 
   function formatNumber(value) {
     return (Number(value) || 0).toLocaleString("es-AR");
@@ -57,7 +64,25 @@
     stateEl.classList.toggle("error", Boolean(isError));
   }
 
+  function renderCount(data) {
+    if (!countEl || !countValueEl) return;
+
+    const total = Number(data.totalUsers) || 0;
+    if (total <= 0) {
+      countEl.hidden = true;
+      return;
+    }
+
+    countValueEl.textContent = formatNumber(total);
+    if (countLabelEl) {
+      countLabelEl.textContent = total === 1 ? "usuario registrado" : "usuarios registrados";
+    }
+    countEl.hidden = false;
+  }
+
   function render(data) {
+    renderCount(data);
+
     const ranking = Array.isArray(data.ranking) ? data.ranking : [];
 
     if (!ranking.length) {
@@ -88,8 +113,15 @@
     }
   }
 
-  async function load() {
-    setState("Cargando ranking…", false);
+  /*
+   * silent = true en los refrescos automáticos: no muestra "Cargando…" ni
+   * pisa la lista con un error si falla un intento puntual (deja lo que ya
+   * se ve). Así el contador y el ranking se actualizan sin parpadeos.
+   */
+  async function load(silent) {
+    if (!silent) {
+      setState("Cargando ranking…", false);
+    }
 
     try {
       const res = await fetch("/api/ranking.php", { credentials: "same-origin" });
@@ -101,22 +133,30 @@
       }
 
       if (!res.ok) {
-        setState(data.error || "No se pudo cargar el ranking.", true);
+        if (!silent) {
+          setState(data.error || "No se pudo cargar el ranking.", true);
+        }
         return;
       }
 
       render(data);
     } catch (error) {
-      setState("No se pudo cargar el ranking. Revisá tu conexión.", true);
+      if (!silent) {
+        setState("No se pudo cargar el ranking. Revisá tu conexión.", true);
+      }
     }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", load, { once: true });
+    document.addEventListener("DOMContentLoaded", () => load(false), { once: true });
   } else {
-    load();
+    load(false);
   }
 
   // Si el usuario suma XP en otra pestaña/acción, refrescamos al volver.
-  window.addEventListener("byr:user-updated", load);
+  window.addEventListener("byr:user-updated", () => load(true));
+
+  // Refresco periódico para que el contador y el ranking se mantengan al día
+  // aunque nadie recargue la página (se acerca a "en vivo" sin push real).
+  window.setInterval(() => load(true), REFRESH_MS);
 })();

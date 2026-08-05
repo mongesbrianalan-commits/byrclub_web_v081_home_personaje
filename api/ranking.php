@@ -44,6 +44,9 @@ try {
            FROM users
           WHERE avatar IS NOT NULL AND avatar <> ''"
     )->fetchAll();
+
+    // Total de usuarios registrados (todas las cuentas, para el contador).
+    $totalUsers = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
 } catch (PDOException $e) {
     json_out([
         'error'  => 'No se pudo cargar el ranking en este momento.',
@@ -96,8 +99,9 @@ foreach ($list as $index => $entry) {
 }
 
 json_out([
-    'ranking' => $ranking,
-    'you'     => $you,           // posición del que consulta (puede ser > RANKING_LIMIT)
-    'total'   => count($list),
-    'limit'   => RANKING_LIMIT,
+    'ranking'    => $ranking,
+    'you'        => $you,           // posición del que consulta (puede ser > RANKING_LIMIT)
+    'total'      => count($list),   // socios en el ranking (con onboarding completo)
+    'totalUsers' => $totalUsers,    // total de cuentas registradas (para el contador de arriba)
+    'limit'      => RANKING_LIMIT,
 ]);
