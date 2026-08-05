@@ -125,6 +125,46 @@ function byr_prode_is_locked(string $kickoffUtc): bool
     return gmdate('Y-m-d H:i:s') >= $kickoffUtc;
 }
 
+/** Normaliza el nombre de un equipo para matchear (sin acentos, espacios ni símbolos). */
+function byr_prode_normalize_team(string $name): string
+{
+    $s = function_exists('mb_strtolower') ? mb_strtolower(trim($name), 'UTF-8') : strtolower(trim($name));
+    $s = strtr($s, [
+        'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n',
+    ]);
+    return preg_replace('/[^a-z0-9]+/', '', $s);
+}
+
+/**
+ * Busca el escudo de un equipo por su nombre (contra la tabla prode_teams).
+ * Intenta match exacto normalizado; si no, que uno contenga al otro. Devuelve
+ * la URL del escudo o null si no lo encuentra.
+ */
+function byr_prode_find_logo(PDO $pdo, string $teamName): ?string
+{
+    $norm = byr_prode_normalize_team($teamName);
+    if ($norm === '') {
+        return null;
+    }
+
+    $stmt = $pdo->prepare('SELECT logo FROM prode_teams WHERE norm = ? LIMIT 1');
+    $stmt->execute([$norm]);
+    $logo = $stmt->fetchColumn();
+    if ($logo) {
+        return $logo;
+    }
+
+    // Coincidencia parcial: el nombre cargado contiene al del equipo o viceversa.
+    $stmt = $pdo->prepare(
+        'SELECT logo FROM prode_teams
+          WHERE ? LIKE CONCAT("%", norm, "%") OR norm LIKE CONCAT("%", ?, "%")
+          ORDER BY CHAR_LENGTH(norm) DESC LIMIT 1'
+    );
+    $stmt->execute([$norm, $norm]);
+    $logo = $stmt->fetchColumn();
+    return $logo ?: null;
+}
+
 /* XP que suma al perfil BYR por acertar en el Prode (aparte del puntaje
    propio del Prode). No toca los puntos canjeables. */
 const BYR_PRODE_XP_EXACT  = 20; // resultado exacto

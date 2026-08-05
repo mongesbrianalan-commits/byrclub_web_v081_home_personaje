@@ -576,6 +576,24 @@
     });
   }
 
+  const teamsSyncBtn = document.querySelector("[data-prode-teams-sync]");
+  const teamsSyncStatus = document.querySelector("[data-prode-teams-status]");
+
+  async function prodeSyncTeams() {
+    teamsSyncBtn.disabled = true;
+    setStatus(teamsSyncStatus, "Trayendo escudos…", "");
+    try {
+      const d = await api("admin/prode-sync-teams.php", {});
+      setStatus(teamsSyncStatus, `✅ ${d.teams} escudos cargados · ${d.backfilled} partidos actualizados.`, "ok");
+    } catch (error) {
+      setStatus(teamsSyncStatus, error.message, "error");
+    } finally {
+      teamsSyncBtn.disabled = false;
+    }
+  }
+
+  if (teamsSyncBtn) teamsSyncBtn.addEventListener("click", prodeSyncTeams);
+
   if (pmAddBtn) pmAddBtn.addEventListener("click", prodeAddMatch);
   if (pmatchLoadBtn) pmatchLoadBtn.addEventListener("click", prodeLoadMatches);
 

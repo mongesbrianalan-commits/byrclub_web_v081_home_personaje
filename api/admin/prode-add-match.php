@@ -52,10 +52,14 @@ if (!$roundId) {
     $roundId = (int) $pdo->lastInsertId();
 }
 
+/* Escudos: los buscamos por nombre (si ya sincronizaste los equipos). */
+$homeLogo = byr_prode_find_logo($pdo, $home);
+$awayLogo = byr_prode_find_logo($pdo, $away);
+
 $pdo->prepare(
-    'INSERT INTO prode_matches (round_id, home_team, away_team, kickoff, status)
-     VALUES (?, ?, ?, ?, "scheduled")'
-)->execute([$roundId, $home, $away, $kickoffUtc]);
+    'INSERT INTO prode_matches (round_id, home_team, away_team, home_logo, away_logo, kickoff, status)
+     VALUES (?, ?, ?, ?, ?, ?, "scheduled")'
+)->execute([$roundId, $home, $away, $homeLogo, $awayLogo, $kickoffUtc]);
 $matchId = (int) $pdo->lastInsertId();
 
 json_out([
