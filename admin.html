@@ -14,9 +14,14 @@
   <link rel="stylesheet" href="assets/core/auth.css">
   <style>
     [hidden] { display: none !important; }
-    .admin-main { max-width: 560px; margin: 0 auto; padding: 40px clamp(16px, 4vw, 32px) 80px; }
+    .admin-main { max-width: 640px; margin: 0 auto; padding: 40px clamp(16px, 4vw, 32px) 80px; }
     .admin-title { font-family: "Lilita One"; font-size: clamp(2rem, 5vw, 2.8rem); text-transform: uppercase; margin: 0 0 4px; }
     .admin-sub { color: #9bd1ff; font-weight: 700; margin: 0 0 24px; }
+    .admin-tabs { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 24px; padding-bottom: 4px; }
+    .admin-tab-btn { flex: 0 0 auto; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: #cfe4ff; font-weight: 800; font-size: .95rem; padding: 10px 16px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: transform .12s, background .12s; }
+    .admin-tab-btn:hover { background: rgba(255,255,255,.12); }
+    .admin-tab-btn.is-active { background: var(--yellow); color: #071342; border-color: var(--yellow); box-shadow: 0 5px 0 #9d7300; }
+    .admin-tab[hidden] { display: none; }
     .admin-block { margin-bottom: 22px; }
     .admin-block h2 { font-family: "Lilita One"; font-size: 1.3rem; margin: 0 0 12px; text-transform: uppercase; opacity: .95; }
     .admin-row { display: flex; gap: 10px; align-items: flex-start; }
@@ -83,9 +88,17 @@
 
     <!-- Panel de admin -->
     <section class="auth-card" data-admin-panel hidden>
-      <h1 class="admin-title">Cargar puntos</h1>
-      <p class="admin-sub">Buscá al cliente por su email y sumale puntos.</p>
+      <h1 class="admin-title">Panel BYR Club</h1>
+      <p class="admin-sub">Gestión del club: clientes, canjes, cumpleaños y prode.</p>
 
+      <nav class="admin-tabs" role="tablist">
+        <button type="button" class="admin-tab-btn is-active" data-tab-btn="clientes">👤 Clientes</button>
+        <button type="button" class="admin-tab-btn" data-tab-btn="canjes">🎟️ Canjes</button>
+        <button type="button" class="admin-tab-btn" data-tab-btn="cumples">🎂 Cumpleaños</button>
+        <button type="button" class="admin-tab-btn" data-tab-btn="prode">⚽ Prode</button>
+      </nav>
+
+      <div class="admin-tab" data-tab="clientes">
       <div class="admin-block">
         <h2>1 · Buscar cliente</h2>
         <div class="admin-row">
@@ -130,8 +143,10 @@
       </div>
 
       <p class="admin-note">💡 Los puntos quedan guardados en la cuenta del cliente al instante y los ve en su perfil.</p>
+      </div><!-- /tab clientes -->
 
-      <div class="admin-block" style="margin-top:34px">
+      <div class="admin-tab" data-tab="canjes" hidden>
+      <div class="admin-block">
         <h2>🎟️ Validar premio de ruleta</h2>
         <div class="admin-row">
           <label class="auth-field">
@@ -150,8 +165,10 @@
           <button type="button" class="auth-submit" data-redeem-confirm>Marcar como canjeado ✓</button>
         </div>
       </div>
+      </div><!-- /tab canjes -->
 
-      <div class="admin-block" style="margin-top:34px">
+      <div class="admin-tab" data-tab="cumples" hidden>
+      <div class="admin-block">
         <h2>🎂 Cumpleaños del mes</h2>
         <div class="bday-head">
           <label class="auth-field">
@@ -163,8 +180,10 @@
         <p class="auth-form-status" data-bday-status></p>
         <div class="bday-list" data-bday-list></div>
       </div>
+      </div><!-- /tab cumples -->
 
-      <div class="admin-block" style="margin-top:34px">
+      <div class="admin-tab" data-tab="prode" hidden>
+      <div class="admin-block">
         <h2>⚽ Prode — cargar la fecha</h2>
         <div class="admin-row">
           <label class="auth-field" style="flex:1 1 200px">
@@ -225,6 +244,7 @@
         <p class="auth-form-status" data-pmatch-status></p>
         <div data-pmatch-list></div>
       </div>
+      </div><!-- /tab prode -->
     </section>
   </main>
 
@@ -233,5 +253,19 @@
   <script src="assets/core/auth.js"></script>
   <script src="assets/core/session-ui.js"></script>
   <script src="assets/core/admin.js"></script>
+  <script>
+    /* Navegación por pestañas del panel admin (solo UI). */
+    (function () {
+      var btns = document.querySelectorAll("[data-tab-btn]");
+      var panels = document.querySelectorAll("[data-tab]");
+      function show(name) {
+        panels.forEach(function (p) { p.hidden = p.getAttribute("data-tab") !== name; });
+        btns.forEach(function (b) { b.classList.toggle("is-active", b.getAttribute("data-tab-btn") === name); });
+      }
+      btns.forEach(function (b) {
+        b.addEventListener("click", function () { show(b.getAttribute("data-tab-btn")); });
+      });
+    })();
+  </script>
 </body>
 </html>
