@@ -55,7 +55,7 @@
         <p>Todos los días vas a encontrar nuevas oportunidades para sumar puntos, desbloquear premios y llevarte sorpresas.</p>
         <div class="hero-actions">
           <a class="primary-game-cta" href="#juegos-disponibles">Explorar juegos</a>
-          <div class="today-chip"><span>HOY</span><strong>1 oportunidad disponible</strong></div>
+          <div class="today-chip"><span>HOY</span><strong>2 oportunidades disponibles</strong></div>
         </div>
       </div>
 
@@ -140,8 +140,8 @@
           </div>
         </a>
 
-        <article class="game-card soon-card">
-          <div class="card-topline"><span class="status-pill soon">Próximamente</span><span class="frequency">Premios sorpresa</span></div>
+        <a class="game-card available-card scratch-game-card" href="assets/games/scratch/scratch.html" style="text-decoration:none;color:inherit">
+          <div class="card-topline"><span class="status-pill available">Disponible</span><span class="frequency">1 raspada por día</span></div>
           <div class="game-visual scratch-visual" aria-hidden="true">
             <div class="scratch-ticket"><small>RASPA Y GANÁ</small><strong>?</strong><span>BYR CLUB</span></div>
             <div class="scratch-coin">★</div>
@@ -150,9 +150,47 @@
             <span class="game-number">JUEGO 02</span>
             <h3>Raspá y ganá</h3>
             <p>Raspá con el dedo o el mouse y descubrí al instante qué premio se esconde debajo.</p>
+            <div class="reward-preview"><span>Podés ganar</span><strong>Puntos · Papas · Bebidas · Premios</strong></div>
+            <span class="game-button active-game" style="text-align:center">Raspar ahora</span>
+          </div>
+        </a>
+
+        <!-- ============================================================
+             MEMOTEST BYR — listo y probado. Se lanza el fin de semana.
+             Para ENCENDERLO: reemplazá este bloque <article ...>...</article>
+             por la versión "Disponible" que está comentada justo debajo.
+             ============================================================ -->
+        <article class="game-card soon-card">
+          <div class="card-topline"><span class="status-pill soon">Próximamente</span><span class="frequency">1 partida por día</span></div>
+          <div class="game-visual memory-visual" aria-hidden="true">
+            <div class="memo-card m1">🍔</div>
+            <div class="memo-card m2">🧠</div>
+            <div class="memo-card m3">?</div>
+          </div>
+          <div class="game-info">
+            <span class="game-number">JUEGO 03</span>
+            <h3>Memotest BYR</h3>
+            <p>Encontrá las parejas de BYR Club en la menor cantidad de intentos y sumá puntos extra.</p>
             <button class="game-button locked-game" disabled>Muy pronto</button>
           </div>
         </article>
+        <!-- VERSIÓN "DISPONIBLE" del Memotest (descomentar para lanzar):
+        <a class="game-card available-card memory-game-card" href="assets/games/memory/memory.html" style="text-decoration:none;color:inherit">
+          <div class="card-topline"><span class="status-pill available">Disponible</span><span class="frequency">1 partida por día</span></div>
+          <div class="game-visual memory-visual" aria-hidden="true">
+            <div class="memo-card m1">🍔</div>
+            <div class="memo-card m2">🧠</div>
+            <div class="memo-card m3">?</div>
+          </div>
+          <div class="game-info">
+            <span class="game-number">JUEGO 03</span>
+            <h3>Memotest BYR</h3>
+            <p>Encontrá las parejas de BYR Club en la menor cantidad de intentos y sumá puntos extra.</p>
+            <div class="reward-preview"><span>Podés ganar</span><strong>Hasta 120 puntos · XP extra</strong></div>
+            <span class="game-button active-game" style="text-align:center">Jugar al Memotest</span>
+          </div>
+        </a>
+        -->
 
         <article class="game-card soon-card">
           <div class="card-topline"><span class="status-pill soon">Próximamente</span><span class="frequency">1 caja por semana</span></div>
@@ -162,7 +200,7 @@
             <div class="mystery-spark spark-a">✦</div><div class="mystery-spark spark-b">✧</div>
           </div>
           <div class="game-info">
-            <span class="game-number">JUEGO 03</span>
+            <span class="game-number">JUEGO 04</span>
             <h3>Caja misteriosa</h3>
             <p>Abrí la caja y encontrá puntos, premios, descuentos o insignias exclusivas.</p>
             <button class="game-button locked-game" disabled>Muy pronto</button>
@@ -175,7 +213,7 @@
             <div class="trivia-card q1">?</div><div class="trivia-card q2">A</div><div class="trivia-card q3">B</div>
           </div>
           <div class="game-info">
-            <span class="game-number">JUEGO 04</span>
+            <span class="game-number">JUEGO 05</span>
             <h3>Trivia BYR</h3>
             <p>Demostrá cuánto sabés de hamburguesas, fútbol y cultura popular para ganar bonus.</p>
             <button class="game-button locked-game" disabled>Muy pronto</button>
@@ -189,7 +227,7 @@
             <div class="challenge-stamp">BONUS<br>XP</div>
           </div>
           <div class="game-info">
-            <span class="game-number">JUEGO 05</span>
+            <span class="game-number">JUEGO 06</span>
             <h3>Desafíos semanales</h3>
             <p>Completá misiones dentro de BYR Club y sumá puntos extra a tu perfil.</p>
             <button class="game-button locked-game" disabled>Muy pronto</button>
@@ -206,8 +244,8 @@
       <div class="future-games">
         <article><span>⚽</span><h3>Penales</h3><small>Próximamente</small></article>
         <article><span>🍔</span><h3>Flappy Burger</h3><small>Próximamente</small></article>
-        <article><span>🧠</span><h3>Memotest BYR</h3><small>Próximamente</small></article>
-        <article><span>🍟</span><h3>Atrapá la papa</h3><small>Próximamente</small></article>
+        <article><span>🎯</span><h3>Atrapá la papa</h3><small>Próximamente</small></article>
+        <article><span>🧩</span><h3>Rompecabezas BYR</h3><small>Próximamente</small></article>
       </div>
     </section>
   </main>

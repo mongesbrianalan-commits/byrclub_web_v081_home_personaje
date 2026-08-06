@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
+
+  <title>Memotest BYR | BYR Club</title>
+  <script src="../../core/auth-guard.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap"
+    rel="stylesheet"
+  />
+
+<link rel="stylesheet" href="../../ui/design-system.css">
+<link rel="stylesheet" href="../../core/effects.css" />
+<link rel="stylesheet" href="../../core/hud.css" />
+<link rel="stylesheet" href="../../core/app-shell.css" />
+<link rel="stylesheet" href="../../core/achievement-notifications.css" />
+<link rel="stylesheet" href="memory.css" />
+</head>
+
+<body data-root="../../../">
+  <header class="site-header">
+    <a class="brand" href="../../../index.html">
+      <img src="../../logo-byr.png" alt="BYR Club" />
+    </a>
+
+    <nav class="site-nav" aria-label="Navegación principal">
+      <a href="../../../index.html">Inicio</a>
+      <a href="../../../beneficios.html">Beneficios</a>
+      <a href="../../../prodes.html">Prodes</a>
+      <a class="is-active" href="../../../juegos.html">Juegos</a>
+      <a href="../../../puntos.html">Puntos</a>
+      <a href="../../../ranking.html">Ranking</a>
+      <a href="../../../perfil.html">Mi perfil</a>
+    </nav>
+
+    <a class="header-button" href="../../../perfil.html">
+      Ver recompensas
+    </a>
+  </header>
+
+  <main class="memory-page">
+    <div class="background-rays"></div>
+    <div class="background-dots"></div>
+
+    <span class="floating-shape floating-shape--star">★</span>
+    <span class="floating-shape floating-shape--plus">+</span>
+    <span class="floating-shape floating-shape--circle"></span>
+    <span class="floating-shape floating-shape--cross">×</span>
+
+    <section class="memory-hero">
+      <div class="hero-copy">
+        <span class="hero-pill">Desafío de memoria</span>
+
+        <h1>
+          <span>Encontrá.</span>
+          <strong>Recordá.</strong>
+          <span>Ganá.</span>
+        </h1>
+
+        <p>
+          Encontrá todas las parejas de BYR Club en la menor cantidad de
+          intentos y sumá puntos extra a tu perfil.
+        </p>
+
+        <a class="hero-action" href="#memoryBoard">
+          Jugar ahora
+          <span>↓</span>
+        </a>
+      </div>
+
+      <div class="hero-character">
+        <div class="speech-bubble">
+          ¡Encontrá
+          <strong>las parejas!</strong>
+        </div>
+
+        <div class="character-rays"></div>
+
+        <img
+          src="../../personaje-byr.png"
+          alt="Mascota de BYR Club"
+          class="character-image"
+        />
+
+        <div class="byr-coin" aria-hidden="true">
+          <span>BYR</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="memory-game" id="memoryBoard">
+      <div class="game-heading">
+        <span>Memotest BYR</span>
+        <h2>Dale vuelta a las cartas y encontrá los pares</h2>
+
+        <p>
+          Tocá dos cartas por turno. Si coinciden, quedan reveladas.
+          Completá el tablero para ganar tu premio del día.
+        </p>
+      </div>
+
+      <div class="memory-stats" aria-live="polite">
+        <div class="stat-chip">
+          <span>Parejas</span>
+          <strong id="pairsValue">0 / 8</strong>
+        </div>
+        <div class="stat-chip">
+          <span>Intentos</span>
+          <strong id="movesValue">0</strong>
+        </div>
+        <div class="stat-chip">
+          <span>Tiempo</span>
+          <strong id="timeValue">0:00</strong>
+        </div>
+      </div>
+
+      <div class="memory-grid" id="memoryGrid" role="grid" aria-label="Tablero de memoria"></div>
+
+      <div class="memory-progress">
+        <div class="progress-copy">
+          <strong id="progressTitle">Empezá a jugar</strong>
+          <span id="memoryProgressText">0 / 8 parejas</span>
+        </div>
+
+        <div class="progress-track">
+          <span id="memoryProgressBar"></span>
+        </div>
+      </div>
+
+      <p class="game-status" id="memoryStatus">
+        Encontrá las 8 parejas para reclamar tu premio del día.
+      </p>
+
+      <!-- Botón de QA: reiniciar el mismo día. Oculto en producción;
+           quitá el hidden para volver a probar el Memotest. -->
+      <button
+        class="test-reset-button"
+        id="resetMemoryButton"
+        type="button"
+        hidden
+      >
+        Reiniciar Memotest — modo prueba
+      </button>
+    </section>
+
+    <section class="games-strip">
+      <a class="game-option" href="../roulette/roulette.html">
+        <span>🎡</span>
+        <div>
+          <strong>Ruleta diaria</strong>
+          <small>Disponible</small>
+        </div>
+      </a>
+
+      <a class="game-option" href="../scratch/scratch.html">
+        <span>🪙</span>
+        <div>
+          <strong>Raspadita</strong>
+          <small>Disponible</small>
+        </div>
+      </a>
+
+      <a class="game-option is-active" href="#">
+        <span>🧠</span>
+        <div>
+          <strong>Memotest</strong>
+          <small>Premio diario</small>
+        </div>
+      </a>
+
+      <a class="game-option" href="../../../juegos.html">
+        <span>🎯</span>
+        <div>
+          <strong>Más juegos</strong>
+          <small>Próximamente</small>
+        </div>
+      </a>
+    </section>
+
+    <a class="back-to-games" href="../../../juegos.html">
+      ← Volver al arcade
+    </a>
+  </main>
+
+  <div class="win-overlay" id="winOverlay" aria-hidden="true">
+    <div class="win-card">
+      <button
+        class="win-close"
+        id="closeWinOverlay"
+        type="button"
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
+
+      <span class="win-kicker" id="winKicker">¡Tablero completado!</span>
+
+      <div class="win-icon" id="winIcon">🧠</div>
+
+      <h2 id="winTitle">¡Memoria de campeón!</h2>
+
+      <p id="winSummary">Encontraste las 8 parejas en 8 intentos.</p>
+
+      <div class="win-rewards">
+        <div class="win-reward-chip">
+          <span>Puntos</span>
+          <strong id="winPoints">+60</strong>
+        </div>
+        <div class="win-reward-chip">
+          <span>XP</span>
+          <strong id="winXp">+40</strong>
+        </div>
+      </div>
+
+      <a href="../../../perfil.html" class="win-button">
+        Ver en mi perfil
+      </a>
+    </div>
+
+    <div class="confetti" id="confetti"></div>
+  </div>
+
+<script src="../../core/storage.js"></script>
+<script src="../../core/prizes.js"></script>
+<script src="../../core/missions.js"></script>
+<script src="../../core/achievements.js"></script>
+<script src="../../core/mission-engine.js"></script>
+<script src="../../core/user.js"></script>
+<script src="../../core/achievement-engine.js"></script>
+<script src="../../core/achievement-notifications.js"></script>
+<script src="../../core/audio.js"></script>
+<script src="../../core/effects.js"></script>
+<script src="../../core/hud.js"></script>
+<script src="../../core/app-shell.js"></script>
+<script src="../../core/auth.js"></script>
+<script src="../../core/session-ui.js"></script>
+<script src="../../core/state-sync.js"></script>
+<script src="memory.js"></script>
+</body>
+</html>
