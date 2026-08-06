@@ -17,8 +17,8 @@
     .admin-main { max-width: 640px; margin: 0 auto; padding: 40px clamp(16px, 4vw, 32px) 80px; }
     .admin-title { font-family: "Lilita One"; font-size: clamp(2rem, 5vw, 2.8rem); text-transform: uppercase; margin: 0 0 4px; }
     .admin-sub { color: #9bd1ff; font-weight: 700; margin: 0 0 24px; }
-    .admin-tabs { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 24px; padding-bottom: 4px; }
-    .admin-tab-btn { flex: 0 0 auto; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: #cfe4ff; font-weight: 800; font-size: .95rem; padding: 10px 16px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: transform .12s, background .12s; }
+    .admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+    .admin-tab-btn { flex: 1 1 auto; text-align: center; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: #cfe4ff; font-weight: 800; font-size: .92rem; padding: 10px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: transform .12s, background .12s; }
     .admin-tab-btn:hover { background: rgba(255,255,255,.12); }
     .admin-tab-btn.is-active { background: var(--yellow); color: #071342; border-color: var(--yellow); box-shadow: 0 5px 0 #9d7300; }
     .admin-tab[hidden] { display: none; }
