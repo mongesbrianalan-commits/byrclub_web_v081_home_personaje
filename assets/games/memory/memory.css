@@ -9,6 +9,70 @@ body {
   background: var(--byr-bg-page);
 }
 
+/* --- Encabezado del sitio (mismas reglas que scratch.css, para que el
+       header/logo/nav se vean igual que en la raspadita) --- */
+.site-header {
+  position: relative;
+  z-index: 50;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 12px clamp(24px, 5vw, 82px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(1, 18, 73, 0.96);
+  box-shadow: 0 14px 35px rgba(0, 10, 48, 0.28);
+}
+
+.brand { flex-shrink: 0; }
+.brand img { width: 142px; display: block; }
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 2.3vw, 40px);
+}
+.site-nav a {
+  position: relative;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+.site-nav a::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -9px;
+  left: 0;
+  height: 3px;
+  border-radius: 99px;
+  background: #ffd51f;
+  transform: scaleX(0);
+  transition: transform 180ms ease;
+}
+.site-nav a:hover::after,
+.site-nav a.is-active::after { transform: scaleX(1); }
+
+.header-button {
+  flex-shrink: 0;
+  padding: 15px 24px;
+  border: 0;
+  border-radius: 17px;
+  color: #00164d;
+  background: #ffd51f;
+  box-shadow: 0 7px 0 #d5a900, 0 14px 28px rgba(0, 0, 0, 0.26);
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+.header-button:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+@media (max-width: 1050px) {
+  .site-nav { display: none; }
+}
+
 .memory-page {
   position: relative;
   max-width: 980px;
@@ -522,6 +586,9 @@ body {
 
 /* --- Responsive --- */
 @media (max-width: 720px) {
+  .site-header { min-height: 76px; padding: 10px 18px; }
+  .brand img { width: 112px; }
+  .header-button { padding: 12px 15px; font-size: 0.78rem; }
   .memory-hero { grid-template-columns: 1fr; }
   .hero-character { order: -1; min-height: 160px; }
   .speech-bubble { right: 12%; }
