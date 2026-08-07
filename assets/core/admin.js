@@ -29,7 +29,18 @@
   const awardBtn = document.querySelector("[data-award-btn]");
   const awardStatus = document.querySelector("[data-award-status]");
 
+  const resetSection = document.querySelector("[data-reset-section]");
+  const resetPass = document.querySelector("[data-reset-pass]");
+  const resetGen = document.querySelector("[data-reset-gen]");
+  const resetBtn = document.querySelector("[data-reset-btn]");
+  const resetStatus = document.querySelector("[data-reset-status]");
+  const resetDone = document.querySelector("[data-reset-done]");
+  const resetShown = document.querySelector("[data-reset-shown]");
+  const resetCopy = document.querySelector("[data-reset-copy]");
+  const resetWa = document.querySelector("[data-reset-wa]");
+
   let currentEmail = null;
+  let currentUser = null;
 
   /* ---------------------------------------------------------
      Cliente HTTP
@@ -107,6 +118,7 @@
     setStatus(findStatus, "Buscando…", "");
     foundCard.hidden = true;
     awardSection.hidden = true;
+    if (resetSection) resetSection.hidden = true;
     if (matchesBox) {
       matchesBox.hidden = true;
       matchesBox.innerHTML = "";
@@ -128,12 +140,19 @@
 
   function selectFoundUser(user) {
     currentEmail = user.email;
+    currentUser = user;
     foundAvatar.textContent = user.avatar || "🍔";
     foundName.textContent = user.name;
     foundPoints.textContent = fmt(user.points);
     foundXp.textContent = fmt(user.xp);
     foundCard.hidden = false;
     awardSection.hidden = false;
+    if (resetSection) {
+      resetSection.hidden = false;
+      if (resetDone) resetDone.hidden = true;
+      setStatus(resetStatus, "", "");
+      if (resetPass) resetPass.value = "";
+    }
     setStatus(findStatus, "", "");
     pointsInput.focus();
   }
@@ -221,6 +240,87 @@
     }
   });
   awardBtn.addEventListener("click", award);
+
+  /* ---------------------------------------------------------
+     Restablecer contraseña (cliente que se la olvidó)
+  --------------------------------------------------------- */
+
+  function generatePassword() {
+    /* Corta, fácil de dictar por WhatsApp y sin caracteres confusos. */
+    const chars = "abcdefghijkmnpqrstuvwxyz23456789";
+    let s = "";
+    for (let i = 0; i < 4; i++) {
+      s += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return "byr-" + s;
+  }
+
+  async function resetPassword() {
+    if (!currentEmail) {
+      setStatus(resetStatus, "Primero buscá un cliente.", "error");
+      return;
+    }
+    const password = String(resetPass.value || "").trim();
+    if (password.length < 6) {
+      setStatus(resetStatus, "La contraseña necesita al menos 6 caracteres.", "error");
+      return;
+    }
+
+    resetBtn.disabled = true;
+    const originalText = resetBtn.textContent;
+    resetBtn.textContent = "Guardando…";
+    setStatus(resetStatus, "", "");
+    if (resetDone) resetDone.hidden = true;
+
+    try {
+      const { user } = await api("admin/reset-password.php", {
+        email: currentEmail,
+        password
+      });
+      setStatus(resetStatus, `✅ Contraseña actualizada para ${user.name}.`, "ok");
+      showResetDone(user, password);
+    } catch (error) {
+      setStatus(resetStatus, error.message, "error");
+    } finally {
+      resetBtn.disabled = false;
+      resetBtn.textContent = originalText;
+    }
+  }
+
+  function showResetDone(user, password) {
+    if (!resetDone) return;
+    resetShown.textContent = password;
+
+    const digits = String((user && user.whatsapp) || (currentUser && currentUser.whatsapp) || "").replace(/\D/g, "");
+    const msg =
+      `¡Hola ${user.name}! 👋 Tu nueva contraseña para BYR Club es: ${password}\n\n` +
+      `Ingresá con tu email y esta contraseña. Después podés cambiarla desde tu perfil. 🍔`;
+    if (digits) {
+      resetWa.href = `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+      resetWa.hidden = false;
+    } else {
+      resetWa.hidden = true;
+    }
+    resetDone.hidden = false;
+  }
+
+  async function copyResetPass() {
+    const text = resetShown.textContent || "";
+    try {
+      await navigator.clipboard.writeText(text);
+      const prev = resetCopy.textContent;
+      resetCopy.textContent = "✓ Copiada";
+      setTimeout(() => { resetCopy.textContent = prev; }, 1500);
+    } catch (error) {
+      /* Si el navegador no deja copiar, al menos queda visible para tipearla. */
+    }
+  }
+
+  if (resetGen) {
+    resetGen.addEventListener("click", () => { resetPass.value = generatePassword(); });
+  }
+  if (resetBtn) resetBtn.addEventListener("click", resetPassword);
+  if (resetCopy) resetCopy.addEventListener("click", copyResetPass);
 
   /* ---------------------------------------------------------
      Cumpleaños del mes

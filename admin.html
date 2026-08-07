@@ -142,6 +142,28 @@
         <p class="auth-form-status" data-award-status></p>
       </div>
 
+      <div class="admin-block" data-reset-section hidden>
+        <h2>🔑 ¿Se olvidó la contraseña?</h2>
+        <p class="admin-hint-line">Asignale una contraseña temporal y pasásela por WhatsApp. Después el cliente la puede cambiar desde su perfil.</p>
+        <label class="auth-field">
+          <span>Nueva contraseña temporal</span>
+          <input type="text" data-reset-pass placeholder="Ej: byr-4823" autocomplete="off">
+        </label>
+        <div class="admin-row" style="gap:8px">
+          <button type="button" class="admin-btn-inline" data-reset-gen>🎲 Generar otra</button>
+          <button type="button" class="auth-submit" data-reset-btn style="flex:1 1 auto">Guardar contraseña 🔑</button>
+        </div>
+        <p class="auth-form-status" data-reset-status></p>
+        <div class="reset-done" data-reset-done hidden style="margin-top:12px;padding:14px;border-radius:14px;background:rgba(123,255,160,.1);border:1px solid rgba(123,255,160,.3)">
+          <div style="font-weight:800;margin-bottom:8px">✅ Contraseña actualizada</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <code data-reset-shown style="font-size:1.2rem;font-weight:800;background:rgba(0,0,0,.25);padding:6px 12px;border-radius:8px">—</code>
+            <button type="button" class="admin-btn-inline" data-reset-copy style="padding:7px 12px">📋 Copiar</button>
+            <a class="admin-btn-inline" data-reset-wa target="_blank" rel="noreferrer" style="padding:7px 12px;text-decoration:none">💬 Enviar por WhatsApp</a>
+          </div>
+        </div>
+      </div>
+
       <p class="admin-note">💡 Los puntos quedan guardados en la cuenta del cliente al instante y los ve en su perfil.</p>
       </div><!-- /tab clientes -->
 

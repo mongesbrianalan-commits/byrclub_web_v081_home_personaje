@@ -146,3 +146,54 @@
 @media (prefers-reduced-motion:reduce){
   .profile-hero-visual>img{transform:translateX(-50%)!important}
 }
+
+/* ---------------------------------------------------------
+   Seguridad — cambiar contraseña
+--------------------------------------------------------- */
+.security-section { margin: 34px 0; }
+.security-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 460px;
+  padding: 28px 30px;
+  border-radius: 26px;
+  border: 3px solid rgba(255,255,255,.1);
+  background: linear-gradient(150deg, var(--blue-800), var(--blue-950));
+  box-shadow: 0 12px 0 rgba(0,0,0,.24);
+}
+.security-form .auth-field { display: flex; flex-direction: column; gap: 6px; }
+.security-form .auth-field span { font-weight: 800; font-size: .82rem; color: #9fc4ff; text-transform: uppercase; letter-spacing: .06em; }
+.security-form .auth-field input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 2px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.28);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.security-form .auth-field input:focus { outline: none; border-color: var(--yellow); }
+.security-show { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: #cfe6ff; cursor: pointer; }
+.security-show input { width: 18px; height: 18px; accent-color: var(--yellow); cursor: pointer; }
+.security-form .auth-submit {
+  margin-top: 4px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 14px;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #081242;
+  background: var(--yellow);
+  box-shadow: 0 6px 0 #b88900;
+  transition: transform .15s;
+}
+.security-form .auth-submit:hover { transform: translateY(-3px); }
+.security-form .auth-submit:disabled { opacity: .7; cursor: default; transform: none; }
+.security-form .auth-form-status { min-height: 20px; margin: 0; font-weight: 800; color: #ffd97a; }
+.security-form .auth-form-status.is-ok { color: var(--green); }
+.security-form .auth-form-status.is-error { color: #ff8fb2; }

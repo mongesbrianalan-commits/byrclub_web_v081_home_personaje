@@ -202,6 +202,32 @@
           <article class="rank-step" data-rank-threshold="12"><div>👑</div><b>Leyenda</b><span>Nivel 12</span><small data-rank-here hidden>ESTÁS ACÁ</small></article>
         </div>
       </section>
+
+      <section class="security-section" data-security-section>
+        <div class="section-heading section-heading-left">
+          <div><span>SEGURIDAD</span><h2>Cambiar mi contraseña</h2></div>
+          <p>Elegí una nueva contraseña para tu cuenta. La vas a necesitar la próxima vez que ingreses.</p>
+        </div>
+        <form class="security-form" data-change-pass-form autocomplete="off">
+          <label class="auth-field">
+            <span>Contraseña actual</span>
+            <input type="password" data-cp-current placeholder="Tu contraseña de ahora" autocomplete="current-password">
+          </label>
+          <label class="auth-field">
+            <span>Nueva contraseña</span>
+            <input type="password" data-cp-new placeholder="Al menos 6 caracteres" autocomplete="new-password">
+          </label>
+          <label class="auth-field">
+            <span>Repetir nueva contraseña</span>
+            <input type="password" data-cp-repeat placeholder="Escribila otra vez" autocomplete="new-password">
+          </label>
+          <label class="security-show">
+            <input type="checkbox" data-cp-show> Ver contraseñas
+          </label>
+          <button type="submit" class="auth-submit" data-cp-submit>Cambiar contraseña 🔒</button>
+          <p class="auth-form-status" data-cp-status role="status"></p>
+        </form>
+      </section>
     </section>
   </main>
 
@@ -229,5 +255,6 @@
   <script src="perfil.js"></script>
   <script src="perfil-premium.js"></script>
   <script src="assets/core/perks-profile.js"></script>
+  <script src="assets/core/change-password.js"></script>
 </body>
 </html>
