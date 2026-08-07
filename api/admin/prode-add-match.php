@@ -40,27 +40,49 @@ try {
 }
 $kickoffUtc = $dt->format('Y-m-d H:i:s');
 
-$season = byr_prode_season();
-
-/* Fecha (round): reusar la del mismo nombre+temporada, o crearla. */
-$stmt = $pdo->prepare('SELECT id FROM prode_rounds WHERE name = ? AND season = ? LIMIT 1');
-$stmt->execute([$name, $season]);
-$roundId = $stmt->fetchColumn();
-if (!$roundId) {
-    $pdo->prepare('INSERT INTO prode_rounds (name, competition, season) VALUES (?, ?, ?)')
-        ->execute([$name, 'Primera División Argentina', $season]);
-    $roundId = (int) $pdo->lastInsertId();
+/* Chequeo temprano: si faltan las tablas del Prode, avisamos claro (en vez de
+   un 500 sin detalle). Se soluciona corriendo la migración 2026-08-prode.sql. */
+try {
+    $pdo->query('SELECT 1 FROM prode_rounds LIMIT 1');
+    $pdo->query('SELECT 1 FROM prode_matches LIMIT 1');
+} catch (PDOException $e) {
+    json_out([
+        'error' => 'Faltan las tablas del Prode. Corré la migración 2026-08-prode.sql en phpMyAdmin y volvé a probar.',
+        'code'  => 'no-tables',
+    ], 500);
 }
 
-/* Escudos: los buscamos por nombre (si ya sincronizaste los equipos). */
-$homeLogo = byr_prode_find_logo($pdo, $home);
-$awayLogo = byr_prode_find_logo($pdo, $away);
+$season = byr_prode_season();
 
-$pdo->prepare(
-    'INSERT INTO prode_matches (round_id, home_team, away_team, home_logo, away_logo, kickoff, status)
-     VALUES (?, ?, ?, ?, ?, ?, "scheduled")'
-)->execute([$roundId, $home, $away, $homeLogo, $awayLogo, $kickoffUtc]);
-$matchId = (int) $pdo->lastInsertId();
+try {
+    /* Fecha (round): reusar la del mismo nombre+temporada, o crearla. */
+    $stmt = $pdo->prepare('SELECT id FROM prode_rounds WHERE name = ? AND season = ? LIMIT 1');
+    $stmt->execute([$name, $season]);
+    $roundId = $stmt->fetchColumn();
+    if (!$roundId) {
+        $pdo->prepare('INSERT INTO prode_rounds (name, competition, season) VALUES (?, ?, ?)')
+            ->execute([$name, 'Primera División Argentina', $season]);
+        $roundId = (int) $pdo->lastInsertId();
+    }
+
+    /* Escudos: los buscamos por nombre (si ya sincronizaste los equipos). El
+       equipo puede no tener escudo (ej. recién ascendido y no está en la
+       temporada de escudos): en ese caso se guarda NULL y el partido igual carga. */
+    $homeLogo = byr_prode_find_logo($pdo, $home);
+    $awayLogo = byr_prode_find_logo($pdo, $away);
+
+    $pdo->prepare(
+        'INSERT INTO prode_matches (round_id, home_team, away_team, home_logo, away_logo, kickoff, status)
+         VALUES (?, ?, ?, ?, ?, ?, "scheduled")'
+    )->execute([$roundId, $home, $away, $homeLogo, $awayLogo, $kickoffUtc]);
+    $matchId = (int) $pdo->lastInsertId();
+} catch (Throwable $e) {
+    /* DEBUG temporal (endpoint admin-only): mostramos el error real para
+       diagnosticar el 500. Volver a "No se pudo guardar el partido…" al terminar. */
+    json_out([
+        'error' => 'DEBUG: ' . $e->getMessage() . ' @ ' . basename($e->getFile()) . ':' . $e->getLine(),
+    ], 500);
+}
 
 json_out([
     'ok'           => true,
