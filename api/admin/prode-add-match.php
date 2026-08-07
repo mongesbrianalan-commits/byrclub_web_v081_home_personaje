@@ -77,11 +77,8 @@ try {
     )->execute([$roundId, $home, $away, $homeLogo, $awayLogo, $kickoffUtc]);
     $matchId = (int) $pdo->lastInsertId();
 } catch (Throwable $e) {
-    /* DEBUG temporal (endpoint admin-only): mostramos el error real para
-       diagnosticar el 500. Volver a "No se pudo guardar el partido…" al terminar. */
-    json_out([
-        'error' => 'DEBUG: ' . $e->getMessage() . ' @ ' . basename($e->getFile()) . ':' . $e->getLine(),
-    ], 500);
+    error_log('prode-add-match: ' . $e->getMessage());
+    json_out(['error' => 'No se pudo guardar el partido. Probá de nuevo.'], 500);
 }
 
 json_out([

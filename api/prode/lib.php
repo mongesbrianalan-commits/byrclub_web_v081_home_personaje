@@ -155,10 +155,14 @@ function byr_prode_find_logo(PDO $pdo, string $teamName): ?string
     }
 
     // Coincidencia parcial: el nombre cargado contiene al del equipo o viceversa.
+    // Forzamos la collation del parámetro a la de la columna `norm`
+    // (utf8mb4_unicode_ci) para evitar "Illegal mix of collations" en el LIKE
+    // cuando la conexión viene con otra collation (ej. utf8mb4_bin).
     $stmt = $pdo->prepare(
-        'SELECT logo FROM prode_teams
-          WHERE ? LIKE CONCAT("%", norm, "%") OR norm LIKE CONCAT("%", ?, "%")
-          ORDER BY CHAR_LENGTH(norm) DESC LIMIT 1'
+        "SELECT logo FROM prode_teams
+          WHERE ? COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', norm, '%')
+             OR norm LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%')
+          ORDER BY CHAR_LENGTH(norm) DESC LIMIT 1"
     );
     $stmt->execute([$norm, $norm]);
     $logo = $stmt->fetchColumn();
