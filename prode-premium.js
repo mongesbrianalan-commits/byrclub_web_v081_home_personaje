@@ -14,6 +14,7 @@
   const ROUND_URL = "/api/prode/round.php";
   const RANKING_URL = "/api/prode/ranking.php";
   const PREDICT_URL = "/api/prode/predict.php";
+  const WINNER_URL = "/api/prode/winner.php";
 
   const $ = (sel) => document.querySelector(sel);
 
@@ -28,7 +29,12 @@
     history: $("[data-prode-history]"),
     pos: $("[data-prode-position]"),
     points: $("[data-prode-points]"),
-    hits: $("[data-prode-hits]")
+    hits: $("[data-prode-hits]"),
+    winner: $("[data-prode-winner]"),
+    winnerRound: $("[data-prode-winner-round]"),
+    winnerName: $("[data-prode-winner-name]"),
+    winnerAvatar: $("[data-prode-winner-avatar]"),
+    winnerSub: $("[data-prode-winner-sub]")
   };
 
   if (!els.matches) return; // no estamos en la página del prode
@@ -374,8 +380,46 @@
     return art;
   }
 
+  /* ---------------- Ganador de la fecha ---------------- */
+
+  async function loadWinner() {
+    if (!els.winner) return;
+    let data;
+    try {
+      const res = await fetch(WINNER_URL, { credentials: "same-origin" });
+      if (res.status === 401) return;
+      data = await res.json();
+    } catch (e) {
+      return;
+    }
+
+    const w = data && data.winner;
+    if (!w || !w.name) {
+      els.winner.hidden = true;
+      return;
+    }
+
+    if (els.winnerRound) {
+      els.winnerRound.textContent = w.roundName
+        ? `Ganador · ${w.roundName}`
+        : "Ganador de la fecha";
+    }
+    if (els.winnerAvatar) els.winnerAvatar.textContent = w.avatar || "🍔";
+    if (els.winnerName) els.winnerName.textContent = w.name;
+    if (els.winnerSub) {
+      const exacts = Number(w.exacts) || 0;
+      const exactsTxt = exacts > 0
+        ? ` · ${exacts} ${exacts === 1 ? "resultado exacto" : "resultados exactos"}`
+        : "";
+      els.winnerSub.textContent = `Sumó ${w.points} pts${exactsTxt} y se llevó el premio de la fecha. 🍔`;
+    }
+
+    els.winner.hidden = false;
+  }
+
   /* ---------------- Arranque ---------------- */
 
   loadRound();
   loadRanking();
+  loadWinner();
 })();
