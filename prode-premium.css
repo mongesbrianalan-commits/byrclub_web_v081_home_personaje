@@ -128,7 +128,14 @@
 
 .prode-ranking{padding:10px clamp(20px,5vw,90px) 70px;max-width:900px;margin:auto}
 
-.ranking-lock-banner{display:flex;align-items:center;gap:12px;margin-top:24px;padding:16px 20px;border-radius:18px;background:rgba(255,213,31,.12);border:1px solid rgba(255,213,31,.4)}
+.ranking-tabs{display:flex;gap:10px;margin-top:22px}
+.ranking-tab{flex:1;padding:13px 14px;border-radius:14px;border:2px solid rgba(255,255,255,.12);background:rgba(3,13,55,.55);color:#bcd3f6;font-family:"Lilita One";font-size:1rem;text-transform:uppercase;letter-spacing:.02em;cursor:pointer;transition:transform .12s,border-color .12s,background .12s,color .12s}
+.ranking-tab:hover{border-color:rgba(255,213,31,.35)}
+.ranking-tab.active{border-color:rgba(255,213,31,.6);background:linear-gradient(150deg,rgba(14,51,151,.92),rgba(3,13,55,.95));color:#fff}
+.ranking-tab:active{transform:translateY(1px)}
+.ranking-scope-note{margin:12px 4px 0;font-weight:700;font-size:.85rem;color:#9dc2f2}
+
+.ranking-lock-banner{display:flex;align-items:center;gap:12px;margin-top:18px;padding:16px 20px;border-radius:18px;background:rgba(255,213,31,.12);border:1px solid rgba(255,213,31,.4)}
 
 .ranking-lock-banner span{font-size:1.4rem}
 

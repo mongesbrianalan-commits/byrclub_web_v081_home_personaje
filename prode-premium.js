@@ -13,6 +13,7 @@
 
   const ROUND_URL = "/api/prode/round.php";
   const RANKING_URL = "/api/prode/ranking.php";
+  const RANKING_FECHA_URL = "/api/prode/ranking-fecha.php";
   const PREDICT_URL = "/api/prode/predict.php";
   const WINNER_URL = "/api/prode/winner.php";
 
@@ -25,6 +26,9 @@
     empty: $("[data-prode-empty]"),
     ranking: $("[data-prode-ranking]"),
     rankingEmpty: $("[data-prode-ranking-empty]"),
+    rankingEmptyText: $("[data-prode-ranking-empty-text]"),
+    rankingNote: $("[data-prode-ranking-note]"),
+    rankTabs: Array.from(document.querySelectorAll("[data-rank-tab]")),
     historySection: $("[data-prode-history-section]"),
     history: $("[data-prode-history]"),
     pos: $("[data-prode-position]"),
@@ -40,6 +44,11 @@
   if (!els.matches) return; // no estamos en la página del prode
 
   let currentMatches = [];
+
+  /* Ranking: cacheamos los dos scopes y mostramos el que esté activo.
+     "fecha" = solo la fecha en juego; "general" = acumulado del torneo. */
+  const rankingData = { fecha: null, general: null };
+  let activeScope = "fecha";
 
   /* ---------------- Helpers de DOM ---------------- */
 
@@ -332,33 +341,85 @@
     renderRound(data);
   }
 
+  /* Ranking GENERAL (acumulado de todas las fechas). También alimenta la
+     "Tu posición" del hero, que es la del torneo entero. */
   async function loadRanking() {
-    if (!els.ranking) return;
-    let data;
     try {
       const res = await fetch(RANKING_URL, { credentials: "same-origin" });
       if (res.status === 401) return;
-      data = await res.json();
+      rankingData.general = await res.json();
     } catch (e) {
       return;
     }
+    const you = rankingData.general && rankingData.general.you;
+    if (els.pos) els.pos.textContent = you ? `#${you.rank}` : "—";
+    renderActiveRanking();
+  }
 
-    const rows = Array.isArray(data.ranking) ? data.ranking : [];
-    if (!rows.length) {
-      if (els.rankingEmpty) els.rankingEmpty.hidden = false;
-      els.ranking.innerHTML = "";
+  /* Ranking de la FECHA EN JUEGO (solo la fecha actual). */
+  async function loadRankingFecha() {
+    try {
+      const res = await fetch(RANKING_FECHA_URL, { credentials: "same-origin" });
+      if (res.status === 401) return;
+      rankingData.fecha = await res.json();
+    } catch (e) {
       return;
     }
-    if (els.rankingEmpty) els.rankingEmpty.hidden = true;
+    renderActiveRanking();
+  }
+
+  /* Dibuja el ranking del scope activo (con su nota y estado vacío propio). */
+  function renderActiveRanking() {
+    if (!els.ranking) return;
+    const data = rankingData[activeScope];
+    const rows = data && Array.isArray(data.ranking) ? data.ranking : [];
+
+    if (els.rankingNote) {
+      if (activeScope === "fecha") {
+        const rn = data && data.round && data.round.name;
+        els.rankingNote.textContent = rn
+          ? `Solo la ${rn} — se actualiza a medida que se juega.`
+          : "Solo la fecha que se está jugando ahora.";
+      } else {
+        els.rankingNote.textContent = "Acumulado de todas las fechas del torneo.";
+      }
+    }
 
     els.ranking.innerHTML = "";
+
+    if (!rows.length) {
+      if (els.rankingEmpty) els.rankingEmpty.hidden = false;
+      if (els.rankingEmptyText) {
+        els.rankingEmptyText.textContent = activeScope === "fecha"
+          ? "Todavía no se jugaron partidos de esta fecha. En cuanto se juegue el primero, aparece acá."
+          : "El ranking se arma cuando se jueguen los primeros partidos. ¡Cargá tus pronósticos para entrar!";
+      }
+      return;
+    }
+
+    if (els.rankingEmpty) els.rankingEmpty.hidden = true;
     rows.forEach((r) => els.ranking.append(rankingRow(r)));
 
     if (data.you && data.you.rank > rows.length) {
       els.ranking.append(rankingRow(data.you));
     }
+  }
 
-    if (els.pos) els.pos.textContent = data.you ? `#${data.you.rank}` : "—";
+  /* Pestañas: cambian el scope activo y re-renderizan (los datos ya están cacheados). */
+  function initRankingTabs() {
+    els.rankTabs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const scope = btn.dataset.rankTab;
+        if (scope === activeScope) return;
+        activeScope = scope;
+        els.rankTabs.forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        renderActiveRanking();
+      });
+    });
   }
 
   function rankingRow(r) {
@@ -419,7 +480,9 @@
 
   /* ---------------- Arranque ---------------- */
 
+  initRankingTabs();
   loadRound();
   loadRanking();
+  loadRankingFecha();
   loadWinner();
 })();

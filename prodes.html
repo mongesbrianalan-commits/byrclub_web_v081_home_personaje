@@ -108,9 +108,14 @@
         <h2>Los mejores pronosticadores</h2>
         <p class="prode-subcopy">🏆 El socio que más puntos suma en la fecha se gana una <strong>hamburguesa gratis</strong>. ¡Jugá todas las fechas!</p>
       </div>
+      <div class="ranking-tabs" role="tablist">
+        <button type="button" class="ranking-tab active" data-rank-tab="fecha" aria-selected="true">🔥 Fecha en juego</button>
+        <button type="button" class="ranking-tab" data-rank-tab="general" aria-selected="false">🏆 General</button>
+      </div>
+      <p class="ranking-scope-note" data-prode-ranking-note></p>
       <div class="ranking-lock-banner" data-prode-ranking-empty hidden>
         <span>🔒</span>
-        <p>El ranking se arma cuando se jueguen los primeros partidos. ¡Cargá tus pronósticos para entrar!</p>
+        <p data-prode-ranking-empty-text>El ranking se arma cuando se jueguen los primeros partidos. ¡Cargá tus pronósticos para entrar!</p>
       </div>
       <div class="ranking-list" data-prode-ranking></div>
     </section>
