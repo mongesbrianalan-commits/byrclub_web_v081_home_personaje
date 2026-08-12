@@ -422,10 +422,17 @@
     redeemPrize.textContent = `${r.prize}`;
     redeemCustomer.textContent = r.customer;
     const pending = r.status === "pending";
-    redeemState.textContent = pending ? "Pendiente" : "Ya canjeado";
-    redeemState.className = "redeem-state " + (pending ? "pending" : "redeemed");
-    redeemConfirm.hidden = !pending;
-    redeemConfirm.disabled = !pending;
+    const expired = pending && r.expired;
+    const canRedeem = pending && !expired;
+    if (expired) {
+      redeemState.textContent = "Vencido";
+      redeemState.className = "redeem-state expired";
+    } else {
+      redeemState.textContent = pending ? "Pendiente" : "Ya canjeado";
+      redeemState.className = "redeem-state " + (pending ? "pending" : "redeemed");
+    }
+    redeemConfirm.hidden = !canRedeem;
+    redeemConfirm.disabled = !canRedeem;
     redeemConfirm.textContent = "Marcar como canjeado ✓";
     redeemCard.hidden = false;
   }

@@ -280,9 +280,9 @@ function byr_prode_close_round_if_complete(PDO $pdo, int $roundId): array
         $code  = byr_generate_redemption_code($pdo);
         $label = byr_prode_prize() . ' · Ganador ' . $round['name'];
         $pdo->prepare(
-            'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status)
-             VALUES (?, ?, "prode-winner", ?, "Prode BYR", "pending")'
-        )->execute([(int) $best['user_id'], $code, $label]);
+            'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status, expires_at)
+             VALUES (?, ?, "prode-winner", ?, "Prode BYR", "pending", DATE_ADD(NOW(), INTERVAL ? HOUR))'
+        )->execute([(int) $best['user_id'], $code, $label, BYR_REDEMPTION_TTL_HOURS_SPECIAL]);
         $winner = [
             'userId' => (int) $best['user_id'],
             'name'   => $best['name'],

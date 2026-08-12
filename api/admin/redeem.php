@@ -19,12 +19,14 @@ if ($code === '') {
     json_out(['error' => 'Escribí un código.'], 422);
 }
 
-/* Canje atómico: solo pasa a 'redeemed' si estaba 'pending'.
-   Así dos cargas simultáneas no pueden canjear dos veces. */
+/* Canje atómico: solo pasa a 'redeemed' si estaba 'pending' y NO venció.
+   Así dos cargas simultáneas no pueden canjear dos veces, y un vale
+   vencido nunca se canjea. */
 $upd = $pdo->prepare(
     'UPDATE redemptions
         SET status = "redeemed", redeemed_at = NOW(), redeemed_by = ?
-      WHERE code = ? AND status = "pending"'
+      WHERE code = ? AND status = "pending"
+        AND (expires_at IS NULL OR expires_at > NOW())'
 );
 $upd->execute([$id, $code]);
 
@@ -43,12 +45,23 @@ if ($upd->rowCount() === 1) {
     ]);
 }
 
-/* No se actualizó: o no existe, o ya estaba canjeado. Averiguamos cuál. */
-$stmt = $pdo->prepare('SELECT status, redeemed_at FROM redemptions WHERE code = ?');
+/* No se actualizó: o no existe, o ya estaba canjeado, o venció. Averiguamos cuál. */
+$stmt = $pdo->prepare(
+    'SELECT status, redeemed_at, expires_at,
+            (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired
+       FROM redemptions WHERE code = ?'
+);
 $stmt->execute([$code]);
 $row = $stmt->fetch();
 if (!$row) {
     json_out(['error' => 'No existe ningún premio con ese código.', 'code' => 'not-found'], 404);
+}
+if ($row['status'] === 'pending' && (int) $row['is_expired'] === 1) {
+    json_out([
+        'error'     => 'Este premio VENCIÓ y ya no se puede canjear.',
+        'code'      => 'expired',
+        'expiresAt' => $row['expires_at'],
+    ], 409);
 }
 json_out([
     'error'      => 'Este premio YA fue canjeado.',

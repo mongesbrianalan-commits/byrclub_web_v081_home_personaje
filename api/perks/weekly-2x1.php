@@ -71,12 +71,13 @@ if ($method === 'POST') {
 
     $code = byr_generate_redemption_code($pdo);
     $ins  = $pdo->prepare(
-        'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status, created_at)
-         VALUES (?, ?, ?, ?, ?, "pending", ?)'
+        'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status, created_at, expires_at)
+         VALUES (?, ?, ?, ?, ?, "pending", ?, DATE_ADD(?, INTERVAL ? HOUR))'
     );
+    $createdAt = $now->format('Y-m-d H:i:s');
     $ins->execute([
         $id, $code, BYR_2X1_PRIZE_ID, BYR_2X1_LABEL, BYR_2X1_SOURCE,
-        $now->format('Y-m-d H:i:s'),
+        $createdAt, $createdAt, BYR_REDEMPTION_TTL_HOURS,
     ]);
 
     json_out(['ok' => true, 'claimed' => true, 'reused' => false, 'code' => $code]);

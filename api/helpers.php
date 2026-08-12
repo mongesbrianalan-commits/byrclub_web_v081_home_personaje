@@ -14,6 +14,12 @@ header('Content-Type: application/json; charset=utf-8');
 const BYR_WELCOME_BONUS  = 300; // puntos de regalo al crear la cuenta
 const BYR_REFERRAL_BONUS = 300; // puntos para CADA uno (invitado e invitador)
 
+// Cada vale de premio vence a las 24hs de emitido, salvo los "especiales"
+// (cumpleaños y ganador del prode) que duran 7 días. Los vales viejos
+// (creados antes de esta regla) tienen expires_at = NULL y NO vencen.
+const BYR_REDEMPTION_TTL_HOURS         = 24;       // ruleta, raspadita, 2x1
+const BYR_REDEMPTION_TTL_HOURS_SPECIAL = 24 * 7;   // cumpleaños y prode: 7 días
+
 /* Sesión con cookie segura (HttpOnly + SameSite). "secure" solo si hay HTTPS. */
 $byr_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (($_SERVER['SERVER_PORT'] ?? null) == 443);

@@ -12,6 +12,7 @@
   background:radial-gradient(circle at 82% 12%,rgba(255,211,30,.16),transparent 42%),linear-gradient(155deg,#0e359e,#06133f);
   border:2px solid rgba(255,211,30,.55);box-shadow:0 14px 0 rgba(0,0,0,.18),0 22px 40px rgba(0,0,0,.26);overflow:hidden}
 .coupon-card.is-redeemed{border-color:rgba(255,255,255,.14);background:linear-gradient(155deg,#0b1f52,#050d31);filter:saturate(.55);opacity:.72;box-shadow:0 12px 0 rgba(0,0,0,.16)}
+.coupon-card.is-expired{border-color:rgba(255,120,120,.4);background:linear-gradient(155deg,#3a1330,#1a0820);filter:saturate(.7);opacity:.78;box-shadow:0 12px 0 rgba(0,0,0,.16)}
 
 .coupon-top{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px}
 .coupon-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;background:rgba(255,255,255,.09);font-size:1.9rem;flex-shrink:0}
@@ -22,6 +23,7 @@
 .coupon-status{align-self:start;padding:5px 11px;border-radius:999px;font-size:.68rem;font-weight:900;letter-spacing:.05em;white-space:nowrap}
 .is-available .coupon-status{background:var(--profile-green,#53e87d);color:#06251a}
 .is-redeemed .coupon-status{background:rgba(255,255,255,.14);color:#c6d4ee}
+.is-expired .coupon-status{background:rgba(255,120,120,.22);color:#ffc9c9}
 
 .coupon-code-row{display:flex;align-items:stretch;gap:10px}
 .coupon-code{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:13px 12px;border-radius:14px;
@@ -37,6 +39,14 @@
 .coupon-copy.copied{background:var(--profile-green,#53e87d);box-shadow:0 5px 0 #1c8a44}
 
 .coupon-redeemed-at{margin:-4px 2px 0;font-size:.76rem;font-weight:800;color:#9fb4dc}
+
+/* Contador de vencimiento (24hs) */
+.coupon-countdown{display:flex;align-items:center;gap:7px;margin:-4px 2px 0;font-size:.86rem;font-weight:900;letter-spacing:.02em;color:#bcd3f6}
+.coupon-countdown::before{content:"⏳";font-size:.95rem}
+.coupon-countdown.is-urgent{color:#ffb84d}
+.coupon-countdown.is-expired-note{color:#ffc9c9}
+.coupon-countdown.is-expired-note::before{content:"⌛"}
+.is-expired .coupon-code{border-color:rgba(255,120,120,.35);color:#e0aebe}
 
 .coupons-empty,.coupons-error{margin-top:6px;padding:26px 22px;border-radius:22px;text-align:center;font-weight:700;
   background:linear-gradient(150deg,rgba(11,42,133,.6),rgba(3,12,51,.7));border:2px dashed rgba(255,255,255,.16)}

@@ -34,10 +34,12 @@ CREATE TABLE IF NOT EXISTS redemptions (
   source       VARCHAR(60)  NOT NULL DEFAULT 'Ruleta diaria',
   status       ENUM('pending','redeemed') NOT NULL DEFAULT 'pending',
   created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at   DATETIME     DEFAULT NULL,         -- vence a las 24hs; NULL = no vence (vales viejos)
   redeemed_at  DATETIME     DEFAULT NULL,
   redeemed_by  INT UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_code (code),
   KEY idx_user (user_id),
-  KEY idx_status (status)
+  KEY idx_status (status),
+  KEY idx_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

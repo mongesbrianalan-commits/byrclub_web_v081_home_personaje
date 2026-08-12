@@ -20,7 +20,8 @@ if ($code === '') {
 }
 
 $stmt = $pdo->prepare(
-    'SELECT r.code, r.prize_label, r.status, r.created_at, r.redeemed_at,
+    'SELECT r.code, r.prize_label, r.status, r.created_at, r.expires_at, r.redeemed_at,
+            (r.expires_at IS NOT NULL AND r.expires_at <= NOW()) AS is_expired,
             u.name AS customer_name, u.email AS customer_email
        FROM redemptions r
        JOIN users u ON u.id = r.user_id
@@ -32,14 +33,18 @@ if (!$row) {
     json_out(['error' => 'No existe ningún premio con ese código.', 'code' => 'not-found'], 404);
 }
 
+$expired = $row['status'] === 'pending' && (int) $row['is_expired'] === 1;
+
 json_out([
     'redemption' => [
         'code'       => $row['code'],
         'prize'      => $row['prize_label'],
         'status'     => $row['status'],
+        'expired'    => $expired,
         'customer'   => $row['customer_name'],
         'email'      => $row['customer_email'],
         'createdAt'  => $row['created_at'],
+        'expiresAt'  => $row['expires_at'],
         'redeemedAt' => $row['redeemed_at'],
     ],
 ]);

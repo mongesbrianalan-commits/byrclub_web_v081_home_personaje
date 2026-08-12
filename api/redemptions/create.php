@@ -76,10 +76,10 @@ if ($existing = $dup->fetch()) {
 /* Nuevo vale con código único server-side. */
 $code = byr_generate_redemption_code($pdo);
 $ins  = $pdo->prepare(
-    'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status)
-     VALUES (?, ?, ?, ?, ?, "pending")'
+    'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status, expires_at)
+     VALUES (?, ?, ?, ?, ?, "pending", DATE_ADD(NOW(), INTERVAL ? HOUR))'
 );
-$ins->execute([$id, $code, $prizeId, $prizeLabel, $source]);
+$ins->execute([$id, $code, $prizeId, $prizeLabel, $source, BYR_REDEMPTION_TTL_HOURS]);
 
 json_out([
     'ok'         => true,

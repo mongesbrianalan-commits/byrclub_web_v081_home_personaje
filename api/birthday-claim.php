@@ -42,9 +42,9 @@ if ($existing) {
 /* Si no, lo generamos (una sola vez al año). */
 $code = byr_generate_redemption_code($pdo);
 $ins  = $pdo->prepare(
-    "INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status)
-     VALUES (?, ?, 'birthday-burger', 'Hamburguesa de cumpleaños', 'Cumpleaños', 'pending')"
+    "INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status, expires_at)
+     VALUES (?, ?, 'birthday-burger', 'Hamburguesa de cumpleaños', 'Cumpleaños', 'pending', DATE_ADD(NOW(), INTERVAL ? HOUR))"
 );
-$ins->execute([$id, $code]);
+$ins->execute([$id, $code, BYR_REDEMPTION_TTL_HOURS_SPECIAL]);
 
 json_out(['voucher' => ['code' => $code, 'status' => 'pending']]);

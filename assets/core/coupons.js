@@ -37,12 +37,87 @@
     if (el) el.hidden = !visible;
   }
 
+  /* --- Contador de vencimiento (24hs) ---
+     El server nos manda secondsLeft (segundos que faltan según SU reloj), así
+     el contador no depende de la hora del celular. Lo anclamos a un instante
+     local y desde ahí descontamos con un único setInterval para todas las
+     tarjetas. Cuando llega a 0, la tarjeta pasa a "Vencido" sola. */
+
+  const timers = new Set();
+  let ticker = null;
+
+  function fmtCountdown(secs) {
+    if (secs >= 86400) {
+      const d = Math.floor(secs / 86400);
+      const h = Math.floor((secs % 86400) / 3600);
+      return "Vence en " + d + "d " + h + "h";
+    }
+    if (secs >= 3600) {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      return "Vence en " + h + "h " + m + "m";
+    }
+    if (secs >= 60) {
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      return "Vence en " + m + "m " + s + "s";
+    }
+    return "Vence en " + secs + "s";
+  }
+
+  function tick() {
+    const now = Date.now();
+    timers.forEach((t) => {
+      const remaining = Math.ceil((t.deadline - now) / 1000);
+      if (remaining <= 0) {
+        expireCard(t);
+        timers.delete(t);
+      } else {
+        t.el.textContent = fmtCountdown(remaining);
+        t.el.classList.toggle("is-urgent", remaining < 3600);
+      }
+    });
+    if (timers.size === 0 && ticker) {
+      window.clearInterval(ticker);
+      ticker = null;
+    }
+  }
+
+  function startTicker() {
+    if (!ticker && timers.size > 0) {
+      ticker = window.setInterval(tick, 1000);
+    }
+  }
+
+  // Convierte una tarjeta disponible en "Vencido" sin recargar.
+  function expireCard(t) {
+    const card = t.card;
+    card.classList.remove("is-available");
+    card.classList.add("is-expired");
+    if (t.statusEl) t.statusEl.textContent = "Vencido";
+    if (t.copyBtn) t.copyBtn.remove();
+    t.el.classList.remove("is-urgent");
+    t.el.classList.add("is-expired-note");
+    t.el.textContent = "Cupón vencido";
+  }
+
   /* --- Render --- */
 
   function couponCard(c) {
     const article = document.createElement("article");
     const redeemed = c.status === "redeemed";
-    article.className = "coupon-card " + (redeemed ? "is-redeemed" : "is-available");
+    // Vencido = pendiente cuyo plazo ya pasó (el server ya lo marca, pero
+    // también nos cubrimos si secondsLeft llegó a 0 recién).
+    const expired = !redeemed &&
+      (c.expired === true || (typeof c.secondsLeft === "number" && c.secondsLeft <= 0));
+    const available = !redeemed && !expired;
+    // ¿Tiene contador? Solo los disponibles con vencimiento (secondsLeft != null).
+    const hasCountdown = available && typeof c.secondsLeft === "number";
+
+    let stateClass = "is-available";
+    if (redeemed) stateClass = "is-redeemed";
+    else if (expired) stateClass = "is-expired";
+    article.className = "coupon-card " + stateClass;
 
     const top = document.createElement("div");
     top.className = "coupon-top";
@@ -62,7 +137,7 @@
 
     const status = document.createElement("span");
     status.className = "coupon-status";
-    status.textContent = redeemed ? "Canjeado" : "Disponible";
+    status.textContent = redeemed ? "Canjeado" : (expired ? "Vencido" : "Disponible");
 
     top.append(icon, meta, status);
     article.append(top);
@@ -74,15 +149,40 @@
     code.textContent = c.code;
     codeRow.append(code);
 
-    if (!redeemed) {
-      const copy = document.createElement("button");
-      copy.type = "button";
-      copy.className = "coupon-copy";
-      copy.textContent = "Copiar";
-      copy.addEventListener("click", () => copyCode(c.code, copy));
-      codeRow.append(copy);
+    let copyBtn = null;
+    if (available) {
+      copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "coupon-copy";
+      copyBtn.textContent = "Copiar";
+      copyBtn.addEventListener("click", () => copyCode(c.code, copyBtn));
+      codeRow.append(copyBtn);
     }
     article.append(codeRow);
+
+    // Contador regresivo en vivo para los disponibles con vencimiento.
+    if (hasCountdown) {
+      const cd = document.createElement("p");
+      cd.className = "coupon-countdown";
+      const secs = Math.max(0, c.secondsLeft);
+      cd.textContent = fmtCountdown(secs);
+      if (secs < 3600) cd.classList.add("is-urgent");
+      article.append(cd);
+      // Anclamos el vencimiento a un instante local: no volvemos a confiar en
+      // el reloj del celular, solo en el delta desde ahora.
+      timers.add({
+        el: cd,
+        deadline: Date.now() + secs * 1000,
+        card: article,
+        statusEl: status,
+        copyBtn: copyBtn,
+      });
+    } else if (expired) {
+      const note = document.createElement("p");
+      note.className = "coupon-countdown is-expired-note";
+      note.textContent = "Cupón vencido";
+      article.append(note);
+    }
 
     if (redeemed && c.redeemedAt) {
       const when = document.createElement("p");
@@ -131,6 +231,8 @@
 
   function render(coupons) {
     grid.textContent = "";
+    // Reiniciamos los contadores: las tarjetas anteriores ya no existen.
+    timers.clear();
     show(errorEl, false);
 
     if (!coupons.length) {
@@ -144,6 +246,8 @@
     const frag = document.createDocumentFragment();
     coupons.forEach((c) => frag.append(couponCard(c)));
     grid.append(frag);
+
+    startTicker();
   }
 
   /* --- Carga --- */

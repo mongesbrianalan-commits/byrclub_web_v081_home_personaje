@@ -78,10 +78,10 @@ $code = null;
 if (!empty($prize['redeemable'])) {
     $code = byr_generate_redemption_code($pdo);
     $ins = $pdo->prepare(
-        'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status)
-         VALUES (?, ?, ?, ?, ?, "pending")'
+        'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status, expires_at)
+         VALUES (?, ?, ?, ?, ?, "pending", DATE_ADD(NOW(), INTERVAL ? HOUR))'
     );
-    $ins->execute([$id, $code, $prize['id'], $prize['label'], 'Ruleta diaria']);
+    $ins->execute([$id, $code, $prize['id'], $prize['label'], 'Ruleta diaria', BYR_REDEMPTION_TTL_HOURS]);
 
     /* Lo dejamos también en el inventario del usuario (para que lo vea en su app). */
     if (!isset($state['inventory']) || !is_array($state['inventory'])) {
