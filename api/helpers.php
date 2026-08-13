@@ -34,6 +34,24 @@ session_set_cookie_params([
 session_name('byrclub_sess');
 session_start();
 
+/**
+ * Lee un valor de config.php (el mismo archivo que usa la base). Cachea la
+ * lectura. Sirve para claves que no son de la base (p. ej. la tasa de puntos
+ * de los pedidos). Devuelve $default si el archivo o la clave no existen.
+ */
+function byr_setting(string $key, $default = null)
+{
+    static $cfg = null;
+    if ($cfg === null) {
+        $path = __DIR__ . '/config.php';
+        $cfg  = file_exists($path) ? (require $path) : [];
+        if (!is_array($cfg)) {
+            $cfg = [];
+        }
+    }
+    return $cfg[$key] ?? $default;
+}
+
 /** Emite una respuesta JSON y corta la ejecución. */
 function json_out($data, int $code = 200): void
 {
@@ -69,6 +87,22 @@ function require_auth(): int
     $id = current_user_id();
     if (!$id) {
         json_out(['error' => 'No hay sesión activa.'], 401);
+    }
+    return $id;
+}
+
+/**
+ * Exige sesión activa Y que el usuario sea admin. Corta con 401/403 si no.
+ * Devuelve el id del admin. Reemplaza el chequeo repetido de is_admin.
+ */
+function require_admin(PDO $pdo): int
+{
+    $id   = require_auth();
+    $stmt = $pdo->prepare('SELECT is_admin FROM users WHERE id = ?');
+    $stmt->execute([$id]);
+    $me = $stmt->fetch();
+    if (!$me || !$me['is_admin']) {
+        json_out(['error' => 'No tenés permisos para hacer esto.'], 403);
     }
     return $id;
 }

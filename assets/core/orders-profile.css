@@ -1,0 +1,36 @@
+/* =========================================================
+   BYR Club — "Mis pedidos" (perfil)
+   Tarjetas con estado del pedido, ítems y puntos acreditados.
+========================================================= */
+
+.orders-section { margin-top: 8px; }
+.orders-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.orders-empty, .orders-error { color: #9bd1ff; font-weight: 700; padding: 10px 2px; }
+.orders-error { color: #ffb0b0; }
+.orders-empty a { color: var(--yellow); font-weight: 800; }
+
+.order-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); border-radius: 20px; padding: 16px 18px; }
+.order-card.is-confirmed { border-color: rgba(78,230,109,.4); }
+.order-card.is-cancelled { opacity: .72; }
+
+.order-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.order-card-id { font-family: "Lilita One"; font-size: 1.2rem; }
+.order-card-id small { display: block; color: #9bd1ff; font-weight: 700; font-size: .74rem; font-family: "Baloo 2", sans-serif; }
+
+.order-badge { font-weight: 900; text-transform: uppercase; letter-spacing: .03em; font-size: .74rem; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+.order-badge.pending { background: rgba(255,213,31,.16); color: #ffe79a; border: 1px solid rgba(255,213,31,.4); }
+.order-badge.confirmed { background: rgba(78,230,109,.16); color: #b8ffcb; border: 1px solid rgba(78,230,109,.4); }
+.order-badge.cancelled { background: rgba(255,120,120,.14); color: #ffb0b0; border: 1px solid rgba(255,120,120,.36); }
+
+.order-card-items { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.order-card-items li { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: .9rem; color: #dbe9ff; }
+.order-card-items li span:last-child { color: #9bd1ff; white-space: nowrap; }
+
+.order-card-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-weight: 700; font-size: .82rem; color: #9bd1ff; margin-bottom: 10px; }
+.order-card-meta .om-coupon { color: #ffe79a; }
+
+.order-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 2px dashed rgba(255,255,255,.18); padding-top: 10px; }
+.order-card-total { font-family: "Lilita One"; font-size: 1.2rem; }
+.order-card-points { font-weight: 900; font-size: .9rem; }
+.order-card-points.earned { color: var(--green); }
+.order-card-points.pending { color: #ffe79a; }

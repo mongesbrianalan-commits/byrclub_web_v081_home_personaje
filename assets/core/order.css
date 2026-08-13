@@ -1,0 +1,102 @@
+/* =========================================================
+   BYR Club — Pedidos online (pedir.html)
+   Estilo arcade: bordes redondeados, sombras duras, acento amarillo.
+   Reutiliza las variables de color de styles.css (:root).
+========================================================= */
+
+.order-main { max-width: 1160px; margin: 0 auto; padding: 28px clamp(16px, 4vw, 32px) 90px; }
+
+/* --- Hero --- */
+.order-hero { margin-bottom: 22px; }
+.order-kicker { display: inline-block; background: var(--yellow); color: #071342; font-weight: 900; text-transform: uppercase; padding: 7px 16px; border-radius: 999px; transform: rotate(-2deg); box-shadow: 0 6px 0 #b98700; font-size: .82rem; }
+.order-hero h1 { font-family: "Lilita One"; font-size: clamp(2.2rem, 6vw, 3.4rem); text-transform: uppercase; margin: 14px 0 6px; line-height: 1; }
+.order-hero h1 strong { color: var(--yellow); text-shadow: 0 5px 0 #8c6500; }
+.order-hero p { color: #bfe0ff; font-weight: 700; margin: 0; max-width: 640px; }
+.order-hero p b { color: #fff; }
+
+/* --- Layout de dos columnas --- */
+.order-layout { display: grid; grid-template-columns: 1fr 380px; gap: 26px; align-items: start; }
+@media (max-width: 900px) { .order-layout { grid-template-columns: 1fr; } }
+
+.order-loading, .order-error { color: #9bd1ff; font-weight: 800; padding: 20px 4px; }
+.order-error { color: #ffb0b0; }
+
+/* --- Categorías y productos --- */
+.menu-category { margin-bottom: 30px; }
+.menu-category h2 { font-family: "Lilita One"; font-size: 1.5rem; text-transform: uppercase; margin: 0 0 14px; }
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+
+.product-card { display: flex; flex-direction: column; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; overflow: hidden; transition: transform .15s, border-color .15s; }
+.product-card:hover { transform: translateY(-3px); border-color: rgba(255,213,31,.5); }
+.product-thumb { position: relative; aspect-ratio: 16 / 10; background: #0a1f5c; display: grid; place-items: center; overflow: hidden; }
+.product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.product-thumb .product-emoji { font-size: 3.4rem; }
+.product-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; flex: 1; }
+.product-name { font-family: "Lilita One"; font-size: 1.15rem; line-height: 1.05; }
+.product-desc { color: #9bd1ff; font-weight: 700; font-size: .86rem; line-height: 1.25; flex: 1; }
+.product-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+.product-price { font-family: "Lilita One"; font-size: 1.3rem; color: var(--yellow); }
+
+/* Stepper +/- */
+.qty-stepper { display: inline-flex; align-items: center; gap: 2px; }
+.qty-add { border: 0; border-radius: 14px; padding: 10px 16px; background: var(--blue-600); color: #fff; font-weight: 900; box-shadow: 0 5px 0 #0438a0; cursor: pointer; white-space: nowrap; }
+.qty-add:hover { transform: translateY(-2px); }
+.qty-btn { width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--blue-600); color: #fff; font-size: 1.3rem; font-weight: 900; line-height: 1; box-shadow: 0 4px 0 #0438a0; cursor: pointer; display: grid; place-items: center; }
+.qty-btn:hover { transform: translateY(-1px); }
+.qty-num { min-width: 34px; text-align: center; font-family: "Lilita One"; font-size: 1.25rem; }
+
+/* --- Carrito --- */
+.order-cart { position: sticky; top: 18px; }
+@media (max-width: 900px) { .order-cart { position: static; } }
+.cart-inner { background: rgba(4,18,58,.86); border: 1px solid rgba(255,255,255,.16); border-radius: 24px; padding: 20px 20px 22px; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+.cart-title { font-family: "Lilita One"; font-size: 1.4rem; text-transform: uppercase; margin: 0 0 14px; }
+
+.cart-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.cart-empty { color: #9bd1ff; font-weight: 700; margin: 8px 0; }
+.cart-line { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px 10px; }
+.cart-line .cl-emoji { font-size: 1.3rem; }
+.cart-line .cl-info { flex: 1; min-width: 0; }
+.cart-line .cl-name { font-weight: 800; font-size: .92rem; line-height: 1.1; }
+.cart-line .cl-price { color: #9bd1ff; font-weight: 700; font-size: .82rem; }
+.cart-line .qty-btn { width: 30px; height: 30px; font-size: 1.05rem; border-radius: 9px; box-shadow: 0 3px 0 #0438a0; }
+.cart-line .qty-num { min-width: 22px; font-size: 1rem; }
+
+.cart-total-row { display: flex; align-items: baseline; justify-content: space-between; border-top: 2px dashed rgba(255,255,255,.2); padding-top: 12px; margin-top: 4px; }
+.cart-total-row span { font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #cfe4ff; }
+.cart-total-row strong { font-family: "Lilita One"; font-size: 1.7rem; color: var(--yellow); }
+.cart-points-hint { margin: 8px 0 0; background: rgba(78,230,109,.12); border: 1px solid rgba(78,230,109,.34); border-radius: 12px; padding: 8px 12px; color: #b8ffcb; font-weight: 800; font-size: .86rem; }
+
+/* --- Checkout --- */
+.cart-checkout { margin-top: 16px; display: flex; flex-direction: column; }
+.checkout-block { margin-bottom: 12px; }
+.checkout-label { display: block; font-weight: 800; color: #cfe4ff; margin-bottom: 8px; font-size: .9rem; }
+.fulfillment-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fulfill-opt { position: relative; cursor: pointer; text-align: center; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); border-radius: 14px; padding: 12px 8px; font-weight: 800; font-size: .9rem; transition: .12s; }
+.fulfill-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.fulfill-opt.is-active { background: var(--yellow); color: #071342; border-color: var(--yellow); box-shadow: 0 5px 0 #9d7300; }
+
+.cart-checkout .auth-field { margin-bottom: 12px; }
+.cart-checkout textarea { width: 100%; box-sizing: border-box; border-radius: 14px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: #fff; padding: 12px 14px; font: inherit; resize: vertical; }
+.cart-checkout select { width: 100%; box-sizing: border-box; }
+.coupon-hint { display: block; color: #9bd1ff; font-weight: 700; font-size: .78rem; margin-top: 6px; }
+
+.cart-checkout .auth-form-status { margin: 10px 0 0; font-weight: 800; min-height: 1.2em; }
+.cart-checkout .auth-form-status.is-error { color: #ffb0b0; }
+.cart-checkout .auth-form-status.is-ok { color: #b8ffcb; }
+
+.order-secondary-btn { border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: #fff; font-weight: 800; border-radius: 16px; padding: 13px 20px; cursor: pointer; }
+.order-secondary-btn:hover { background: rgba(255,255,255,.16); }
+
+/* --- Éxito --- */
+.order-success { display: grid; place-items: center; padding: 20px 0; }
+.success-card { max-width: 560px; width: 100%; text-align: center; background: rgba(4,18,58,.9); border: 1px solid rgba(255,255,255,.16); border-radius: 26px; padding: 40px 28px; box-shadow: 0 18px 40px rgba(0,0,0,.4); }
+.success-emoji { font-size: 3.6rem; }
+.success-card h2 { font-family: "Lilita One"; font-size: 2rem; text-transform: uppercase; margin: 8px 0 10px; }
+.success-card p { color: #bfe0ff; font-weight: 700; }
+.success-card p strong { color: var(--yellow); }
+.success-summary { text-align: left; background: rgba(255,255,255,.06); border-radius: 16px; padding: 14px 16px; margin: 16px 0; font-weight: 700; }
+.success-summary .ss-line { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.success-summary .ss-total { border-top: 2px dashed rgba(255,255,255,.2); margin-top: 6px; padding-top: 8px; font-family: "Lilita One"; }
+.success-summary .ss-total b { color: var(--yellow); }
+.success-actions { display: flex; flex-direction: column; gap: 10px; }
+.success-actions .auth-submit { text-decoration: none; text-align: center; }

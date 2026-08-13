@@ -771,10 +771,313 @@
   if (pmAddBtn) pmAddBtn.addEventListener("click", prodeAddMatch);
   if (pmatchLoadBtn) pmatchLoadBtn.addEventListener("click", prodeLoadMatches);
 
+  /* ---------------------------------------------------------
+     Pedidos de clientes (confirmar acredita puntos + canjea cupón)
+  --------------------------------------------------------- */
+
+  const ordersList = document.querySelector("[data-orders-admin-list]");
+  const ordersAdminStatus = document.querySelector("[data-orders-admin-status]");
+  const ordersFilter = document.querySelector("[data-orders-filter]");
+  const ordersRefresh = document.querySelector("[data-orders-refresh]");
+  let ordersFilterStatus = "pending";
+
+  function money(n) {
+    return "$" + fmt(n);
+  }
+
+  const ORDER_STATUS = {
+    pending:   { label: "Pendiente",  cls: "pending" },
+    confirmed: { label: "Confirmado", cls: "confirmed" },
+    cancelled: { label: "Cancelado",  cls: "cancelled" }
+  };
+
+  async function loadOrders() {
+    if (!ordersList) return;
+    setStatus(ordersAdminStatus, "Cargando pedidos…", "");
+    ordersList.innerHTML = "";
+    try {
+      const q = ordersFilterStatus ? `?status=${ordersFilterStatus}` : "";
+      const res = await fetch(`${API}admin/orders-list.php${q}`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudieron cargar los pedidos.");
+      renderOrders(data.orders || []);
+      setStatus(ordersAdminStatus, "", "");
+    } catch (error) {
+      setStatus(ordersAdminStatus, error.message, "error");
+    }
+  }
+
+  function renderOrders(list) {
+    ordersList.innerHTML = "";
+    if (!list.length) {
+      ordersList.innerHTML = `<p class="oa-empty">No hay pedidos${ordersFilterStatus === "pending" ? " pendientes" : ""} por ahora.</p>`;
+      return;
+    }
+    list.forEach((o) => ordersList.append(orderAdminCard(o)));
+  }
+
+  function orderAdminCard(o) {
+    const st = ORDER_STATUS[o.status] || ORDER_STATUS.pending;
+    const card = document.createElement("article");
+    card.className = "oa-card is-" + o.status;
+
+    const digits = String(o.customerPhone || "").replace(/\D/g, "");
+    const waLink = digits
+      ? ` <a href="https://wa.me/${digits}" target="_blank" rel="noreferrer">💬 ${escapeHtml(o.customerPhone)}</a>`
+      : (o.customerPhone ? ` · ${escapeHtml(o.customerPhone)}` : "");
+
+    const itemsHtml = (o.items || [])
+      .map((ln) => `<li><span>${escapeHtml(String(ln.qty))}× ${escapeHtml(ln.name)}</span><span>${money(ln.subtotal)}</span></li>`)
+      .join("");
+
+    const fulfillHtml = o.fulfillment === "delivery"
+      ? `🛵 Delivery · <span class="oa-addr">${escapeHtml(o.address || "sin dirección")}</span>`
+      : "🏪 Retiro en el local";
+
+    const couponHtml = o.couponLabel
+      ? `<div class="oa-coupon">🎟️ Cupón adjunto: ${escapeHtml(o.couponLabel)} (${escapeHtml(o.couponCode || "")}) — se marca canjeado al confirmar.</div>`
+      : "";
+
+    const notesHtml = o.notes
+      ? `<div class="oa-fulfill">📝 ${escapeHtml(o.notes)}</div>`
+      : "";
+
+    card.innerHTML = `
+      <div class="oa-top">
+        <div class="oa-id">Pedido #${o.id} <small>· ${escapeHtml(fmtDateTime(o.createdAt))}</small></div>
+        <span class="oa-badge ${st.cls}">${st.label}</span>
+      </div>
+      <div class="oa-customer">${escapeHtml(o.customerName || "—")}${waLink}</div>
+      <div class="oa-fulfill">${fulfillHtml}</div>
+      ${notesHtml}
+      <ul class="oa-items">${itemsHtml}</ul>
+      ${couponHtml}
+      <div class="oa-total"><span>Total</span><b>${money(o.itemsTotal)}</b></div>
+    `;
+
+    if (o.status === "pending") {
+      const row = document.createElement("div");
+      row.className = "oa-confirm-row";
+
+      const field = document.createElement("label");
+      field.className = "auth-field";
+      field.innerHTML = `<span>Puntos a sumar</span>`;
+      const ptsInput = document.createElement("input");
+      ptsInput.type = "number";
+      ptsInput.min = "0";
+      ptsInput.value = String(o.pointsSuggested || 0);
+      field.append(ptsInput);
+
+      const confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "oa-confirm-btn";
+      confirmBtn.textContent = "Confirmar y acreditar ✓";
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "oa-cancel-btn";
+      cancelBtn.textContent = "Cancelar";
+
+      const lineSt = document.createElement("small");
+      lineSt.className = "oa-line-status auth-form-status";
+
+      confirmBtn.addEventListener("click", async () => {
+        const points = parseInt(ptsInput.value, 10);
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        confirmBtn.textContent = "Confirmando…";
+        try {
+          const r = await api("admin/orders-confirm.php", {
+            orderId: o.id,
+            points: isNaN(points) ? o.pointsSuggested : points
+          });
+          let msg = `✅ Pedido confirmado · +${fmt(r.pointsAwarded)} pts (nuevo saldo: ${fmt(r.newBalance)}).`;
+          if (r.couponApplied === true) msg += " Cupón canjeado.";
+          else if (r.couponApplied === false) msg += " (El cupón ya no estaba disponible.)";
+          setStatus(ordersAdminStatus, msg, "ok");
+          loadOrders();
+        } catch (error) {
+          setStatus(ordersAdminStatus, error.message, "error");
+          confirmBtn.disabled = false;
+          cancelBtn.disabled = false;
+          confirmBtn.textContent = "Confirmar y acreditar ✓";
+        }
+      });
+
+      cancelBtn.addEventListener("click", async () => {
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        cancelBtn.textContent = "Cancelando…";
+        try {
+          await api("admin/orders-cancel.php", { orderId: o.id });
+          setStatus(ordersAdminStatus, `Pedido #${o.id} cancelado.`, "");
+          loadOrders();
+        } catch (error) {
+          setStatus(ordersAdminStatus, error.message, "error");
+          confirmBtn.disabled = false;
+          cancelBtn.disabled = false;
+          cancelBtn.textContent = "Cancelar";
+        }
+      });
+
+      row.append(field, confirmBtn, cancelBtn, lineSt);
+      card.append(row);
+    } else if (o.status === "confirmed" && o.pointsAwarded !== null) {
+      const p = document.createElement("div");
+      p.className = "oa-fulfill";
+      p.innerHTML = `🪙 Se acreditaron <b style="color:var(--green)">+${fmt(o.pointsAwarded)}</b> puntos.`;
+      card.append(p);
+    }
+
+    return card;
+  }
+
+  function fmtDateTime(value) {
+    if (!value) return "";
+    const d = new Date(String(value).replace(" ", "T"));
+    if (isNaN(d.getTime())) return String(value);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm} ${hh}:${mi}`;
+  }
+
+  function initOrders() {
+    if (!ordersList) return;
+    if (ordersFilter) {
+      ordersFilter.querySelectorAll("[data-orders-status]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          ordersFilterStatus = btn.getAttribute("data-orders-status");
+          ordersFilter.querySelectorAll("[data-orders-status]").forEach((b) => {
+            b.classList.toggle("is-active", b === btn);
+          });
+          loadOrders();
+        });
+      });
+    }
+    if (ordersRefresh) ordersRefresh.addEventListener("click", loadOrders);
+    loadOrders();
+  }
+
+  /* ---------------------------------------------------------
+     Menú — editar precios y disponibilidad
+  --------------------------------------------------------- */
+
+  const menuAdminList = document.querySelector("[data-menu-admin-list]");
+  const menuAdminStatus = document.querySelector("[data-menu-admin-status]");
+
+  const CAT_LABEL = {
+    hamburguesas: "Hamburguesas", combos: "Combos",
+    papas: "Papas", bebidas: "Bebidas", otros: "Otros"
+  };
+
+  async function loadMenuAdmin() {
+    if (!menuAdminList) return;
+    setStatus(menuAdminStatus, "Cargando menú…", "");
+    menuAdminList.innerHTML = "";
+    try {
+      const res = await fetch(`${API}admin/products-list.php`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo cargar el menú.");
+      renderMenuAdmin(data.products || []);
+      setStatus(menuAdminStatus, "", "");
+    } catch (error) {
+      setStatus(menuAdminStatus, error.message, "error");
+    }
+  }
+
+  function renderMenuAdmin(products) {
+    menuAdminList.innerHTML = "";
+    if (!products.length) {
+      menuAdminList.innerHTML = `<p class="oa-empty">Todavía no hay productos. Corré la migración 2026-08-orders.sql.</p>`;
+      return;
+    }
+    products.forEach((p) => menuAdminList.append(productAdminRow(p)));
+  }
+
+  function productAdminRow(p) {
+    const row = document.createElement("div");
+    row.className = "ma-row";
+
+    const emoji = document.createElement("span");
+    emoji.className = "ma-emoji";
+    emoji.textContent = p.emoji || "🍔";
+
+    const info = document.createElement("div");
+    info.className = "ma-info";
+    info.innerHTML = `<div class="ma-name">${escapeHtml(p.name)}</div><div class="ma-cat">${escapeHtml(CAT_LABEL[p.category] || p.category)}</div>`;
+
+    const priceField = document.createElement("div");
+    priceField.className = "ma-price-field";
+    const sign = document.createElement("span");
+    sign.textContent = "$";
+    const priceInput = document.createElement("input");
+    priceInput.type = "number";
+    priceInput.min = "0";
+    priceInput.value = String(p.price);
+    priceField.append(sign, priceInput);
+
+    const availLabel = document.createElement("label");
+    availLabel.className = "ma-avail";
+    const availCheck = document.createElement("input");
+    availCheck.type = "checkbox";
+    availCheck.checked = !!p.available;
+    availLabel.append(availCheck, document.createTextNode(" En la carta"));
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "ma-save";
+    saveBtn.textContent = "Guardar";
+
+    const rowSt = document.createElement("small");
+    rowSt.className = "ma-row-status";
+
+    saveBtn.addEventListener("click", async () => {
+      const price = parseInt(priceInput.value, 10);
+      if (isNaN(price) || price < 0) {
+        rowSt.textContent = "Precio inválido.";
+        rowSt.style.color = "#ffb0b0";
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Guardando…";
+      try {
+        await api("admin/product-save.php", {
+          id: p.id,
+          slug: p.slug,
+          category: p.category,
+          name: p.name,
+          description: p.description,
+          image: p.image,
+          emoji: p.emoji,
+          price,
+          available: availCheck.checked,
+          sort: p.sort
+        });
+        p.price = price;
+        p.available = availCheck.checked;
+        rowSt.textContent = "✅ Guardado.";
+        rowSt.style.color = "#7bffa0";
+      } catch (error) {
+        rowSt.textContent = error.message;
+        rowSt.style.color = "#ffb0b0";
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Guardar";
+      }
+    });
+
+    row.append(emoji, info, priceField, availLabel, saveBtn, rowSt);
+    return row;
+  }
+
   checkAdmin().then(() => {
     if (panel && !panel.hidden) {
       initBirthdays();
       loadProdeTeamsDatalist();
+      initOrders();
+      loadMenuAdmin();
     }
   });
 })();

@@ -29,4 +29,11 @@ return [
 
     // Premio para el ganador de cada fecha del Prode (podés cambiarlo cuando quieras).
     'prode_prize'        => 'Hamburguesa gratis (Doble Cheese con papas)',
+
+    /*
+     * Pedidos online — cuántos pesos vale 1 punto. Con 100, una compra de
+     * $8.000 sugiere 80 puntos. Es solo una SUGERENCIA: al confirmar el pedido
+     * el admin ve el número y lo puede ajustar antes de acreditar.
+     */
+    'order_points_per_amount' => 100,
 ];

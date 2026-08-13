@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_referral_code (referral_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Pedidos online (menú + carrito). Las tablas products / orders / order_items
+-- se crean con migrations/2026-08-orders.sql (ahí va también la siembra del menú).
+
 -- Vales de premios canjeables de la ruleta (ver migrations/2026-08-redemptions.sql).
 CREATE TABLE IF NOT EXISTS redemptions (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
