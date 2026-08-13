@@ -19,7 +19,7 @@
 CREATE TABLE IF NOT EXISTS products (
   id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   slug        VARCHAR(60)  NOT NULL,                 -- id estable (no cambia con el nombre)
-  category    ENUM('hamburguesas','papas','bebidas','combos','otros') NOT NULL DEFAULT 'otros',
+  category    ENUM('promos','entradas','hamburguesas','combos','papas','postres','bebidas','otros') NOT NULL DEFAULT 'otros',
   name        VARCHAR(120) NOT NULL,
   description VARCHAR(255) DEFAULT NULL,
   image       VARCHAR(190) DEFAULT NULL,             -- ruta bajo assets/ (o NULL)
@@ -72,15 +72,46 @@ CREATE TABLE IF NOT EXISTS order_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =========================================================
--- Siembra del menú (PLACEHOLDER de precios — ajustar en el panel)
--- Reutiliza las fotos que ya están en assets/rewards/.
+-- Siembra del menú — menú real de BYR Docksud (Que Resto), sin fotos.
+-- Precios en pesos. Ajustables desde la pestaña "Menú" del panel.
 -- =========================================================
-INSERT INTO products (slug, category, name, description, image, emoji, price, sort) VALUES
-  ('cheese-burger', 'hamburguesas', 'Cheese Burger',        'El clásico que nunca falla.',                 'assets/rewards/cheese-burger.jpg', '🍔', 6500, 10),
-  ('doble-cheese',  'hamburguesas', 'Doble Cheese Burger',  'Más carne, más cheddar, más ganas.',          'assets/rewards/doble-cheese.jpg',  '🍔', 8500, 20),
-  ('cuarto-byr',    'hamburguesas', 'Cuarto de BYR',        'El sabor clásico con sello BYR.',             'assets/rewards/cuarto-byr.jpg',    '🍔', 9000, 30),
-  ('americana',     'hamburguesas', 'Americana',            'Huevo, panceta, cebolla y BBQ. Una bomba.',   'assets/rewards/americana.jpg',     '🍔', 9500, 40),
-  ('cannons',       'hamburguesas', 'Cannons',              'Cheddar, panceta y bastones. Mucho BYR.',     'assets/rewards/cannons.jpg',       '🍔', 10500, 50),
-  ('la-triple',     'hamburguesas', 'La Triple',            'Solo para los que van en serio.',             'assets/rewards/la-triple.jpg',     '🍔', 12000, 60),
-  ('papas',         'papas',        'Porción de papas BYR', 'El acompañamiento que nunca sobra.',          'assets/rewards/papas.png',         '🍟', 3500, 10),
-  ('coca-cola',     'bebidas',      'Coca-Cola 500cc',      'Para acompañar tu pedido como corresponde.',  'assets/rewards/coca-cola.jpg',     '🥤', 2000, 10);
+INSERT INTO products (slug, category, name, description, emoji, price, sort) VALUES
+  -- Promos
+  ('promo-triple-cheese',     'promos',       'Triple Cheese Promo',        'Hamburguesa triple con cheddar y porción de papas.',                                      '🍔', 14000, 10),
+  ('promo-3x2-crispy-onion',  'promos',       '3x2 Crispy Onion',           '3 Crispy Onion con tres porciones de papas.',                                             '🍔', 35000, 20),
+  ('promo-3x2-doble-cheese',  'promos',       '3x2 Doble Cheese',           'Tres dobles con cheddar, acompañadas de tres porciones de papas.',                         '🍔', 32000, 30),
+  ('promo-3x2-cuarto-byr',    'promos',       '3x2 Cuarto de BYR',          'Tres Cuarto de BYR más tres porciones de papas.',                                         '🍔', 33000, 40),
+  ('promo-dos-pollo-crispy',  'promos',       'Dos Pollo Crispy',           'Dos Pollo Crispy, acompañadas de dos porciones de papas individuales.',                    '🍗', 25000, 50),
+  -- Entradas
+  ('picada-copada',           'entradas',     'Picada Copada',              '5 nuggets de pollo, 5 bastones de muzzarella, 5 aros de cebolla.',                         '🍗', 14000, 60),
+  ('nuggets-pollo-x10',       'entradas',     'Nuggets de pollo x10',       'Nuggets de pollo x10 unidades.',                                                          '🍗', 10500, 70),
+  ('aros-cebolla-x10',        'entradas',     'Aros de cebolla x10',        'Aros de cebolla x10 unidades.',                                                           '🧅', 12000, 80),
+  ('bastones-muzzarella-x10', 'entradas',     'Bastones de muzzarella x10', 'Bastones de muzzarella x10 unidades.',                                                    '🧀', 12000, 90),
+  -- Burgers
+  ('simple-cheddar',          'hamburguesas', 'Simple con Cheddar',         'Pan de papa, carne, queso cheddar.',                                                      '🍔', 11000, 100),
+  ('doble-cheddar',           'hamburguesas', 'Doble con Cheddar',          'Pan de papa, carne x2, queso cheddar.',                                                   '🍔', 16000, 110),
+  ('triple-cheddar',          'hamburguesas', 'Triple con Cheddar',         'Pan de papa, carne x3, cheddar x6.',                                                      '🍔', 21500, 120),
+  ('pollo-spicy',             'hamburguesas', 'Pollo Spicy',                'Pan de papa, medallón de pollo crispy, lechuga, tomate, cheddar, mayonesa picante.',       '🍔', 15500, 130),
+  ('americana',               'hamburguesas', 'Americana',                  'Pan de papa, carne x2, cheddar x4, panceta, cebolla caramelizada, huevo, salsa barbacoa.', '🍔', 18000, 140),
+  ('lt-burger',               'hamburguesas', 'LT Burger',                  'Pan de papa, carne x2, cheddar x4, panceta, lechuga, tomate, salsa barbacoa.',             '🍔', 17000, 150),
+  ('byr-mac',                 'hamburguesas', 'BYR Mac',                    'Pan de papa, doble carne, cheddar, lechuga, pepinillos, aderezo BYR.',                     '🍔', 17500, 160),
+  ('crispy-onion',            'hamburguesas', 'Crispy Onion',               'Pan de papa, carne x2, cheddar x4, cebolla crispy, panceta, pepino, alioli.',              '🍔', 18000, 170),
+  ('cuarto-de-byr',           'hamburguesas', 'Cuarto de BYR',              'Pan de papa, doble carne, cheddar, cebollita en cubos, pepinillos, ketchup, mostaza.',     '🍔', 16500, 180),
+  ('stacker-onion',           'hamburguesas', 'Stacker Onion',              'Pan de papa, doble carne, cheddar, panceta, aros de cebolla, salsa alioli.',               '🍔', 19500, 190),
+  ('oklahoma',                'hamburguesas', 'Oklahoma',                   'Pan de papa, doble carne, cebolla smasheada, cheddar, pepinillos, salsa BYR.',             '🍔', 17000, 200),
+  ('argentina',               'hamburguesas', 'Argentina',                  'Pan de papa, carne x2, lomito, queso dambo, lechuga, tomate, huevo, mayonesa.',            '🍔', 17000, 210),
+  ('mundial-ar',              'hamburguesas', 'Mundial AR',                 'Pan de papa, doble carne, doble provoleta, tomate, chimichurri.',                          '🍔', 17000, 220),
+  ('tasty',                   'hamburguesas', 'Tasty',                      'Pan de papa, doble carne, cheddar, lechuga, tomate, cebolla cubeteada, salsa tasty.',      '🍔', 17500, 230),
+  ('cannons',                 'hamburguesas', 'Cannons',                    'Pan de papa, doble carne, cheddar, panceta, triple bastón de muzzarella, salsa BYR.',      '🍔', 19500, 240),
+  ('la-triple',               'hamburguesas', 'La Triple',                  'Pan de papa, carne x3, cheddar x6, panceta, papas bastón, salsa barbacoa.',                '🍔', 21500, 250),
+  -- Papas
+  ('papas-individual',        'papas',        'Porción individual',         'Papas McCain, corte tradicional.',                                                        '🍟', 4000, 260),
+  ('papas-a-caballo',         'papas',        'Papas a Caballo',            'Papas McCain corte tradicional, cheddar, dos huevos a la plancha, una pizca de verdeo. (Para compartir).', '🍟', 11000, 270),
+  ('papas-xxl',               'papas',        'Papas XXL',                  'Papas McCain corte tradicional, cheddar, panceta, cebollita de verdeo. (Para compartir).', '🍟', 12500, 280),
+  ('papas-meat',              'papas',        'Papas Meat',                 'Papas McCain, cheddar, blend (carne), huevos. (Para compartir).',                          '🍟', 15000, 290),
+  -- Postres
+  ('tiramisu',                'postres',      'Tiramisú',                   'Postre tiramisú.',                                                                        '🍰', 4000, 300),
+  ('chocotorta',              'postres',      'Chocotorta',                 NULL,                                                                                      '🍰', 4000, 310),
+  ('cookies-oreo',            'postres',      'Cookies (Oreo)',             NULL,                                                                                      '🍪', 4000, 320),
+  ('cheesecake-frutos-rojos', 'postres',      'Cheesecake de frutos rojos', NULL,                                                                                      '🍰', 4000, 330),
+  ('tentazione',              'postres',      'Tentazione',                 'Vainillas, dulce de leche, merengue, crema chantilly, duraznos en almíbar.',              '🍰', 4500, 340);

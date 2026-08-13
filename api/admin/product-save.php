@@ -20,7 +20,7 @@ require_method('POST');
 $pdo = db();
 require_admin($pdo);
 
-const BYR_PRODUCT_CATEGORIES = ['hamburguesas', 'combos', 'papas', 'bebidas', 'otros'];
+const BYR_PRODUCT_CATEGORIES = ['promos', 'entradas', 'hamburguesas', 'combos', 'papas', 'postres', 'bebidas', 'otros'];
 
 $in          = body_json();
 $id          = (int) ($in['id'] ?? 0);

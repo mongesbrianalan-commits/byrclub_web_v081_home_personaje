@@ -13,10 +13,13 @@ $pdo = db();
 
 /* Etiquetas lindas por categoría (la tabla guarda el slug de categoría). */
 const BYR_MENU_CATEGORIES = [
-    'hamburguesas' => '🍔 Hamburguesas',
-    'combos'       => '👑 Combos',
+    'promos'       => '🔥 Promos',
+    'entradas'     => '🍗 Entradas',
+    'hamburguesas' => '🍔 Burgers',
     'papas'        => '🍟 Papas',
+    'postres'      => '🍰 Postres',
     'bebidas'      => '🥤 Bebidas',
+    'combos'       => '👑 Combos',
     'otros'        => '🍴 Otros',
 ];
 
