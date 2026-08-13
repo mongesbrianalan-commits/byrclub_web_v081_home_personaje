@@ -957,6 +957,10 @@
       });
     }
     if (ordersRefresh) ordersRefresh.addEventListener("click", loadOrders);
+    // Recargar la lista cada vez que se ENTRA a la pestaña Pedidos, así no
+    // queda "vieja" si el admin dejó el panel abierto y llegó un pedido nuevo.
+    const pedidosTabBtn = document.querySelector('[data-tab-btn="pedidos"]');
+    if (pedidosTabBtn) pedidosTabBtn.addEventListener("click", loadOrders);
     loadOrders();
   }
 
