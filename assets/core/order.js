@@ -60,31 +60,9 @@
   /* --- Render del menú --- */
 
   function productCard(p) {
+    // Tarjeta compacta: sin foto ni emoji (nombre, descripción, precio y botón).
     const card = document.createElement("article");
     card.className = "product-card";
-
-    const thumb = document.createElement("div");
-    thumb.className = "product-thumb";
-    if (p.image) {
-      const img = document.createElement("img");
-      img.src = p.image;
-      img.alt = p.name;
-      img.loading = "lazy";
-      // Si la imagen no está, mostramos el emoji.
-      img.addEventListener("error", () => {
-        thumb.innerHTML = "";
-        const em = document.createElement("span");
-        em.className = "product-emoji";
-        em.textContent = p.emoji || "🍔";
-        thumb.append(em);
-      });
-      thumb.append(img);
-    } else {
-      const em = document.createElement("span");
-      em.className = "product-emoji";
-      em.textContent = p.emoji || "🍔";
-      thumb.append(em);
-    }
 
     const body = document.createElement("div");
     body.className = "product-body";
@@ -103,7 +81,7 @@
     foot.append(price, stepperFor(p));
 
     body.append(name, desc, foot);
-    card.append(thumb, body);
+    card.append(body);
     return card;
   }
 
@@ -217,9 +195,6 @@
     cart.forEach((it) => {
       const line = document.createElement("div");
       line.className = "cart-line";
-      const em = document.createElement("span");
-      em.className = "cl-emoji";
-      em.textContent = it.emoji || "🍔";
       const info = document.createElement("div");
       info.className = "cl-info";
       const nm = document.createElement("div");
@@ -231,7 +206,7 @@
       info.append(nm, pr);
       // Reutilizamos el control +/- (necesita el "producto").
       const controls = qtyControls(it, it.qty);
-      line.append(em, info, controls);
+      line.append(info, controls);
       cartItemsEl.append(line);
     });
 

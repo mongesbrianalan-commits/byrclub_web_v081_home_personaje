@@ -28,10 +28,7 @@
 
 .product-card { display: flex; flex-direction: column; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; overflow: hidden; transition: transform .15s, border-color .15s; }
 .product-card:hover { transform: translateY(-3px); border-color: rgba(255,213,31,.5); }
-.product-thumb { position: relative; aspect-ratio: 16 / 10; background: #0a1f5c; display: grid; place-items: center; overflow: hidden; }
-.product-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.product-thumb .product-emoji { font-size: 3.4rem; }
-.product-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; flex: 1; }
+.product-body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; flex: 1; }
 .product-name { font-family: "Lilita One"; font-size: 1.15rem; line-height: 1.05; }
 .product-desc { color: #9bd1ff; font-weight: 700; font-size: .86rem; line-height: 1.25; flex: 1; }
 .product-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
@@ -54,7 +51,6 @@
 .cart-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .cart-empty { color: #9bd1ff; font-weight: 700; margin: 8px 0; }
 .cart-line { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px 10px; }
-.cart-line .cl-emoji { font-size: 1.3rem; }
 .cart-line .cl-info { flex: 1; min-width: 0; }
 .cart-line .cl-name { font-weight: 800; font-size: .92rem; line-height: 1.1; }
 .cart-line .cl-price { color: #9bd1ff; font-weight: 700; font-size: .82rem; }
