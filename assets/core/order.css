@@ -76,9 +76,12 @@
 .fulfill-opt.is-active { background: var(--yellow); color: #071342; border-color: var(--yellow); box-shadow: 0 5px 0 #9d7300; }
 
 .cart-checkout .auth-field { margin-bottom: 12px; }
-.cart-checkout textarea { width: 100%; box-sizing: border-box; border-radius: 14px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: #fff; padding: 12px 14px; font: inherit; resize: vertical; }
+/* El textarea vive dentro de una .auth-field (caja blanca), igual que los
+   inputs: fondo transparente y texto oscuro para que se lea lo que se escribe. */
+.cart-checkout textarea { width: 100%; box-sizing: border-box; border: 0; outline: 0; background: transparent; color: #07164d; font: inherit; font-weight: 800; padding: 4px 0; resize: vertical; }
+.cart-checkout textarea::placeholder { color: #9fb0d6; }
 .cart-checkout select { width: 100%; box-sizing: border-box; }
-.coupon-hint { display: block; color: #9bd1ff; font-weight: 700; font-size: .78rem; margin-top: 6px; }
+.coupon-hint { display: block; color: #36549e; font-weight: 700; font-size: .78rem; margin-top: 6px; }
 
 .cart-checkout .auth-form-status { margin: 10px 0 0; font-weight: 800; min-height: 1.2em; }
 .cart-checkout .auth-form-status.is-error { color: #ffb0b0; }
