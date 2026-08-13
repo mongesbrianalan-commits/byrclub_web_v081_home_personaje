@@ -7,6 +7,7 @@
  * el panel. Requiere sesión (para pedir hay que estar logueado).
  */
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/menu-options.php';
 
 require_auth();
 $pdo = db();
@@ -46,6 +47,7 @@ foreach ($rows as $r) {
         'image'       => $r['image'],
         'emoji'       => $r['emoji'],
         'price'       => (int) $r['price'],
+        'optionSet'   => byr_option_set_for_category($cat), // 'burger' | null
     ];
 }
 
@@ -78,4 +80,5 @@ if ($rate < 1) {
 json_out([
     'categories'      => $categories,
     'pointsPerAmount' => $rate,
+    'optionSets'      => byr_option_sets(), // definiciones para armar el popup
 ]);

@@ -53,6 +53,7 @@
 .cart-line { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px 10px; }
 .cart-line .cl-info { flex: 1; min-width: 0; }
 .cart-line .cl-name { font-weight: 800; font-size: .92rem; line-height: 1.1; }
+.cart-line .cl-options { color: #ffe79a; font-weight: 700; font-size: .76rem; line-height: 1.2; margin: 2px 0; }
 .cart-line .cl-price { color: #9bd1ff; font-weight: 700; font-size: .82rem; }
 .cart-line .qty-btn { width: 30px; height: 30px; font-size: 1.05rem; border-radius: 9px; box-shadow: 0 3px 0 #0438a0; }
 .cart-line .qty-num { min-width: 22px; font-size: 1rem; }
@@ -99,3 +100,29 @@
 .success-summary .ss-total b { color: var(--yellow); }
 .success-actions { display: flex; flex-direction: column; gap: 10px; }
 .success-actions .auth-submit { text-decoration: none; text-align: center; }
+
+/* --- Popup de opciones (papas / bebida / adicionales) --- */
+.opt-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(2,10,40,.72); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; }
+.opt-modal { width: min(520px, 100%); max-height: 90vh; display: flex; flex-direction: column; background: var(--blue-950); border: 1px solid rgba(255,255,255,.18); border-radius: 22px; box-shadow: 0 24px 60px rgba(0,0,0,.5); overflow: hidden; }
+.opt-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,.12); }
+.opt-head b { font-family: "Lilita One"; font-size: 1.4rem; }
+.opt-close { border: 0; background: rgba(255,255,255,.1); color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 1rem; cursor: pointer; flex: 0 0 auto; }
+.opt-close:hover { background: rgba(255,255,255,.2); }
+.opt-groups { overflow-y: auto; padding: 6px 20px 10px; }
+.opt-group { padding: 14px 0; border-bottom: 1px dashed rgba(255,255,255,.14); }
+.opt-group:last-child { border-bottom: 0; }
+.opt-group-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.opt-group-title span { font-family: "Lilita One"; font-size: 1.05rem; }
+.opt-req { font-style: normal; font-weight: 900; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; background: var(--yellow); color: #071342; padding: 3px 9px; border-radius: 999px; }
+.opt-opt { font-style: normal; font-weight: 800; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: #9bd1ff; }
+.opt-row { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; cursor: pointer; transition: background .12s; }
+.opt-row:hover { background: rgba(255,255,255,.06); }
+.opt-row input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--yellow); cursor: pointer; }
+.opt-row-name { flex: 1; font-weight: 700; }
+.opt-row-price { color: #9bd1ff; font-weight: 800; font-size: .9rem; white-space: nowrap; }
+.opt-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.2); }
+.opt-total { display: flex; flex-direction: column; line-height: 1.1; }
+.opt-total span { font-weight: 800; text-transform: uppercase; font-size: .72rem; color: #9bd1ff; }
+.opt-total-value { font-family: "Lilita One"; font-size: 1.5rem; color: var(--yellow); }
+.opt-add-btn { flex: 1; max-width: 260px; border: 0; border-radius: 16px; padding: 14px 20px; background: var(--yellow); color: #071342; font-weight: 900; box-shadow: 0 6px 0 #b98700; cursor: pointer; }
+.opt-add-btn:hover { transform: translateY(-2px); }

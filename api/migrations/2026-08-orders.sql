@@ -64,7 +64,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id   INT UNSIGNED NOT NULL,
   product_id INT UNSIGNED DEFAULT NULL,              -- referencia (puede quedar NULL si borran el producto)
   name       VARCHAR(120) NOT NULL,                  -- snapshot
-  unit_price INT UNSIGNED NOT NULL,                  -- snapshot
+  options    VARCHAR(500) DEFAULT NULL,              -- opciones elegidas (papas/bebida/adicionales)
+  unit_price INT UNSIGNED NOT NULL,                  -- snapshot (base + opciones)
   qty        SMALLINT UNSIGNED NOT NULL,
   subtotal   INT UNSIGNED NOT NULL,                  -- unit_price * qty
   PRIMARY KEY (id),

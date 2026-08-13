@@ -827,7 +827,10 @@
       : (o.customerPhone ? ` · ${escapeHtml(o.customerPhone)}` : "");
 
     const itemsHtml = (o.items || [])
-      .map((ln) => `<li><span>${escapeHtml(String(ln.qty))}× ${escapeHtml(ln.name)}</span><span>${money(ln.subtotal)}</span></li>`)
+      .map((ln) => {
+        const opts = ln.options ? `<small style="display:block;color:#9bd1ff;font-weight:700">${escapeHtml(ln.options)}</small>` : "";
+        return `<li><span>${escapeHtml(String(ln.qty))}× ${escapeHtml(ln.name)}${opts}</span><span>${money(ln.subtotal)}</span></li>`;
+      })
       .join("");
 
     const fulfillHtml = o.fulfillment === "delivery"

@@ -56,7 +56,7 @@
     (o.items || []).forEach((ln) => {
       const li = document.createElement("li");
       const a = document.createElement("span");
-      a.textContent = ln.qty + "× " + ln.name;
+      a.textContent = ln.qty + "× " + ln.name + (ln.options ? " (" + ln.options + ")" : "");
       const b = document.createElement("span");
       b.textContent = money(ln.subtotal);
       li.append(a, b);

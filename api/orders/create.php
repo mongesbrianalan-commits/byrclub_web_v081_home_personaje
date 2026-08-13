@@ -15,6 +15,7 @@
  *   couponCode:  string  (opcional; un cupón propio disponible para adjuntar)
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../menu-options.php';
 require_method('POST');
 
 $id  = require_auth();
@@ -43,60 +44,77 @@ if ($fulfillment === 'delivery' && $address === '') {
     json_out(['error' => 'Para delivery necesitamos tu dirección.'], 422);
 }
 
-/* --- Normalizamos ítems: sumamos cantidades por slug/id, ignoramos basura --- */
-$wanted = [];   // key => qty
+/* --- Traemos los productos reales (disponibles) para casar lo pedido --- */
+$keys = [];
 foreach ($itemsIn as $it) {
     if (!is_array($it)) {
         continue;
     }
     $key = trim((string) ($it['slug'] ?? $it['id'] ?? ''));
-    $qty = (int) ($it['qty'] ?? 0);
-    if ($key === '' || $qty <= 0) {
-        continue;
+    if ($key !== '') {
+        $keys[$key] = true;
     }
-    $qty = min($qty, 50); // tope de cordura por ítem
-    $wanted[$key] = ($wanted[$key] ?? 0) + $qty;
 }
-if (!$wanted) {
+$keys = array_keys($keys);
+if (!$keys) {
     json_out(['error' => 'Tu pedido está vacío.'], 422);
 }
 
-/* --- Traemos los productos reales (disponibles) y recomputamos precios --- */
-$keys         = array_keys($wanted);
 $placeholders = implode(',', array_fill(0, count($keys), '?'));
 $stmt = $pdo->prepare(
-    "SELECT id, slug, name, price
+    "SELECT id, slug, name, price, category
        FROM products
       WHERE available = 1 AND (slug IN ($placeholders) OR id IN ($placeholders))"
 );
 $stmt->execute([...$keys, ...$keys]);
 $products = $stmt->fetchAll();
 
-/* Índice por slug y por id para casar contra lo pedido. */
 $bySlug = [];
 $byId   = [];
 foreach ($products as $p) {
-    $bySlug[$p['slug']]       = $p;
-    $byId[(string) $p['id']]  = $p;
+    $bySlug[$p['slug']]      = $p;
+    $byId[(string) $p['id']] = $p;
 }
 
+/* --- Una línea por ítem: recomputamos precio base + opciones (server-side). --- */
 $lines      = [];
 $itemsTotal = 0;
-foreach ($wanted as $key => $qty) {
+foreach ($itemsIn as $it) {
+    if (!is_array($it)) {
+        continue;
+    }
+    $key = trim((string) ($it['slug'] ?? $it['id'] ?? ''));
+    $qty = min((int) ($it['qty'] ?? 0), 50); // tope de cordura por línea
+    if ($key === '' || $qty <= 0) {
+        continue;
+    }
     $p = $bySlug[$key] ?? $byId[$key] ?? null;
     if (!$p) {
-        continue; // producto inexistente o no disponible: se descarta
+        continue; // inexistente o no disponible: se descarta
     }
-    $unit     = (int) $p['price'];
+
+    /* Opciones (papas/bebida/adicionales): validadas y tarifadas por el servidor. */
+    $setKey   = byr_option_set_for_category($p['category']);
+    $selected = is_array($it['options'] ?? null) ? $it['options'] : [];
+    $opt      = byr_resolve_options($setKey, $selected);
+    if (!$opt['ok']) {
+        json_out(['error' => $opt['error'], 'code' => 'option-invalid'], 422);
+    }
+
+    $unit     = (int) $p['price'] + (int) $opt['delta'];
     $subtotal = $unit * $qty;
     $itemsTotal += $subtotal;
     $lines[] = [
         'product_id' => (int) $p['id'],
         'name'       => $p['name'],
+        'options'    => $opt['text'] !== '' ? $opt['text'] : null,
         'unit_price' => $unit,
         'qty'        => $qty,
         'subtotal'   => $subtotal,
     ];
+    if (count($lines) >= 100) {
+        break; // tope de cordura por pedido
+    }
 }
 
 if (!$lines) {
@@ -154,14 +172,15 @@ try {
     $orderId = (int) $pdo->lastInsertId();
 
     $insItem = $pdo->prepare(
-        'INSERT INTO order_items (order_id, product_id, name, unit_price, qty, subtotal)
-         VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO order_items (order_id, product_id, name, options, unit_price, qty, subtotal)
+         VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     foreach ($lines as $ln) {
         $insItem->execute([
             $orderId,
             $ln['product_id'],
             $ln['name'],
+            $ln['options'],
             $ln['unit_price'],
             $ln['qty'],
             $ln['subtotal'],

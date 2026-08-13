@@ -4,11 +4,11 @@
   /* =========================================================
      BYR Club — Pedidos online (pedir.html)
      ---------------------------------------------------------
-     Trae el menú de /api/menu.php, deja armar un carrito, y envía
-     el pedido a /api/orders/create.php. Los precios SIEMPRE los
-     recalcula el servidor: acá solo mandamos slug + cantidad.
-     El pedido queda 'pending' hasta que el admin lo confirme y
-     acredite los puntos.
+     Trae el menú de /api/menu.php, deja armar un carrito y envía el pedido a
+     /api/orders/create.php. Las burgers abren un POPUP de opciones (papas,
+     bebida, adicionales). Los precios los recalcula SIEMPRE el servidor: acá
+     solo mandamos slug + cantidad + qué opciones se eligieron.
+     El pedido queda 'pending' hasta que el admin lo confirme.
   ========================================================= */
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -35,20 +35,17 @@
 
   if (!menuList) return;
 
-  /* cart: slug -> { slug, name, price, emoji, image, qty } */
+  /* cart: lineId -> { lineId, slug, name, unitPrice, qty, optionsText, optionsPayload, isOption } */
   const cart = new Map();
   let pointsPerAmount = 100;
+  let optionSets = {};
+  const productBySlug = new Map();
 
   /* --- Utilidades --- */
 
-  function money(n) {
-    // Pesos argentinos con separador de miles: 8500 -> "$8.500"
-    return "$" + Number(n || 0).toLocaleString("es-AR");
-  }
-
-  function show(el, visible) {
-    if (el) el.hidden = !visible;
-  }
+  function money(n) { return "$" + Number(n || 0).toLocaleString("es-AR"); }
+  function show(el, visible) { if (el) el.hidden = !visible; }
+  function cssEscape(s) { return String(s).replace(/"/g, '\\"'); }
 
   function setStatus(msg, kind) {
     if (!statusEl) return;
@@ -57,10 +54,15 @@
     if (kind) statusEl.classList.add(kind === "error" ? "is-error" : "is-ok");
   }
 
-  /* --- Render del menú --- */
+  function hasOptions(p) {
+    return p.optionSet && Array.isArray(optionSets[p.optionSet]) && optionSets[p.optionSet].length;
+  }
+
+  /* =========================================================
+     Render del menú
+  ========================================================= */
 
   function productCard(p) {
-    // Tarjeta compacta: sin foto ni emoji (nombre, descripción, precio y botón).
     const card = document.createElement("article");
     card.className = "product-card";
 
@@ -77,57 +79,52 @@
     foot.className = "product-foot";
     const price = document.createElement("span");
     price.className = "product-price";
-    price.textContent = money(p.price);
-    foot.append(price, stepperFor(p));
+    // Con opciones, el precio final puede subir: lo mostramos como "desde".
+    price.textContent = (hasOptions(p) ? "desde " : "") + money(p.price);
+    foot.append(price, actionFor(p));
 
     body.append(name, desc, foot);
     card.append(body);
     return card;
   }
 
-  /* Control +/- por producto. Refleja la cantidad que hay en el carrito. */
-  function stepperFor(p) {
-    const wrap = document.createElement("div");
-    wrap.dataset.stepperFor = p.slug;
+  // Acción de la tarjeta: popup (con opciones) o control +/- (directo).
+  function actionFor(p) {
+    if (hasOptions(p)) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "qty-add";
+      btn.textContent = "Agregar +";
+      btn.addEventListener("click", () => openOptionsModal(p));
+      return btn;
+    }
+    // Producto simple: holder con stepper que refleja la cantidad en el carrito.
+    const holder = document.createElement("div");
+    holder.setAttribute("data-stepper-for", p.slug);
+    holder.__product = p;
+    holder.append(simpleStepper(p));
+    return holder;
+  }
 
-    const inCart = cart.get(p.slug);
-    if (!inCart || inCart.qty <= 0) {
+  function simpleStepper(p) {
+    const lineId = "p:" + p.slug;
+    const line = cart.get(lineId);
+    if (!line || line.qty <= 0) {
       const add = document.createElement("button");
       add.type = "button";
       add.className = "qty-add";
       add.textContent = "Agregar +";
-      add.addEventListener("click", () => { changeQty(p, 1); });
-      wrap.append(add);
-    } else {
-      wrap.append(qtyControls(p, inCart.qty));
+      add.addEventListener("click", () => addSimple(p));
+      return add;
     }
-    return wrap;
+    return qtyControls(lineId, () => refreshSimpleStepper(p.slug));
   }
 
-  function qtyControls(p, qty) {
-    const box = document.createElement("div");
-    box.className = "qty-stepper";
-    const minus = document.createElement("button");
-    minus.type = "button";
-    minus.className = "qty-btn";
-    minus.setAttribute("aria-label", "Quitar uno");
-    minus.textContent = "−";
-    minus.addEventListener("click", () => { changeQty(p, -1); });
-    const num = document.createElement("span");
-    num.className = "qty-num";
-    num.textContent = String(qty);
-    const plus = document.createElement("button");
-    plus.type = "button";
-    plus.className = "qty-btn";
-    plus.setAttribute("aria-label", "Agregar uno");
-    plus.textContent = "+";
-    plus.addEventListener("click", () => { changeQty(p, 1); });
-    box.append(minus, num, plus);
-    return box;
-  }
-
-  function cssEscape(s) {
-    return String(s).replace(/"/g, '\\"');
+  function refreshSimpleStepper(slug) {
+    const holder = menuList.querySelector('[data-stepper-for="' + cssEscape(slug) + '"]');
+    if (!holder || !holder.__product) return;
+    const fresh = actionFor(holder.__product);
+    holder.replaceWith(fresh);
   }
 
   function renderMenu(categories) {
@@ -140,43 +137,83 @@
       const grid = document.createElement("div");
       grid.className = "menu-grid";
       cat.products.forEach((p) => {
-        const card = productCard(p);
-        // Enlazamos el producto al holder del stepper para redibujarlo luego.
-        const holder = card.querySelector("[data-stepper-for]");
-        if (holder) holder.__product = p;
-        grid.append(card);
+        productBySlug.set(p.slug, p);
+        grid.append(productCard(p));
       });
       section.append(h2, grid);
       menuList.append(section);
     });
   }
 
-  /* --- Carrito --- */
+  /* =========================================================
+     Carrito (por líneas)
+  ========================================================= */
 
-  function changeQty(p, delta) {
-    const cur = cart.get(p.slug);
-    const qty = (cur ? cur.qty : 0) + delta;
-    if (qty <= 0) {
-      cart.delete(p.slug);
+  // Firma estable de una selección de opciones, para juntar líneas idénticas.
+  function signature(payload) {
+    const keys = Object.keys(payload).sort();
+    return keys.map((k) => {
+      const v = payload[k];
+      return k + "=" + (Array.isArray(v) ? v.slice().sort().join(",") : String(v));
+    }).join("|");
+  }
+
+  function addSimple(p) {
+    const lineId = "p:" + p.slug;
+    const existing = cart.get(lineId);
+    if (existing) {
+      existing.qty = Math.min(existing.qty + 1, 50);
     } else {
-      cart.set(p.slug, {
-        slug: p.slug, name: p.name, price: p.price,
-        emoji: p.emoji, image: p.image, qty: Math.min(qty, 50),
+      cart.set(lineId, {
+        lineId, slug: p.slug, name: p.name, unitPrice: p.price,
+        qty: 1, optionsText: "", optionsPayload: {}, isOption: false,
       });
     }
-    // Redibujamos el stepper de ESE producto en la carta.
-    const holder = menuList.querySelector('[data-stepper-for="' + cssEscape(p.slug) + '"]');
-    if (holder) {
-      const fresh = stepperFor(p);
-      fresh.__product = p;
-      holder.replaceWith(fresh);
-    }
+    refreshSimpleStepper(p.slug);
     renderCart();
+  }
+
+  function changeLineQty(lineId, delta) {
+    const line = cart.get(lineId);
+    if (!line) return;
+    line.qty += delta;
+    if (line.qty <= 0) {
+      cart.delete(lineId);
+    } else {
+      line.qty = Math.min(line.qty, 50);
+    }
+    if (!line.isOption) refreshSimpleStepper(line.slug);
+    renderCart();
+  }
+
+  // Controles +/- para una línea del carrito (o el stepper de un producto simple).
+  function qtyControls(lineId, afterChange) {
+    const line = cart.get(lineId);
+    const qty = line ? line.qty : 0;
+    const box = document.createElement("div");
+    box.className = "qty-stepper";
+    const minus = document.createElement("button");
+    minus.type = "button";
+    minus.className = "qty-btn";
+    minus.setAttribute("aria-label", "Quitar uno");
+    minus.textContent = "−";
+    minus.addEventListener("click", () => { changeLineQty(lineId, -1); if (afterChange) afterChange(); });
+    const num = document.createElement("span");
+    num.className = "qty-num";
+    num.textContent = String(qty);
+    const plus = document.createElement("button");
+    plus.type = "button";
+    plus.className = "qty-btn";
+    plus.setAttribute("aria-label", "Agregar uno");
+    plus.textContent = "+";
+    plus.addEventListener("click", () => { changeLineQty(lineId, 1); if (afterChange) afterChange(); });
+    box.append(minus, num, plus);
+    return box;
   }
 
   function cartTotal() {
     let t = 0;
-    cart.forEach((it) => { t += it.price * it.qty; });
+    cart.forEach((it) => { t += it.unitPrice * it.qty; });
     return t;
   }
 
@@ -200,13 +237,18 @@
       const nm = document.createElement("div");
       nm.className = "cl-name";
       nm.textContent = it.name;
+      info.append(nm);
+      if (it.optionsText) {
+        const op = document.createElement("div");
+        op.className = "cl-options";
+        op.textContent = it.optionsText;
+        info.append(op);
+      }
       const pr = document.createElement("div");
       pr.className = "cl-price";
-      pr.textContent = money(it.price) + " × " + it.qty + " = " + money(it.price * it.qty);
-      info.append(nm, pr);
-      // Reutilizamos el control +/- (necesita el "producto").
-      const controls = qtyControls(it, it.qty);
-      line.append(info, controls);
+      pr.textContent = money(it.unitPrice) + " × " + it.qty + " = " + money(it.unitPrice * it.qty);
+      info.append(pr);
+      line.append(info, qtyControls(it.lineId));
       cartItemsEl.append(line);
     });
 
@@ -224,7 +266,188 @@
     show(checkoutForm, true);
   }
 
-  /* --- Cupones disponibles para adjuntar --- */
+  /* =========================================================
+     Popup de opciones (papas / bebida / adicionales)
+  ========================================================= */
+
+  let modalEl = null;
+
+  // Calcula el precio extra y el texto legible de una selección (para mostrar).
+  function priceAndText(groups, selection) {
+    let delta = 0;
+    const parts = [];
+    groups.forEach((g) => {
+      const byId = {};
+      g.options.forEach((o) => { byId[o.id] = o; });
+      if (g.type === "single") {
+        const id = selection[g.id];
+        if (id && byId[id]) { delta += byId[id].price; parts.push(byId[id].name); }
+      } else {
+        const ids = selection[g.id] || [];
+        const names = [];
+        ids.forEach((id) => { if (byId[id]) { delta += byId[id].price; names.push(byId[id].name); } });
+        if (names.length) parts.push(names.join(", "));
+      }
+    });
+    return { delta, text: parts.join(" · ") };
+  }
+
+  function openOptionsModal(p) {
+    const groups = optionSets[p.optionSet];
+    if (!groups) { addSimple(p); return; }
+
+    // Estado de la selección. Los "single" obligatorios arrancan en la 1ra opción.
+    const selection = {};
+    groups.forEach((g) => {
+      if (g.type === "single") {
+        selection[g.id] = g.required && g.options.length ? g.options[0].id : "";
+      } else {
+        selection[g.id] = [];
+      }
+    });
+
+    const overlay = document.createElement("div");
+    overlay.className = "opt-overlay";
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+
+    const modal = document.createElement("div");
+    modal.className = "opt-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+
+    const head = document.createElement("div");
+    head.className = "opt-head";
+    head.innerHTML = '<b>' + escapeHtml(p.name) + '</b>';
+    const closeX = document.createElement("button");
+    closeX.type = "button";
+    closeX.className = "opt-close";
+    closeX.setAttribute("aria-label", "Cerrar");
+    closeX.textContent = "✕";
+    closeX.addEventListener("click", closeModal);
+    head.append(closeX);
+
+    const groupsWrap = document.createElement("div");
+    groupsWrap.className = "opt-groups";
+
+    const footTotal = document.createElement("strong");
+    footTotal.className = "opt-total-value";
+
+    function recompute() {
+      const pt = priceAndText(groups, selection);
+      footTotal.textContent = money(p.price + pt.delta);
+    }
+
+    groups.forEach((g) => {
+      const gEl = document.createElement("div");
+      gEl.className = "opt-group";
+      const gt = document.createElement("div");
+      gt.className = "opt-group-title";
+      gt.innerHTML = '<span>' + escapeHtml(g.title) + '</span>' +
+        (g.required ? '<em class="opt-req">Obligatorio</em>' : '<em class="opt-opt">Opcional</em>');
+      gEl.append(gt);
+
+      if (g.type === "single") {
+        // Para los opcionales agregamos "No, gracias".
+        if (!g.required) {
+          gEl.append(optionRow(g, { id: "", name: "No, gracias", price: 0 }, selection, recompute, "radio"));
+        }
+        g.options.forEach((o) => gEl.append(optionRow(g, o, selection, recompute, "radio")));
+      } else {
+        g.options.forEach((o) => gEl.append(optionRow(g, o, selection, recompute, "check")));
+      }
+      groupsWrap.append(gEl);
+    });
+
+    const foot = document.createElement("div");
+    foot.className = "opt-foot";
+    const totalWrap = document.createElement("div");
+    totalWrap.className = "opt-total";
+    totalWrap.innerHTML = '<span>Precio</span>';
+    totalWrap.append(footTotal);
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "opt-add-btn";
+    addBtn.textContent = "Agregar al pedido";
+    addBtn.addEventListener("click", () => {
+      addWithOptions(p, groups, selection);
+      closeModal();
+    });
+    foot.append(totalWrap, addBtn);
+
+    modal.append(head, groupsWrap, foot);
+    overlay.append(modal);
+    document.body.append(overlay);
+    document.body.style.overflow = "hidden";
+    modalEl = overlay;
+    recompute();
+  }
+
+  function optionRow(group, opt, selection, recompute, kind) {
+    const row = document.createElement("label");
+    row.className = "opt-row";
+    const input = document.createElement("input");
+    input.type = kind === "check" ? "checkbox" : "radio";
+    input.name = "optg-" + group.id;
+    input.value = opt.id;
+
+    if (kind === "radio") {
+      input.checked = selection[group.id] === opt.id;
+      input.addEventListener("change", () => { selection[group.id] = opt.id; recompute(); });
+    } else {
+      input.checked = (selection[group.id] || []).indexOf(opt.id) !== -1;
+      input.addEventListener("change", () => {
+        const arr = selection[group.id] || [];
+        if (input.checked) { if (arr.indexOf(opt.id) === -1) arr.push(opt.id); }
+        else { const i = arr.indexOf(opt.id); if (i !== -1) arr.splice(i, 1); }
+        selection[group.id] = arr;
+        recompute();
+      });
+    }
+
+    const label = document.createElement("span");
+    label.className = "opt-row-name";
+    label.textContent = opt.name;
+    const price = document.createElement("span");
+    price.className = "opt-row-price";
+    price.textContent = opt.price > 0 ? "+ " + money(opt.price) : "";
+
+    row.append(input, label, price);
+    return row;
+  }
+
+  function addWithOptions(p, groups, selection) {
+    const pt = priceAndText(groups, selection);
+    // payload limpio para el server (sin las claves vacías de single opcional).
+    const payload = {};
+    groups.forEach((g) => {
+      const v = selection[g.id];
+      if (g.type === "single") { if (v) payload[g.id] = v; }
+      else if (Array.isArray(v) && v.length) { payload[g.id] = v.slice(); }
+    });
+
+    const lineId = "o:" + p.slug + ":" + signature(payload);
+    const existing = cart.get(lineId);
+    if (existing) {
+      existing.qty = Math.min(existing.qty + 1, 50);
+    } else {
+      cart.set(lineId, {
+        lineId, slug: p.slug, name: p.name, unitPrice: p.price + pt.delta,
+        qty: 1, optionsText: pt.text, optionsPayload: payload, isOption: true,
+      });
+    }
+    renderCart();
+  }
+
+  function closeModal() {
+    if (modalEl) { modalEl.remove(); modalEl = null; }
+    document.body.style.overflow = "";
+  }
+
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && modalEl) closeModal(); });
+
+  /* =========================================================
+     Cupones / cuenta / entrega
+  ========================================================= */
 
   async function loadCoupons() {
     try {
@@ -246,11 +469,10 @@
     } catch (e) { /* sin cupones, seguimos */ }
   }
 
-  /* --- Gate de admin (mientras los pedidos están en revisión) ---
-     La página arranca oculta (<main hidden>). Solo la mostramos si sos admin;
-     un socio que llegue por la URL es redirigido al inicio. También precarga
-     el WhatsApp de la cuenta. Para publicar: quitar este gate y el `hidden`
-     del <main> en pedir.html. */
+  /* Gate de admin (mientras los pedidos están en revisión). La página arranca
+     oculta (<main hidden>). Solo la mostramos si sos admin; un socio que llegue
+     por la URL es redirigido. También precarga el WhatsApp de la cuenta.
+     Para publicar: quitar este gate y el `hidden` del <main> en pedir.html. */
   async function ensureAllowed() {
     const mainEl = document.querySelector("[data-order-main]");
     try {
@@ -268,16 +490,13 @@
     }
   }
 
-  /* --- Toggle retiro / delivery --- */
-
   function initFulfillment() {
     const opts = document.querySelectorAll("[data-fulfill-opt]");
     opts.forEach((opt) => {
       const input = opt.querySelector("input");
       input.addEventListener("change", () => {
         opts.forEach((o) => o.classList.toggle("is-active", o === opt));
-        const isDelivery = opt.getAttribute("data-fulfill-opt") === "delivery";
-        show(addressField, isDelivery);
+        show(addressField, opt.getAttribute("data-fulfill-opt") === "delivery");
       });
     });
   }
@@ -287,16 +506,15 @@
     return checked ? checked.value : "pickup";
   }
 
-  /* --- Enviar pedido --- */
+  /* =========================================================
+     Enviar pedido
+  ========================================================= */
 
   async function submitOrder(ev) {
     ev.preventDefault();
     setStatus("");
 
-    if (cart.size === 0) {
-      setStatus("Tu pedido está vacío.", "error");
-      return;
-    }
+    if (cart.size === 0) { setStatus("Tu pedido está vacío.", "error"); return; }
     const fulfillment = currentFulfillment();
     const address = addressInput.value.trim();
     if (fulfillment === "delivery" && !address) {
@@ -306,7 +524,7 @@
     }
 
     const items = [];
-    cart.forEach((it) => { items.push({ slug: it.slug, qty: it.qty }); });
+    cart.forEach((it) => { items.push({ slug: it.slug, qty: it.qty, options: it.optionsPayload || {} }); });
 
     const payload = {
       items,
@@ -351,7 +569,7 @@
         const row = document.createElement("div");
         row.className = "ss-line";
         const a = document.createElement("span");
-        a.textContent = ln.qty + "× " + ln.name;
+        a.textContent = ln.qty + "× " + ln.name + (ln.options ? " (" + ln.options + ")" : "");
         const b = document.createElement("span");
         b.textContent = money(ln.subtotal);
         row.append(a, b);
@@ -373,7 +591,6 @@
       }
     }
 
-    // Ocultamos carta + carrito, mostramos el éxito.
     show(layoutEl, false);
     show(heroEl, false);
     show(successEl, true);
@@ -395,18 +612,16 @@
     show(layoutEl, true);
     show(heroEl, true);
     renderCart();
-    // Redibujamos los steppers de la carta (todos vuelven a "Agregar +").
+    // Los steppers de productos simples vuelven a "Agregar +".
     menuList.querySelectorAll("[data-stepper-for]").forEach((holder) => {
-      const p = holder.__product;
-      if (!p) return;
-      const fresh = stepperFor(p);
-      fresh.__product = p;
-      holder.replaceWith(fresh);
+      if (holder.__product) refreshSimpleStepper(holder.__product.slug);
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  /* --- Carga inicial --- */
+  /* =========================================================
+     Carga inicial
+  ========================================================= */
 
   async function loadMenu() {
     try {
@@ -414,6 +629,7 @@
       if (res.status === 401) return; // el guard ya redirige
       const data = await res.json();
       pointsPerAmount = Number(data.pointsPerAmount) || 100;
+      optionSets = data.optionSets || {};
       const cats = Array.isArray(data.categories) ? data.categories : [];
       show(menuLoading, false);
       if (!cats.length) {
@@ -429,7 +645,6 @@
   }
 
   async function init() {
-    // Gate de admin: si no está permitido, ya se redirigió; no cargamos nada.
     const allowed = await ensureAllowed();
     if (!allowed) return;
 
