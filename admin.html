@@ -81,6 +81,9 @@
     .orders-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .orders-filter .admin-tab-btn { flex: 0 0 auto; }
     .orders-admin-list { display: flex; flex-direction: column; gap: 14px; }
+    .oa-print-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .oa-print-btn { border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: #cfe4ff; font-weight: 800; font-size: .85rem; padding: 8px 14px; border-radius: 12px; cursor: pointer; }
+    .oa-print-btn:hover { background: rgba(255,255,255,.16); }
     .oa-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); border-radius: 18px; padding: 16px 18px; }
     .oa-card.is-confirmed { border-color: rgba(78,230,109,.4); }
     .oa-card.is-cancelled { opacity: .7; }
@@ -404,6 +407,7 @@
   <script src="assets/core/user.js"></script>
   <script src="assets/core/auth.js"></script>
   <script src="assets/core/session-ui.js"></script>
+  <script src="assets/core/print-ticket.js"></script>
   <script src="assets/core/admin.js"></script>
   <script>
     /* Navegación por pestañas del panel admin (solo UI). */

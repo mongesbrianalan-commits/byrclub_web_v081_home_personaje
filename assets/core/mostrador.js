@@ -602,6 +602,13 @@
       }
     }
 
+    // Impresión de comanda/ticket de esta venta (requiere print-ticket.js).
+    const forPrint = Object.assign({ fulfillment: "mostrador" }, sale);
+    const pc = $("[data-print-comanda]");
+    const pt = $("[data-print-ticket]");
+    if (pc) pc.onclick = () => { if (window.BYRPrint) window.BYRPrint.comanda(forPrint); };
+    if (pt) pt.onclick = () => { if (window.BYRPrint) window.BYRPrint.ticket(forPrint); };
+
     show(layoutEl, false);
     show(heroEl, false);
     show(cajaWarning, false);

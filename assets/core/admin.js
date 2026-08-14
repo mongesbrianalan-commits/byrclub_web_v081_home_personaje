@@ -1053,6 +1053,27 @@
       }
     }
 
+    // Impresión (comanda para cocina; ticket para caja). Requiere print-ticket.js.
+    if (o.status !== "cancelled" && window.BYRPrint) {
+      const pr = document.createElement("div");
+      pr.className = "oa-print-row";
+      const comandaBtn = document.createElement("button");
+      comandaBtn.type = "button";
+      comandaBtn.className = "oa-print-btn";
+      comandaBtn.textContent = "🖨️ Comanda";
+      comandaBtn.addEventListener("click", () => window.BYRPrint.comanda(o));
+      pr.append(comandaBtn);
+      if (currentRole !== "cocina") {
+        const ticketBtn = document.createElement("button");
+        ticketBtn.type = "button";
+        ticketBtn.className = "oa-print-btn";
+        ticketBtn.textContent = "🖨️ Ticket";
+        ticketBtn.addEventListener("click", () => window.BYRPrint.ticket(o));
+        pr.append(ticketBtn);
+      }
+      card.append(pr);
+    }
+
     return card;
   }
 

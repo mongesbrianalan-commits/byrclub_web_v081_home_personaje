@@ -123,6 +123,10 @@
         <h2>¡Venta cobrada!</h2>
         <p>Venta <strong data-success-id>#0</strong> · <span data-success-method>—</span></p>
         <div class="success-summary" data-success-summary></div>
+        <div class="pos-print-row" style="display:flex;gap:10px;margin-bottom:12px">
+          <button type="button" class="order-secondary-btn" data-print-comanda style="flex:1">🖨️ Comanda</button>
+          <button type="button" class="order-secondary-btn" data-print-ticket style="flex:1">🖨️ Ticket</button>
+        </div>
         <button type="button" class="auth-submit" data-new-sale>Nueva venta 🍔</button>
       </div>
     </section>
@@ -139,6 +143,7 @@
   <script src="assets/core/user.js"></script>
   <script src="assets/core/auth.js"></script>
   <script src="assets/core/session-ui.js"></script>
+  <script src="assets/core/print-ticket.js"></script>
   <script src="assets/core/mostrador.js"></script>
 </body>
 </html>
