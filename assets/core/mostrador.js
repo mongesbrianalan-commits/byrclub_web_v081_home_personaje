@@ -626,7 +626,8 @@
       const data = await res.json();
       const u = data.user;
       if (!u) { window.location.replace("ingresar.html?next=/mostrador.html"); return false; }
-      if (!u.isAdmin) { window.location.replace("index.html"); return false; }
+      const role = u.role || (u.isAdmin ? "admin" : "socio");
+      if (role !== "admin" && role !== "cajero") { window.location.replace("index.html"); return false; }
       if (mainEl) mainEl.hidden = false;
       return true;
     } catch (e) {

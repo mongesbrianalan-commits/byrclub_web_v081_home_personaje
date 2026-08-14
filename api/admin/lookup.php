@@ -7,15 +7,8 @@
 require_once __DIR__ . '/../helpers.php';
 require_method('POST');
 
-$id  = require_auth();
 $pdo = db();
-
-$stmt = $pdo->prepare('SELECT is_admin FROM users WHERE id = ?');
-$stmt->execute([$id]);
-$me = $stmt->fetch();
-if (!$me || !$me['is_admin']) {
-    json_out(['error' => 'No tenés permisos para hacer esto.'], 403);
-}
+require_role($pdo, ['cajero']);
 
 /** Arma la tarjeta que muestra el admin (sin datos sensibles). */
 function admin_user_card(array $row): array
@@ -28,6 +21,7 @@ function admin_user_card(array $row): array
         'whatsapp' => $row['whatsapp'],
         'points'   => $state['wallet']['points'] ?? 0,
         'xp'       => $state['progression']['xp'] ?? 0,
+        'role'     => !empty($row['is_admin']) ? 'admin' : ($row['role'] ?? 'socio'),
     ];
 }
 

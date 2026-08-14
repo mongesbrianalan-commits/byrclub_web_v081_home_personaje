@@ -229,6 +229,24 @@
         </div>
       </div>
 
+      <div class="admin-block" data-role-section hidden>
+        <h2>👥 Rol del staff</h2>
+        <p class="admin-hint-line">💡 Dale acceso al panel a un empleado. <b>Cajero</b>: caja, pedidos, mostrador y cupones. <b>Cocina</b>: solo ve los pedidos. <b>Admin</b>: todo.</p>
+        <div class="admin-row">
+          <label class="auth-field">
+            <span>Rol de esta cuenta</span>
+            <select data-role-select>
+              <option value="socio">Socio (sin acceso al panel)</option>
+              <option value="cajero">Cajero</option>
+              <option value="cocina">Cocina</option>
+              <option value="admin">Admin (todo)</option>
+            </select>
+          </label>
+          <button type="button" class="admin-btn-inline" data-role-save>Guardar rol</button>
+        </div>
+        <p class="auth-form-status" data-role-status></p>
+      </div>
+
       <p class="admin-note">💡 Los puntos quedan guardados en la cuenta del cliente al instante y los ve en su perfil.</p>
       </div><!-- /tab clientes -->
 

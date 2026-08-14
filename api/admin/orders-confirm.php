@@ -19,7 +19,7 @@ require_once __DIR__ . '/../caja.php';
 require_method('POST');
 
 $pdo   = db();
-$admin = require_admin($pdo);
+$admin = require_role($pdo, ['cajero']);
 
 $in      = body_json();
 $orderId = (int) ($in['orderId'] ?? 0);

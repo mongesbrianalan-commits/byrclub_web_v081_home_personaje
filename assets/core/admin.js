@@ -39,8 +39,14 @@
   const resetCopy = document.querySelector("[data-reset-copy]");
   const resetWa = document.querySelector("[data-reset-wa]");
 
+  const roleSection = document.querySelector("[data-role-section]");
+  const roleSelect = document.querySelector("[data-role-select]");
+  const roleSave = document.querySelector("[data-role-save]");
+  const roleStatus = document.querySelector("[data-role-status]");
+
   let currentEmail = null;
   let currentUser = null;
+  let currentRole = "admin"; // rol del staff logueado; lo setea checkStaff()
 
   /* ---------------------------------------------------------
      Cliente HTTP
@@ -78,28 +84,60 @@
      Verificar que sea admin
   --------------------------------------------------------- */
 
-  async function checkAdmin() {
+  // Qué pestañas ve cada rol (admin ve todo).
+  const TAB_ROLES = {
+    clientes: ["admin"],
+    pedidos:  ["admin", "cajero", "cocina"],
+    caja:     ["admin", "cajero"],
+    menu:     ["admin"],
+    canjes:   ["admin", "cajero"],
+    cumples:  ["admin"],
+    prode:    ["admin"],
+  };
+
+  function applyRoleTabs(role) {
+    let firstAllowed = null;
+    Object.keys(TAB_ROLES).forEach((tab) => {
+      const allowed = TAB_ROLES[tab].includes(role);
+      const btn = document.querySelector(`[data-tab-btn="${tab}"]`);
+      const panelEl = document.querySelector(`[data-tab="${tab}"]`);
+      if (btn) btn.style.display = allowed ? "" : "none";
+      if (panelEl && !allowed) panelEl.hidden = true;
+      if (allowed && !firstAllowed) firstAllowed = tab;
+    });
+    // Activar la primera pestaña permitida (por si la default no lo está).
+    if (firstAllowed) {
+      const btn = document.querySelector(`[data-tab-btn="${firstAllowed}"]`);
+      if (btn) btn.click();
+    }
+  }
+
+  async function checkStaff() {
     let data;
     try {
       const res = await fetch(API + "me.php", { credentials: "same-origin" });
       data = await res.json();
     } catch (error) {
-      return;
+      return null;
     }
 
     if (!data.user) {
       window.location.replace("ingresar.html?next=/admin.html");
-      return;
+      return null;
     }
 
-    if (!data.user.isAdmin) {
+    const role = data.user.role || (data.user.isAdmin ? "admin" : "socio");
+    if (!["admin", "cajero", "cocina"].includes(role)) {
       gate.hidden = false;
       panel.hidden = true;
-      return;
+      return null;
     }
 
+    currentRole = role;
     gate.hidden = true;
     panel.hidden = false;
+    applyRoleTabs(role);
+    return role;
   }
 
   /* ---------------------------------------------------------
@@ -119,6 +157,7 @@
     foundCard.hidden = true;
     awardSection.hidden = true;
     if (resetSection) resetSection.hidden = true;
+    if (roleSection) roleSection.hidden = true;
     if (matchesBox) {
       matchesBox.hidden = true;
       matchesBox.innerHTML = "";
@@ -153,8 +192,29 @@
       setStatus(resetStatus, "", "");
       if (resetPass) resetPass.value = "";
     }
+    if (roleSection) {
+      roleSection.hidden = false;
+      if (roleSelect) roleSelect.value = user.role || "socio";
+      if (roleStatus) setStatus(roleStatus, "", "");
+    }
     setStatus(findStatus, "", "");
     pointsInput.focus();
+  }
+
+  function initRoleMgmt() {
+    if (!roleSave) return;
+    roleSave.addEventListener("click", async () => {
+      if (!currentEmail) { setStatus(roleStatus, "Primero buscá un cliente.", "error"); return; }
+      roleSave.disabled = true;
+      try {
+        const r = await api("admin/set-role.php", { email: currentEmail, role: roleSelect.value });
+        setStatus(roleStatus, `✅ ${r.name} ahora es ${r.role}.`, "ok");
+      } catch (error) {
+        setStatus(roleStatus, error.message, "error");
+      } finally {
+        roleSave.disabled = false;
+      }
+    });
   }
 
   function renderMatches(list) {
@@ -858,7 +918,7 @@
       <div class="oa-total"><span>Total</span><b>${money(o.itemsTotal)}</b></div>
     `;
 
-    if (o.status === "pending") {
+    if (o.status === "pending" && currentRole !== "cocina") {
       const row = document.createElement("div");
       row.className = "oa-confirm-row";
 
@@ -1272,13 +1332,15 @@
     loadCaja();
   }
 
-  checkAdmin().then(() => {
-    if (panel && !panel.hidden) {
+  checkStaff().then((role) => {
+    if (!role) return; // no es staff: quedó el gate
+    initOrders();                                     // todo el staff ve pedidos
+    if (role === "admin" || role === "cajero") initCaja();
+    if (role === "admin") {
       initBirthdays();
       loadProdeTeamsDatalist();
-      initOrders();
-      initCaja();
       loadMenuAdmin();
+      initRoleMgmt();
     }
   });
 })();

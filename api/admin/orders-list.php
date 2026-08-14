@@ -10,7 +10,7 @@
 require_once __DIR__ . '/../helpers.php';
 
 $pdo = db();
-require_admin($pdo);
+require_role($pdo, ['cajero', 'cocina']);
 
 $status = $_GET['status'] ?? '';
 $allowed = ['pending', 'confirmed', 'cancelled'];

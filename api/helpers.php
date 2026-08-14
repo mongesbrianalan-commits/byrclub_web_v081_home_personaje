@@ -107,6 +107,46 @@ function require_admin(PDO $pdo): int
     return $id;
 }
 
+/**
+ * Rol efectivo del usuario: 'admin' | 'cajero' | 'cocina' | 'socio'.
+ * is_admin manda: si está en 1, es 'admin'. Resiliente a que la columna `role`
+ * todavía no exista (antes de correr 2026-08-roles.sql): en ese caso todos son
+ * admin o socio, igual que antes.
+ */
+function byr_role(PDO $pdo, int $id): string
+{
+    try {
+        $stmt = $pdo->prepare('SELECT is_admin, role FROM users WHERE id = ?');
+        $stmt->execute([$id]);
+        $r = $stmt->fetch();
+    } catch (Throwable $e) {
+        $stmt = $pdo->prepare('SELECT is_admin FROM users WHERE id = ?');
+        $stmt->execute([$id]);
+        $r = $stmt->fetch();
+    }
+    if (!$r) {
+        return 'socio';
+    }
+    if (!empty($r['is_admin'])) {
+        return 'admin';
+    }
+    return $r['role'] ?? 'socio';
+}
+
+/**
+ * Exige que el usuario sea admin (siempre permitido) O tenga uno de los roles
+ * en $allowed (p. ej. ['cajero']). Corta con 401/403. Devuelve su id.
+ */
+function require_role(PDO $pdo, array $allowed): int
+{
+    $id   = require_auth();
+    $role = byr_role($pdo, $id);
+    if ($role === 'admin' || in_array($role, $allowed, true)) {
+        return $id;
+    }
+    json_out(['error' => 'No tenés permisos para hacer esto.'], 403);
+}
+
 /** Estado de juego inicial para una cuenta nueva. */
 function default_state(string $name, ?string $avatar = null): array
 {
@@ -131,6 +171,7 @@ function public_user(array $row): array
         'avatar'       => $row['avatar'],
         'whatsapp'     => $row['whatsapp'] ?? null,
         'isAdmin'      => (bool) $row['is_admin'],
+        'role'         => !empty($row['is_admin']) ? 'admin' : ($row['role'] ?? 'socio'),
         'onboarded'    => !empty($row['avatar']),
         'birthdate'    => $row['birthdate'] ?? null,
         'referralCode' => $row['referral_code'] ?? null,

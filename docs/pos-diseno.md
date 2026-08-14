@@ -65,11 +65,12 @@ Todo con migraciones SQL en `api/migrations/` para correr en phpMyAdmin, en orde
 
 ---
 
-## 3. Roles y permisos
-- **admin:** todo (menú, precios, reportes, reabrir caja, cancelar).
-- **cajero:** abrir/cerrar su caja, vender, cobrar, reimprimir, movimientos de caja.
-- **cocina:** ver/marcar comandas (KDS), sin acceso a plata.
-- Gate server-side por rol en cada endpoint (hoy solo hay `is_admin`).
+## 3. Roles y permisos ✅ IMPLEMENTADO (2026-08-14)
+- **admin:** todo (menú, precios, cumples, prode, reportes, asignar roles).
+- **cajero:** caja, pedidos (confirmar/cobrar), mostrador, canjes. Sin puntos manuales ni config.
+- **cocina:** solo ve los pedidos (read-only); KDS real llega en Fase 3.
+- **socio:** sin acceso al panel.
+- `users.role` ENUM (migración `2026-08-roles.sql`); `is_admin` sigue siendo el maestro de admin. Helper `require_role($pdo, [...])` (admin siempre pasa). El admin asigna roles desde la pestaña Clientes. El panel muestra/oculta pestañas según rol; los endpoints validan igual server-side.
 
 ---
 

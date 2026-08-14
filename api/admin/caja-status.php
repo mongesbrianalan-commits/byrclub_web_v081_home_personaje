@@ -7,7 +7,7 @@ require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/../caja.php';
 
 $pdo = db();
-require_admin($pdo);
+require_role($pdo, ['cajero']);
 
 if (!byr_caja_ready($pdo)) {
     json_out(['ready' => false, 'open' => false, 'session' => null]);

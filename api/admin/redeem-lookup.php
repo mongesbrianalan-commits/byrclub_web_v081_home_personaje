@@ -3,15 +3,8 @@
 require_once __DIR__ . '/../helpers.php';
 require_method('POST');
 
-$id  = require_auth();
 $pdo = db();
-
-$stmt = $pdo->prepare('SELECT is_admin FROM users WHERE id = ?');
-$stmt->execute([$id]);
-$me = $stmt->fetch();
-if (!$me || !$me['is_admin']) {
-    json_out(['error' => 'No tenés permisos para hacer esto.'], 403);
-}
+$id  = require_role($pdo, ['cajero']);
 
 $in   = body_json();
 $code = strtoupper(trim($in['code'] ?? ''));
