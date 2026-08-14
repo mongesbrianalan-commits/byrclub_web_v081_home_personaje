@@ -244,6 +244,12 @@
         op.textContent = it.optionsText;
         info.append(op);
       }
+      if (it.note) {
+        const nt = document.createElement("div");
+        nt.className = "cl-note";
+        nt.textContent = "📝 " + it.note;
+        info.append(nt);
+      }
       const pr = document.createElement("div");
       pr.className = "cl-price";
       pr.textContent = money(it.unitPrice) + " × " + it.qty + " = " + money(it.unitPrice * it.qty);
@@ -358,6 +364,22 @@
       groupsWrap.append(gEl);
     });
 
+    // Nota libre por producto (aclaraciones tipo "sin cebolla", "sin tomate").
+    let noteText = "";
+    const noteGroup = document.createElement("div");
+    noteGroup.className = "opt-group opt-note-group";
+    const noteTitle = document.createElement("div");
+    noteTitle.className = "opt-group-title";
+    noteTitle.innerHTML = '<span>¿Alguna aclaración?</span><em class="opt-opt">Opcional</em>';
+    const noteInput = document.createElement("textarea");
+    noteInput.className = "opt-note-input";
+    noteInput.rows = 2;
+    noteInput.maxLength = 200;
+    noteInput.placeholder = "Ej: sin cebolla, sin tomate…";
+    noteInput.addEventListener("input", () => { noteText = noteInput.value; });
+    noteGroup.append(noteTitle, noteInput);
+    groupsWrap.append(noteGroup);
+
     const foot = document.createElement("div");
     foot.className = "opt-foot";
     const totalWrap = document.createElement("div");
@@ -369,7 +391,7 @@
     addBtn.className = "opt-add-btn";
     addBtn.textContent = "Agregar al pedido";
     addBtn.addEventListener("click", () => {
-      addWithOptions(p, groups, selection);
+      addWithOptions(p, groups, selection, noteText);
       closeModal();
     });
     foot.append(totalWrap, addBtn);
@@ -415,7 +437,7 @@
     return row;
   }
 
-  function addWithOptions(p, groups, selection) {
+  function addWithOptions(p, groups, selection, note) {
     const pt = priceAndText(groups, selection);
     // payload limpio para el server (sin las claves vacías de single opcional).
     const payload = {};
@@ -425,14 +447,17 @@
       else if (Array.isArray(v) && v.length) { payload[g.id] = v.slice(); }
     });
 
-    const lineId = "o:" + p.slug + ":" + signature(payload);
+    // La aclaración forma parte de la identidad de la línea: dos burgers iguales
+    // con notas distintas son líneas separadas.
+    const noteClean = (note || "").replace(/\s+/g, " ").trim().slice(0, 200);
+    const lineId = "o:" + p.slug + ":" + signature(payload) + (noteClean ? "|n:" + noteClean : "");
     const existing = cart.get(lineId);
     if (existing) {
       existing.qty = Math.min(existing.qty + 1, 50);
     } else {
       cart.set(lineId, {
         lineId, slug: p.slug, name: p.name, unitPrice: p.price + pt.delta,
-        qty: 1, optionsText: pt.text, optionsPayload: payload, isOption: true,
+        qty: 1, optionsText: pt.text, optionsPayload: payload, note: noteClean, isOption: true,
       });
     }
     renderCart();
@@ -524,7 +549,7 @@
     }
 
     const items = [];
-    cart.forEach((it) => { items.push({ slug: it.slug, qty: it.qty, options: it.optionsPayload || {} }); });
+    cart.forEach((it) => { items.push({ slug: it.slug, qty: it.qty, options: it.optionsPayload || {}, note: it.note || "" }); });
 
     const payload = {
       items,

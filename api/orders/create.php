@@ -101,13 +101,27 @@ foreach ($itemsIn as $it) {
         json_out(['error' => $opt['error'], 'code' => 'option-invalid'], 422);
     }
 
+    /* Aclaración libre del socio (ej: "sin cebolla"). No cambia el precio; se
+       guarda junto al texto de opciones. Nunca se confía en su largo. */
+    $note = trim((string) ($it['note'] ?? ''));
+    $note = preg_replace('/\s+/u', ' ', $note);
+    if (function_exists('mb_substr')) {
+        $note = mb_substr($note, 0, 200);
+    } else {
+        $note = substr($note, 0, 200);
+    }
+    $optionsText = $opt['text'];
+    if ($note !== '') {
+        $optionsText = ($optionsText !== '' ? $optionsText . ' · ' : '') . '📝 ' . $note;
+    }
+
     $unit     = (int) $p['price'] + (int) $opt['delta'];
     $subtotal = $unit * $qty;
     $itemsTotal += $subtotal;
     $lines[] = [
         'product_id' => (int) $p['id'],
         'name'       => $p['name'],
-        'options'    => $opt['text'] !== '' ? $opt['text'] : null,
+        'options'    => $optionsText !== '' ? $optionsText : null,
         'unit_price' => $unit,
         'qty'        => $qty,
         'subtotal'   => $subtotal,

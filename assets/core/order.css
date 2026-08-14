@@ -54,6 +54,7 @@
 .cart-line .cl-info { flex: 1; min-width: 0; }
 .cart-line .cl-name { font-weight: 800; font-size: .92rem; line-height: 1.1; }
 .cart-line .cl-options { color: #ffe79a; font-weight: 700; font-size: .76rem; line-height: 1.2; margin: 2px 0; }
+.cart-line .cl-note { color: #cfe0ff; font-weight: 700; font-size: .74rem; line-height: 1.2; margin: 2px 0; }
 .cart-line .cl-price { color: #9bd1ff; font-weight: 700; font-size: .82rem; }
 .cart-line .qty-btn { width: 30px; height: 30px; font-size: 1.05rem; border-radius: 9px; box-shadow: 0 3px 0 #0438a0; }
 .cart-line .qty-num { min-width: 22px; font-size: 1rem; }
@@ -115,6 +116,10 @@
 .opt-group-title span { font-family: "Lilita One"; font-size: 1.05rem; }
 .opt-req { font-style: normal; font-weight: 900; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; background: var(--yellow); color: #071342; padding: 3px 9px; border-radius: 999px; }
 .opt-opt { font-style: normal; font-weight: 800; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: #9bd1ff; }
+/* Caja clara dentro del modal oscuro, para que se lea lo que se escribe. */
+.opt-note-input { width: 100%; box-sizing: border-box; border: 0; border-radius: 12px; background: rgba(255,255,255,.95); color: #07164d; font: inherit; font-weight: 700; padding: 10px 12px; resize: vertical; outline: 0; }
+.opt-note-input::placeholder { color: #8296bf; font-weight: 600; }
+.opt-note-input:focus { box-shadow: 0 0 0 3px var(--yellow); }
 .opt-row { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; cursor: pointer; transition: background .12s; }
 .opt-row:hover { background: rgba(255,255,255,.06); }
 .opt-row input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--yellow); cursor: pointer; }
