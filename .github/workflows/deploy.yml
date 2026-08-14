@@ -42,10 +42,40 @@ jobs:
             **/.ftp-deploy-sync-state.json
 
       # Hostinger a veces corta la conexion FTP ("Timeout control socket").
-      # Si el primer intento fallo, reintentamos una vez. Solo corre si el
-      # paso anterior no salio bien.
-      - name: Reintentar subida por FTP
+      # Reintentamos con esperas crecientes para aguantar cortes transitorios.
+
+      # --- Intento 2 (tras esperar 45s) ---
+      - name: Esperar antes del 2do intento
         if: steps.ftp1.outcome == 'failure'
+        run: sleep 45
+
+      - name: Reintentar subida por FTP (2)
+        id: ftp2
+        if: steps.ftp1.outcome == 'failure'
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /domains/byrclub.com/public_html/
+          protocol: ftps
+          timeout: 120000
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .github/**
+            api/config.php
+            **/.ftp-deploy-sync-state.json
+
+      # --- Intento 3 (tras esperar 90s). Si este falla, el deploy queda en rojo. ---
+      - name: Esperar antes del 3er intento
+        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
+        run: sleep 90
+
+      - name: Reintentar subida por FTP (3)
+        if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
