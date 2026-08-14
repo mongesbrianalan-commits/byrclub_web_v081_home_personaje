@@ -85,6 +85,8 @@
 .fulfill-opt input { position: absolute; opacity: 0; pointer-events: none; }
 .fulfill-opt.is-active { background: var(--yellow); color: #071342; border-color: var(--yellow); box-shadow: 0 5px 0 #9d7300; }
 
+.checkout-guest-hint { background: rgba(78,230,109,.1); border: 1px solid rgba(78,230,109,.32); border-radius: 12px; padding: 10px 14px; margin: 0 0 12px; color: #b8ffcb; font-weight: 700; font-size: .86rem; }
+.checkout-guest-hint a { color: #fff; font-weight: 800; }
 .cart-checkout .auth-field { margin-bottom: 12px; }
 /* El textarea vive dentro de una .auth-field (caja blanca), igual que los
    inputs: fondo transparente y texto oscuro para que se lea lo que se escribe. */

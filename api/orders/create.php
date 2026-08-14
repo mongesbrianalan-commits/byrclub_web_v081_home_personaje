@@ -18,24 +18,17 @@ require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/../menu-options.php';
 require_method('POST');
 
-$id  = require_auth();
 $pdo = db();
-
-/* Datos de la cuenta para el snapshot de contacto. */
-$stmt = $pdo->prepare('SELECT name, whatsapp FROM users WHERE id = ?');
-$stmt->execute([$id]);
-$user = $stmt->fetch();
-if (!$user) {
-    json_out(['error' => 'No se encontró tu cuenta.'], 404);
-}
+$id  = current_user_id(); // null = invitado (pide sin loguearse)
 
 $in          = body_json();
 $itemsIn     = is_array($in['items'] ?? null) ? $in['items'] : [];
 $fulfillment = ($in['fulfillment'] ?? 'pickup') === 'delivery' ? 'delivery' : 'pickup';
 $address     = trim((string) ($in['address'] ?? ''));
 $pickupName  = trim((string) ($in['pickupName'] ?? ''));
+$guestName   = trim((string) ($in['name'] ?? ''));
 $notes       = trim((string) ($in['notes'] ?? ''));
-$phone       = trim((string) ($in['phone'] ?? '')) ?: (string) ($user['whatsapp'] ?? '');
+$phone       = trim((string) ($in['phone'] ?? ''));
 $couponCode  = strtoupper(trim((string) ($in['couponCode'] ?? '')));
 
 if (!$itemsIn) {
@@ -45,11 +38,37 @@ if ($fulfillment === 'delivery' && $address === '') {
     json_out(['error' => 'Para delivery necesitamos tu dirección.'], 422);
 }
 
-/* Para retiro, el nombre de quien retira (si lo puso) reemplaza el de la cuenta
-   como snapshot de contacto; el pedido igual queda ligado al socio por user_id. */
-$customerName = ($fulfillment === 'pickup' && $pickupName !== '')
-    ? (function_exists('mb_substr') ? mb_substr($pickupName, 0, 120) : substr($pickupName, 0, 120))
-    : (string) $user['name'];
+$cap120 = function (string $s): string {
+    return function_exists('mb_substr') ? mb_substr($s, 0, 120) : substr($s, 0, 120);
+};
+
+if ($id) {
+    /* --- Socio logueado: snapshot de contacto desde la cuenta --- */
+    $stmt = $pdo->prepare('SELECT name, whatsapp FROM users WHERE id = ?');
+    $stmt->execute([$id]);
+    $user = $stmt->fetch();
+    if (!$user) {
+        json_out(['error' => 'No se encontró tu cuenta.'], 404);
+    }
+    if ($phone === '') {
+        $phone = (string) ($user['whatsapp'] ?? '');
+    }
+    // El campo "Tu nombre" (prellenado con el de la cuenta) queda como snapshot.
+    $nameField    = $guestName !== '' ? $guestName : $pickupName;
+    $customerName = $nameField !== '' ? $cap120($nameField) : (string) $user['name'];
+} else {
+    /* --- Invitado: cuenta exprés por teléfono. Nombre y WhatsApp obligatorios. --- */
+    $name = $pickupName !== '' ? $pickupName : $guestName;
+    if ($name === '') {
+        json_out(['error' => 'Necesitamos tu nombre.'], 422);
+    }
+    if ($phone === '') {
+        json_out(['error' => 'Necesitamos tu WhatsApp para avisarte del pedido.'], 422);
+    }
+    $couponCode   = ''; // los invitados no adjuntan cupones
+    $id           = byr_find_or_create_phone_account($pdo, $name, $phone);
+    $customerName = $cap120($name);
+}
 
 /* --- Traemos los productos reales (disponibles) para casar lo pedido --- */
 $keys = [];

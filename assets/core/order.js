@@ -23,8 +23,8 @@
   const checkoutForm = $("[data-checkout-form]");
   const addressField = $("[data-address-field]");
   const addressInput = $("[data-address]");
-  const pickupField  = $("[data-pickup-field]");
-  const pickupInput  = $("[data-pickup-name]");
+  const nameInput    = $("[data-order-name]");
+  const guestHint    = $("[data-guest-hint]");
   const phoneInput   = $("[data-phone]");
   const couponField  = $("[data-coupon-field]");
   const couponSelect = $("[data-coupon]");
@@ -46,6 +46,8 @@
   /* cart: lineId -> { lineId, slug, name, unitPrice, qty, optionsText, optionsPayload, isOption } */
   const cart = new Map();
   let pointsPerAmount = 100;
+  let isMember = false;      // ¿está logueado? (si no, pide como invitado)
+  let lastOrderPhone = "";   // teléfono del último pedido (para seguir el estado sin login)
   let optionSets = {};
   const productBySlug = new Map();
 
@@ -628,32 +630,31 @@
     } catch (e) { /* sin cupones, seguimos */ }
   }
 
-  /* Gate de admin (mientras los pedidos están en revisión). La página arranca
-     oculta (<main hidden>). Solo la mostramos si sos admin; un socio que llegue
-     por la URL es redirigido. También precarga el WhatsApp de la cuenta.
-     Para publicar: quitar este gate y el `hidden` del <main> en pedir.html. */
-  async function ensureAllowed() {
+  /* La página es para TODOS: socios (suman puntos) e invitados (cuenta exprés por
+     teléfono). Se muestra siempre; si hay sesión, precarga nombre y WhatsApp. */
+  async function initGate() {
     const mainEl = document.querySelector("[data-order-main]");
+    if (mainEl) mainEl.hidden = false;
     try {
       const res = await fetch("/api/me.php", { credentials: "same-origin" });
       const data = await res.json();
       const u = data.user;
-      if (!u) { window.location.replace("ingresar.html?next=/pedir.html"); return false; }
-      if (!u.isAdmin) { window.location.replace("index.html"); return false; }
-      if (u.whatsapp && !phoneInput.value) phoneInput.value = u.whatsapp;
-      if (u.name && !pickupInput.value) pickupInput.value = u.name;
-      if (mainEl) mainEl.hidden = false;
-      return true;
+      if (u) {
+        isMember = true;
+        if (u.whatsapp && phoneInput && !phoneInput.value) phoneInput.value = u.whatsapp;
+        if (u.name && nameInput && !nameInput.value) nameInput.value = u.name;
+      } else {
+        isMember = false;
+        show(guestHint, true);
+      }
     } catch (e) {
-      window.location.replace("index.html");
-      return false;
+      isMember = false;
     }
+    return true;
   }
 
   function applyFulfillment(kind) {
-    const isDelivery = kind === "delivery";
-    show(addressField, isDelivery);
-    show(pickupField, !isDelivery);
+    show(addressField, kind === "delivery");
   }
 
   function initFulfillment() {
@@ -682,6 +683,11 @@
     setStatus("");
 
     if (cart.size === 0) { setStatus("Tu pedido está vacío.", "error"); return; }
+    const name = nameInput ? nameInput.value.trim() : "";
+    const phone = phoneInput ? phoneInput.value.trim() : "";
+    if (!name) { setStatus("Decinos tu nombre.", "error"); if (nameInput) nameInput.focus(); return; }
+    if (!phone) { setStatus("Necesitamos tu WhatsApp para avisarte del pedido.", "error"); if (phoneInput) phoneInput.focus(); return; }
+
     const fulfillment = currentFulfillment();
     const address = addressInput.value.trim();
     if (fulfillment === "delivery" && !address) {
@@ -693,12 +699,13 @@
     const items = [];
     cart.forEach((it) => { items.push({ slug: it.slug, qty: it.qty, options: it.optionsPayload || {}, note: it.note || "" }); });
 
+    lastOrderPhone = phone; // para seguir el estado sin login
     const payload = {
       items,
       fulfillment,
+      name,
       address: fulfillment === "delivery" ? address : "",
-      pickupName: fulfillment === "pickup" ? pickupInput.value.trim() : "",
-      phone: phoneInput.value.trim(),
+      phone,
       notes: notesInput.value.trim(),
       couponCode: couponSelect.value || "",
     };
@@ -759,6 +766,10 @@
       }
     }
 
+    // "Ver mis pedidos" solo tiene sentido para socios logueados.
+    const profileLink = $("[data-success-profile]");
+    if (profileLink) profileLink.style.display = isMember ? "" : "none";
+
     if (orderCartEl) orderCartEl.classList.remove("is-open");
     show(cartOverlay, false);
     document.body.style.overflow = "";
@@ -787,15 +798,30 @@
     if (!stEl) return;
     clearInterval(statusPollTimer);
     stEl.textContent = SUCCESS_STAGES.pending;
+    const guestPhone = lastOrderPhone;
     async function tick() {
       try {
-        const res = await fetch("/api/orders/mine.php", { credentials: "same-origin" });
-        if (!res.ok) return;
-        const data = await res.json();
-        const o = (data.orders || []).find((x) => x.id === orderId);
-        if (!o) return;
-        stEl.textContent = SUCCESS_STAGES[o.status] || o.status;
-        if (o.status === "delivered" || o.status === "cancelled") clearInterval(statusPollTimer);
+        let status = null;
+        if (isMember) {
+          // Socio: busca su pedido en "Mis pedidos" (con sesión).
+          const res = await fetch("/api/orders/mine.php", { credentials: "same-origin" });
+          if (res.ok) {
+            const data = await res.json();
+            const o = (data.orders || []).find((x) => x.id === orderId);
+            if (o) status = o.status;
+          }
+        } else if (guestPhone) {
+          // Invitado: seguimiento público por id + teléfono.
+          const res = await fetch("/api/orders/track.php?id=" + orderId + "&phone=" + encodeURIComponent(guestPhone), { credentials: "same-origin" });
+          if (res.ok) {
+            const data = await res.json();
+            status = data.status || null;
+          }
+        }
+        if (status) {
+          stEl.textContent = SUCCESS_STAGES[status] || status;
+          if (status === "delivered" || status === "cancelled") clearInterval(statusPollTimer);
+        }
       } catch (e) { /* reintenta en el próximo tick */ }
     }
     tick();
@@ -851,7 +877,7 @@
   }
 
   async function init() {
-    const allowed = await ensureAllowed();
+    const allowed = await initGate();
     if (!allowed) return;
 
     initFulfillment();

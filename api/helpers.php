@@ -228,6 +228,54 @@ function byr_generate_referral_code(PDO $pdo): string
 }
 
 /**
+ * Cuenta exprés por teléfono (pedido de invitado): busca un usuario cuyo WhatsApp
+ * termine igual (últimos 8 dígitos, misma lógica que lookup.php). Si existe,
+ * devuelve su id (ahí se acreditan los puntos). Si no, crea una cuenta liviana
+ * SIN contraseña usable ni email, y devuelve el id nuevo. Requiere que la columna
+ * `email` admita NULL (migración 2026-08-guest-orders.sql).
+ */
+function byr_find_or_create_phone_account(PDO $pdo, string $name, string $phone): int
+{
+    $digits = preg_replace('/\D/', '', $phone);
+    $last   = strlen($digits) >= 8 ? substr($digits, -8) : $digits;
+
+    if (strlen($last) >= 6) {
+        try {
+            $sql = "SELECT id FROM users
+                     WHERE whatsapp IS NOT NULL AND whatsapp <> ''
+                       AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(whatsapp,' ',''),'-',''),'+',''),'(',''),')',''),'.','') LIKE ?
+                     ORDER BY id ASC LIMIT 1";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(['%' . $last]);
+            $row = $stmt->fetch();
+            if ($row) {
+                return (int) $row['id'];
+            }
+        } catch (Throwable $e) {
+            /* si algo raro pasa con la búsqueda, seguimos y creamos la cuenta */
+        }
+    }
+
+    $safeName = function_exists('mb_substr') ? mb_substr($name, 0, 120) : substr($name, 0, 120);
+    $state = default_state($safeName, null);
+    $code  = byr_generate_referral_code($pdo);
+    $state['profile']['referralCode'] = $code;
+    $hash  = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT); // sin contraseña usable
+
+    $ins = $pdo->prepare(
+        'INSERT INTO users (email, password_hash, name, whatsapp, state, referral_code)
+         VALUES (NULL, ?, ?, ?, ?, ?)'
+    );
+    try {
+        $ins->execute([$hash, $safeName, $phone, json_encode($state, JSON_UNESCAPED_UNICODE), $code]);
+    } catch (Throwable $e) {
+        // Falta la migración que hace `email` nullable.
+        json_out(['error' => 'Todavía no se puede pedir sin cuenta. (Falta correr 2026-08-guest-orders.sql.)', 'code' => 'guest-not-ready'], 503);
+    }
+    return (int) $pdo->lastInsertId();
+}
+
+/**
  * Genera un código de vale de premio único (formato BYR-XXXXXX con un
  * alfabeto sin caracteres ambiguos). Reintenta si choca.
  */

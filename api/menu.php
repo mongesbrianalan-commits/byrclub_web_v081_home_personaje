@@ -9,7 +9,7 @@
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/menu-options.php';
 
-require_auth();
+/* Público: cualquiera puede ver la carta (para pedir como invitado). */
 $pdo = db();
 
 /* Etiquetas lindas por categoría (la tabla guarda el slug de categoría). */
