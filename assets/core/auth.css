@@ -209,6 +209,13 @@
   transition: border-color 0.2s;
 }
 
+/* El atributo `hidden` debe ocultar el campo: sin esto, `.auth-field { display }`
+   le gana a la regla del navegador y el campo sigue visible (ej: dirección en
+   retiro, cupón sin cupones). */
+.auth-field[hidden] {
+  display: none;
+}
+
 .auth-field:focus-within {
   border-color: var(--blue-400);
 }
