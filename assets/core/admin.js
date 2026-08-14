@@ -1011,6 +1011,25 @@
 
       row.append(field, payField, confirmBtn, cancelBtn, lineSt);
       card.append(row);
+
+      // Editar el pedido antes de aceptarlo (agregar lo que el cliente sumó).
+      const editToggle = document.createElement("button");
+      editToggle.type = "button";
+      editToggle.className = "oa-edit-toggle";
+      editToggle.textContent = "✏️ Editar pedido";
+      let editorEl = null;
+      editToggle.addEventListener("click", () => {
+        if (editorEl) {
+          editorEl.remove();
+          editorEl = null;
+          editToggle.textContent = "✏️ Editar pedido";
+        } else {
+          editorEl = buildOrderEditor(o);
+          card.append(editorEl);
+          editToggle.textContent = "Cerrar edición";
+        }
+      });
+      card.append(editToggle);
     } else if (o.status !== "cancelled") {
       // Pedido aceptado (o más avanzado): mostrar puntos + control de estado.
       if (o.pointsAwarded !== null) {
@@ -1077,6 +1096,80 @@
     return card;
   }
 
+  /* ---------------------------------------------------------
+     Editar un pedido pendiente (agregar/cambiar/quitar ítems)
+  --------------------------------------------------------- */
+
+  let editableProducts = []; // productos simples (sin opciones) para agregar
+
+  async function loadEditableProducts() {
+    try {
+      const res = await fetch(`${API}menu.php?staff=1`, { credentials: "same-origin" });
+      const data = await res.json();
+      const cats = Array.isArray(data.categories) ? data.categories : [];
+      const out = [];
+      cats.forEach((c) => (c.products || []).forEach((p) => {
+        if (!p.optionSet) out.push({ slug: p.slug, name: p.name, price: p.price });
+      }));
+      editableProducts = out;
+    } catch (e) { editableProducts = []; }
+  }
+
+  function miniBtn(txt, fn) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "oa-mini-btn";
+    b.textContent = txt;
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  async function editOrder(body) {
+    try {
+      await api("admin/order-edit.php", body);
+      loadOrders();
+    } catch (error) {
+      setStatus(ordersAdminStatus, error.message, "error");
+    }
+  }
+
+  function buildOrderEditor(o) {
+    const box = document.createElement("div");
+    box.className = "oa-editor";
+
+    (o.items || []).forEach((ln) => {
+      const r = document.createElement("div");
+      r.className = "oa-edit-item";
+      const nm = document.createElement("span");
+      nm.className = "oa-edit-name";
+      nm.textContent = ln.name + (ln.options ? " (" + ln.options + ")" : "");
+      const ctl = document.createElement("div");
+      ctl.className = "oa-edit-qty";
+      ctl.append(
+        miniBtn("−", () => editOrder({ orderId: o.id, action: "setItemQty", itemId: ln.id, qty: ln.qty - 1 })),
+        Object.assign(document.createElement("span"), { className: "oa-edit-num", textContent: String(ln.qty) }),
+        miniBtn("+", () => editOrder({ orderId: o.id, action: "setItemQty", itemId: ln.id, qty: ln.qty + 1 }))
+      );
+      r.append(nm, ctl);
+      box.append(r);
+    });
+
+    const add = document.createElement("div");
+    add.className = "oa-edit-add";
+    const sel = document.createElement("select");
+    sel.innerHTML = '<option value="">➕ Agregar producto…</option>' +
+      editableProducts.map((p) => `<option value="${escapeHtml(p.slug)}">${escapeHtml(p.name)} · ${money(p.price)}</option>`).join("");
+    const addBtn = miniBtn("Agregar", () => { if (sel.value) editOrder({ orderId: o.id, action: "addItem", slug: sel.value, qty: 1 }); });
+    add.append(sel, addBtn);
+    box.append(add);
+
+    const hint = document.createElement("small");
+    hint.className = "oa-edit-hint";
+    hint.textContent = "Se agregan bebidas, papas, entradas y postres. Las hamburguesas van desde el mostrador.";
+    box.append(hint);
+    return box;
+  }
+
   function fmtDateTime(value) {
     if (!value) return "";
     const d = new Date(String(value).replace(" ", "T"));
@@ -1106,6 +1199,7 @@
     // queda "vieja" si el admin dejó el panel abierto y llegó un pedido nuevo.
     const pedidosTabBtn = document.querySelector('[data-tab-btn="pedidos"]');
     if (pedidosTabBtn) pedidosTabBtn.addEventListener("click", loadOrders);
+    loadEditableProducts(); // productos para el editor de pedidos pendientes
     loadOrders();
   }
 

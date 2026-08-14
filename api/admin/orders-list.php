@@ -43,7 +43,7 @@ if (!$orders) {
 $ids          = array_column($orders, 'id');
 $placeholders = implode(',', array_fill(0, count($ids), '?'));
 $stmt = $pdo->prepare(
-    "SELECT order_id, name, options, unit_price, qty, subtotal
+    "SELECT id, order_id, name, options, unit_price, qty, subtotal
        FROM order_items WHERE order_id IN ($placeholders) ORDER BY id ASC"
 );
 $stmt->execute($ids);
@@ -51,6 +51,7 @@ $stmt->execute($ids);
 $itemsByOrder = [];
 foreach ($stmt->fetchAll() as $it) {
     $itemsByOrder[(int) $it['order_id']][] = [
+        'id'       => (int) $it['id'],
         'name'     => $it['name'],
         'options'  => $it['options'],
         'unitPrice' => (int) $it['unit_price'],

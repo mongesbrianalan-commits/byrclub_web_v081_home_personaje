@@ -640,7 +640,7 @@
 
   async function loadMenu() {
     try {
-      const res = await fetch("/api/menu.php", { credentials: "same-origin" });
+      const res = await fetch("/api/menu.php?staff=1", { credentials: "same-origin" });
       if (res.status === 401) return;
       const data = await res.json();
       optionSets = data.optionSets || {};

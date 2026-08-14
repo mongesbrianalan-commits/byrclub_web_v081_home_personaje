@@ -24,13 +24,31 @@ const BYR_MENU_CATEGORIES = [
     'otros'        => '🍴 Otros',
 ];
 
-$stmt = $pdo->query(
-    'SELECT id, slug, category, name, description, image, emoji, price
-       FROM products
-      WHERE available = 1
-      ORDER BY sort ASC, id ASC'
-);
-$rows = $stmt->fetchAll();
+/* Los productos "solo staff" (ej: bebidas sueltas) se muestran únicamente al
+   mostrador: hace falta pedir ?staff=1 Y tener sesión de cajero/admin. El menú
+   público (pedir.html) nunca los ve. Resiliente si falta la columna. */
+$isStaff = false;
+if (isset($_GET['staff'])) {
+    $uid = current_user_id();
+    if ($uid) {
+        $role = byr_role($pdo, $uid);
+        $isStaff = ($role === 'admin' || $role === 'cajero');
+    }
+}
+$hasStaffCol = false;
+try {
+    $hasStaffCol = (bool) $pdo->query("SHOW COLUMNS FROM products LIKE 'staff_only'")->fetch();
+} catch (Throwable $e) {
+    $hasStaffCol = false;
+}
+
+$sql = 'SELECT id, slug, category, name, description, image, emoji, price
+          FROM products WHERE available = 1';
+if ($hasStaffCol && !$isStaff) {
+    $sql .= ' AND staff_only = 0';
+}
+$sql .= ' ORDER BY sort ASC, id ASC';
+$rows = $pdo->query($sql)->fetchAll();
 
 /* Agrupamos respetando el orden de BYR_MENU_CATEGORIES (categorías vacías se omiten). */
 $byCat = [];
