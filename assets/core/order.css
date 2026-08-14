@@ -21,13 +21,27 @@
 .order-loading, .order-error { color: #9bd1ff; font-weight: 800; padding: 20px 4px; }
 .order-error { color: #ffb0b0; }
 
+/* --- Navegación de categorías (tipo Que Resto) --- */
+.menu-nav { position: sticky; top: 8px; z-index: 5; display: flex; gap: 8px; overflow-x: auto; padding: 8px; margin: 0 0 20px; background: rgba(4,18,58,.92); border: 1px solid rgba(255,255,255,.14); border-radius: 999px; box-shadow: 0 10px 24px rgba(0,0,0,.28); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.menu-nav::-webkit-scrollbar { display: none; }
+.menu-nav-pill { flex: 0 0 auto; border: 0; background: transparent; color: #cfe4ff; font-weight: 800; font-size: .9rem; padding: 8px 15px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
+.menu-nav-pill:hover { background: rgba(255,255,255,.1); }
+.menu-nav-pill.is-active { background: var(--yellow); color: #071342; }
+
 /* --- Categorías y productos --- */
-.menu-category { margin-bottom: 30px; }
+.menu-category { margin-bottom: 30px; scroll-margin-top: 72px; }
 .menu-category h2 { font-family: "Lilita One"; font-size: 1.5rem; text-transform: uppercase; margin: 0 0 14px; }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 
 .product-card { display: flex; flex-direction: column; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; overflow: hidden; transition: transform .15s, border-color .15s; }
 .product-card:hover { transform: translateY(-3px); border-color: rgba(255,213,31,.5); }
+
+/* Foto del producto (o placeholder con el emoji del rubro). */
+.product-photo { position: relative; width: 100%; aspect-ratio: 4 / 3; background: #0a1f5c; overflow: hidden; }
+.product-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.product-photo.is-placeholder { display: grid; place-items: center; background: radial-gradient(120% 120% at 30% 20%, #17337f 0%, #0a1a4d 72%); }
+.product-photo-emoji { font-size: 3.4rem; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); opacity: .92; }
+
 .product-body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; flex: 1; }
 .product-name { font-family: "Lilita One"; font-size: 1.15rem; line-height: 1.05; }
 .product-desc { color: #9bd1ff; font-weight: 700; font-size: .86rem; line-height: 1.25; flex: 1; }

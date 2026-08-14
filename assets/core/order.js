@@ -62,9 +62,30 @@
      Render del menú
   ========================================================= */
 
+  // Bloque de foto (o placeholder con el emoji del rubro si no hay imagen).
+  function productPhoto(p) {
+    const box = document.createElement("div");
+    box.className = "product-photo";
+    if (p.image) {
+      const img = document.createElement("img");
+      img.src = p.image;
+      img.alt = p.name;
+      img.loading = "lazy";
+      box.append(img);
+    } else {
+      box.classList.add("is-placeholder");
+      const em = document.createElement("span");
+      em.className = "product-photo-emoji";
+      em.textContent = p.emoji || "🍔";
+      box.append(em);
+    }
+    return box;
+  }
+
   function productCard(p) {
     const card = document.createElement("article");
     card.className = "product-card";
+    card.append(productPhoto(p));
 
     const body = document.createElement("div");
     body.className = "product-body";
@@ -129,9 +150,29 @@
 
   function renderMenu(categories) {
     menuList.textContent = "";
+
+    // Navegación de categorías (pestañitas tipo Que Resto).
+    const nav = document.createElement("nav");
+    nav.className = "menu-nav";
+    nav.setAttribute("aria-label", "Categorías");
+    categories.forEach((cat, i) => {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = "menu-nav-pill" + (i === 0 ? " is-active" : "");
+      pill.textContent = cat.label;
+      pill.dataset.target = "menu-cat-" + cat.slug;
+      pill.addEventListener("click", () => {
+        const sec = document.getElementById("menu-cat-" + cat.slug);
+        if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      nav.append(pill);
+    });
+    menuList.append(nav);
+
     categories.forEach((cat) => {
       const section = document.createElement("section");
       section.className = "menu-category";
+      section.id = "menu-cat-" + cat.slug;
       const h2 = document.createElement("h2");
       h2.textContent = cat.label;
       const grid = document.createElement("div");
@@ -143,6 +184,22 @@
       section.append(h2, grid);
       menuList.append(section);
     });
+
+    setupMenuNavObserver(nav);
+  }
+
+  // Marca activa la pestañita de la categoría visible al hacer scroll.
+  function setupMenuNavObserver(nav) {
+    if (!nav || !("IntersectionObserver" in window)) return;
+    const sections = menuList.querySelectorAll(".menu-category");
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        nav.querySelectorAll(".menu-nav-pill").forEach((p) =>
+          p.classList.toggle("is-active", p.dataset.target === e.target.id));
+      });
+    }, { rootMargin: "-15% 0px -75% 0px", threshold: 0 });
+    sections.forEach((s) => obs.observe(s));
   }
 
   /* =========================================================
