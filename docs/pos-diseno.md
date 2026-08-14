@@ -109,7 +109,8 @@ Reutiliza `create.php` (recompute de precios server-side) para la carga de líne
 ---
 
 ## 7. Fases de entrega
-- **Fase 1 — Caja (sin hardware): ✅ IMPLEMENTADA (2026-08-14, primer incremento).** Apertura/cierre, medios de pago, cobro al confirmar pedido, movimientos, X/Z en pantalla. Falta: pantalla de venta de mostrador (walk-in) y roles finos (hoy admin-only). Requiere correr `api/migrations/2026-08-caja.sql`. El código degrada con gracia si la migración no está corrida.
+- **Fase 1 — Caja (sin hardware): ✅ IMPLEMENTADA (2026-08-14).** Apertura/cierre, medios de pago, cobro al confirmar pedido, movimientos, X/Z en pantalla. Requiere `api/migrations/2026-08-caja.sql`. Degrada con gracia si la migración no está corrida.
+- **Fase 2 — Venta de mostrador: ✅ IMPLEMENTADA (2026-08-14).** Página `mostrador.html` (admin-only): el cajero arma el pedido desde el menú real, identifica al socio (opcional, suma puntos) o consumidor final, elige medio de pago, ve el vuelto y cobra. Crea la venta ya confirmada y pagada, atada a la caja. Endpoint `api/admin/pos-sale.php`. Requiere `api/migrations/2026-08-pos-sale.sql` (user_id nullable + channel/served_by). Falta: roles finos (hoy admin-only).
 - **Fase 2 — Impresión:** cola `print_jobs` + agente + renderer ESC/POS 80mm (comanda + ticket). Aquí entra el hardware de red.
 - **Fase 3 — Operación:** KDS cocina, reportes avanzados, cajón de dinero, afinado multi-sucursal.
 - **Fase 4 — (futuro, si se decide):** fiscal AFIP (factura electrónica / controlador). Proyecto aparte.

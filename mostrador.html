@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a42d8">
+  <title>Mostrador (POS) — BYR Club</title>
+  <script src="assets/core/auth-guard.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="assets/core/auth.css">
+  <link rel="stylesheet" href="assets/core/order.css">
+  <style>
+    /* --- POS mostrador (además de order.css) --- */
+    .pos-warning { max-width: 1100px; margin: 0 auto 14px; background: rgba(255,213,31,.12); border: 1px solid rgba(255,213,31,.4); color: #ffe79a; font-weight: 700; border-radius: 14px; padding: 12px 16px; }
+    .pos-warning a { color: #fff; font-weight: 800; }
+    .pos-customer-row { display: flex; gap: 8px; }
+    .pos-customer-row input { flex: 1 1 auto; }
+    .pos-customer-row button { flex: 0 0 auto; border: 0; border-radius: 12px; background: var(--yellow, #ffd51f); color: #071342; font-weight: 800; padding: 0 16px; cursor: pointer; }
+    .pos-customer-status { font-weight: 700; font-size: .84rem; margin: 8px 0 0; min-height: 1em; }
+    .pos-customer-status.is-ok { color: #7bffa0; }
+    .pos-customer-status.is-error { color: #ff9d9d; }
+    .pos-change-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 8px 12px; border-radius: 12px; background: rgba(123,255,160,.1); border: 1px solid rgba(123,255,160,.3); }
+    .pos-change-row strong { color: #7bffa0; font-size: 1.15rem; }
+    .pos-checkout { display: flex; flex-direction: column; gap: 12px; }
+    .pos-checkout .auth-field textarea, .pos-checkout .auth-field input, .pos-checkout .auth-field select { width: 100%; box-sizing: border-box; }
+  </style>
+</head>
+<body class="order-page home-v08" data-root="./">
+  <div class="page-noise" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Ir al inicio">
+      <img src="assets/logo-byr.png" alt="Logo BYR">
+      <span>CLUB</span>
+    </a>
+    <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="admin.html">Panel</a>
+      <a class="active" href="mostrador.html">Mostrador</a>
+      <a href="perfil.html">Mi perfil</a>
+    </nav>
+    <a class="header-cta" href="admin.html">Panel</a>
+  </header>
+
+  <!-- Admin-only: arranca oculto; mostrador.js lo muestra solo a admins. -->
+  <main class="order-main" data-pos-main hidden>
+    <section class="order-hero">
+      <div class="order-hero-copy">
+        <span class="order-kicker">🧾 Venta de mostrador</span>
+        <h1>Cobrá en el <strong>local</strong></h1>
+        <p>Armá el pedido, elegí el medio de pago y cobralo. Si identificás al socio, <b>suma puntos</b> automáticamente.</p>
+      </div>
+    </section>
+
+    <div class="pos-warning" data-caja-warning hidden></div>
+
+    <div class="order-layout">
+      <!-- Carta -->
+      <section class="order-menu" aria-label="Menú">
+        <p class="order-loading" data-menu-loading>Cargando el menú…</p>
+        <p class="order-error" data-menu-error hidden>No pudimos cargar el menú. Probá recargar la página.</p>
+        <div data-menu-list></div>
+      </section>
+
+      <!-- Venta -->
+      <aside class="order-cart" aria-label="Venta">
+        <div class="cart-inner">
+          <h2 class="cart-title">🧾 Venta</h2>
+
+          <div class="cart-items" data-cart-items aria-live="polite">
+            <p class="cart-empty" data-cart-empty>Elegí productos de la carta 👈</p>
+          </div>
+
+          <div class="cart-total-row">
+            <span>Total</span>
+            <strong data-cart-total>$0</strong>
+          </div>
+
+          <div class="pos-checkout" data-checkout hidden>
+            <div class="checkout-block">
+              <span class="checkout-label">Cliente <small>(opcional, para sumar puntos)</small></span>
+              <div class="pos-customer-row">
+                <input type="text" data-customer-input placeholder="Email o WhatsApp del socio" autocomplete="off">
+                <button type="button" data-customer-find>Buscar</button>
+              </div>
+              <p class="pos-customer-status" data-customer-status></p>
+            </div>
+
+            <label class="auth-field">
+              <span>Medio de pago</span>
+              <select data-pay-method>
+                <option value="efectivo">💵 Efectivo</option>
+                <option value="debito">💳 Débito</option>
+                <option value="credito">💳 Crédito</option>
+                <option value="qr">📱 QR</option>
+                <option value="transfer">🏦 Transferencia</option>
+              </select>
+            </label>
+
+            <label class="auth-field" data-tendered-field>
+              <span>Recibí <small>(efectivo, para el vuelto)</small></span>
+              <input type="number" data-tendered inputmode="numeric" min="0" placeholder="Ej: 20000">
+            </label>
+            <div class="pos-change-row" data-change-row hidden>
+              <span>Vuelto</span>
+              <strong data-change>$0</strong>
+            </div>
+
+            <button type="button" class="auth-submit" data-charge-btn>Cobrar 💵</button>
+            <p class="auth-form-status" data-pos-status role="status"></p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Éxito -->
+    <section class="order-success" data-sale-success hidden>
+      <div class="success-card">
+        <div class="success-emoji">✅</div>
+        <h2>¡Venta cobrada!</h2>
+        <p>Venta <strong data-success-id>#0</strong> · <span data-success-method>—</span></p>
+        <div class="success-summary" data-success-summary></div>
+        <button type="button" class="auth-submit" data-new-sale>Nueva venta 🍔</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="footer-brand" href="index.html"><img src="assets/logo-byr.png" alt="BYR"><span>Hamburguesería</span></a>
+    <div class="footer-links"><a href="admin.html">Panel</a><a href="index.html">BYR Club</a><span>Dock Sud, Avellaneda</span></div>
+    <p>© 2026 BYR Club</p>
+  </footer>
+
+  <script src="script.js"></script>
+  <script src="assets/core/storage.js"></script>
+  <script src="assets/core/user.js"></script>
+  <script src="assets/core/auth.js"></script>
+  <script src="assets/core/session-ui.js"></script>
+  <script src="assets/core/mostrador.js"></script>
+</body>
+</html>

@@ -30,6 +30,23 @@ function byr_caja_ready(PDO $pdo): bool
     return $ready;
 }
 
+/**
+ * ¿Está corrida la migración de venta de mostrador (2026-08-pos-sale.sql)?
+ * Se detecta por la columna `orders.channel`. Cachea el resultado.
+ */
+function byr_pos_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $ready = (bool) $pdo->query("SHOW COLUMNS FROM orders LIKE 'channel'")->fetch();
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
 /** Devuelve la sesión de caja abierta (fila completa) o null si no hay ninguna. */
 function byr_open_session(PDO $pdo): ?array
 {
