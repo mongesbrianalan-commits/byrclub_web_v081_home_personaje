@@ -57,9 +57,16 @@
         <h1><strong>BYR CLUB</strong></h1>
         <p class="hero-manifesto">Jugá.<br>Sumá puntos.<br>Canjeá beneficios.</p>
         <div class="hero-actions">
+          <!-- data-order-cta: por ahora visible SOLO para admin (lo revela el
+               script del final). Para PUBLICAR: sacar style="display:none" y el
+               script data-order-cta. -->
+          <a class="play-button play-button--order" href="pedir.html" data-order-cta style="display:none">
+            <span class="play-icon">🛒</span>
+            Hacer un pedido
+          </a>
           <a class="play-button" href="ingresar.html">
-            <span class="play-icon">🍔</span>
-            Sumate gratis
+            <span class="play-icon">⭐</span>
+            Entrar al Club
           </a>
         </div>
         <p class="launch-note">Registrate gratis y empezá a sumar puntos <strong>hoy</strong>.</p>
@@ -209,6 +216,19 @@
   <script src="script.js"></script>
   <script src="assets/core/auth.js"></script>
   <script src="assets/core/session-ui.js"></script>
+  <script>
+    /* "Hacer un pedido": por ahora visible SOLO para admin (previsualización).
+       Para publicarlo a todos: borrar este bloque y el style="display:none"
+       del <a data-order-cta> en el hero. */
+    (function () {
+      var cta = document.querySelector("[data-order-cta]");
+      if (!cta) return;
+      fetch("/api/me.php", { credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.user && d.user.isAdmin) cta.style.display = ""; })
+        .catch(function () {});
+    })();
+  </script>
   <script src="assets/core/perk-2x1-popup.js"></script>
   <script src="assets/core/prode-winner-popup.js"></script>
 </body>

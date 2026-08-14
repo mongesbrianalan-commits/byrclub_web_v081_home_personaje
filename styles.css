@@ -49,6 +49,8 @@ button{cursor:pointer}
 .hero-copy>p{font-size:clamp(1.12rem,2vw,1.45rem);max-width:610px;font-weight:700;line-height:1.45}
 .hero-actions{display:flex;gap:18px;align-items:center;margin:32px 0}
 .play-button{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);color:#fff;border:2px solid rgba(255,255,255,.28);border-radius:16px;padding:12px 18px;font-weight:900}
+.play-button--order{background:var(--yellow,#ffd51f);color:#071342;border-color:var(--yellow,#ffd51f);box-shadow:0 6px 0 #b98700}
+.play-button--order:hover{transform:translateY(-2px)}
 .play-icon{width:34px;height:34px;display:grid;place-items:center;background:#fff;color:var(--blue-700);border-radius:50%;font-size:.75rem}
 .mini-badges{display:flex;flex-wrap:wrap;gap:10px}
 .mini-badges span{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:7px 13px;border-radius:999px;font-weight:800}
