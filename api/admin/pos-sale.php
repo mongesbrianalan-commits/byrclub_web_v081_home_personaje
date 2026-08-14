@@ -16,6 +16,7 @@
 require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/../menu-options.php';
 require_once __DIR__ . '/../caja.php';
+require_once __DIR__ . '/../printing.php';
 require_method('POST');
 
 $pdo   = db();
@@ -212,13 +213,24 @@ try {
     json_out(['error' => 'No se pudo registrar la venta. Probá de nuevo.'], 500);
 }
 
+/* --- Impresión automática (fuera de la transacción, a propósito) ---------
+   La venta ya está cobrada y guardada. Si la impresora está apagada el
+   trabajo queda esperando en la cola, pero la venta NO se cae por eso. */
+$printed = [];
+foreach (byr_print_auto() as $kind) {
+    if (byr_print_enqueue($pdo, $kind, $orderId, $admin)) {
+        $printed[] = $kind;
+    }
+}
+
 /* Vuelto (solo informativo, para efectivo). */
 $change = ($payMethod === 'efectivo' && $tendered !== null && $tendered >= $itemsTotal)
     ? $tendered - $itemsTotal
     : null;
 
 json_out([
-    'ok'    => true,
+    'ok'      => true,
+    'printed' => $printed,
     'sale'  => [
         'id'            => $orderId,
         'itemsTotal'    => $itemsTotal,

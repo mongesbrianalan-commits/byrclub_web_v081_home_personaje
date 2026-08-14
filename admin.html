@@ -131,6 +131,13 @@
     .oa-cancel-btn { border: 1px solid rgba(255,120,120,.4); background: rgba(255,120,120,.1); color: #ffb0b0; font-weight: 800; border-radius: 14px; padding: 0 18px; min-height: 50px; cursor: pointer; }
     .oa-line-status { width: 100%; margin: 8px 0 0; font-weight: 800; }
     .oa-empty { color: #9bd1ff; font-weight: 700; padding: 10px 2px; }
+    /* --- Impresión (comanda / ticket) --- */
+    .oa-print-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,.14); }
+    .oa-print-btn { border: 1px solid rgba(155,209,255,.35); background: rgba(155,209,255,.1); color: #cfe6ff; font-weight: 800; font-size: .9rem; border-radius: 12px; padding: 0 14px; min-height: 40px; cursor: pointer; }
+    .oa-print-btn:hover:not(:disabled) { background: rgba(155,209,255,.2); }
+    .oa-print-btn:disabled { opacity: .55; cursor: default; }
+    .oa-print-note { width: 100%; margin: 4px 0 0; font-weight: 800; font-size: .84rem; color: #9bd1ff; }
+    .oa-print-note.error { color: #ffb0b0; }
 
     /* --- Menú (admin) --- */
     .menu-admin-list { display: flex; flex-direction: column; gap: 10px; }

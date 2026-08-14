@@ -16,6 +16,7 @@
  */
 require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/../caja.php';
+require_once __DIR__ . '/../printing.php';
 require_method('POST');
 
 $pdo   = db();
@@ -138,9 +139,20 @@ try {
     json_out(['error' => 'No se pudo confirmar el pedido. Probá de nuevo.'], 500);
 }
 
+/* --- Impresión automática (fuera de la transacción, a propósito) ---------
+   Aceptar el pedido es lo que dispara la comanda a la cocina. Si la impresora
+   está apagada el trabajo espera en la cola; el pedido queda confirmado igual. */
+$printed = [];
+foreach (byr_print_auto() as $kind) {
+    if (byr_print_enqueue($pdo, $kind, $orderId, $admin)) {
+        $printed[] = $kind;
+    }
+}
+
 json_out([
     'ok'            => true,
     'orderId'       => $orderId,
+    'printed'       => $printed,
     'pointsAwarded' => $pointsToGrant,
     'newBalance'    => (int) ($state['wallet']['points'] ?? 0),
     'couponApplied' => $couponApplied,

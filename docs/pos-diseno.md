@@ -95,8 +95,10 @@ POST /api/pos/sale                crear venta de mostrador (orden + líneas)
 POST /api/orders/pay              registrar pago(s), marcar paid, acreditar puntos, encolar impresión
 GET  /api/pos/report/x            reporte parcial (sin cerrar)
 GET  /api/pos/report/z            reporte de cierre
-GET  /api/print/jobs?station=..   agente: próximos trabajos (con token)
-POST /api/print/ack               agente: confirmar impreso / error
+GET  /api/print/jobs.php?station=..  agente: próximos trabajos (header X-BYR-Print-Token)   [implementado]
+POST /api/print/ack.php             agente: confirmar impreso / error                      [implementado]
+POST /api/admin/print-job.php       staff: reimprimir comanda/ticket o probar impresora    [implementado]
+POST /api/admin/print-queue.php     staff: estado de la cola (si se acumulan, no imprime)  [implementado]
 ```
 Reutiliza `create.php` (recompute de precios server-side) para la carga de líneas; el cobro se separa en `pay`.
 
@@ -112,7 +114,9 @@ Reutiliza `create.php` (recompute de precios server-side) para la carga de líne
 ## 7. Fases de entrega
 - **Fase 1 — Caja (sin hardware): ✅ IMPLEMENTADA (2026-08-14).** Apertura/cierre, medios de pago, cobro al confirmar pedido, movimientos, X/Z en pantalla. Requiere `api/migrations/2026-08-caja.sql`. Degrada con gracia si la migración no está corrida.
 - **Fase 2 — Venta de mostrador: ✅ IMPLEMENTADA (2026-08-14).** Página `mostrador.html` (admin-only): el cajero arma el pedido desde el menú real, identifica al socio (opcional, suma puntos) o consumidor final, elige medio de pago, ve el vuelto y cobra. Crea la venta ya confirmada y pagada, atada a la caja. Endpoint `api/admin/pos-sale.php`. Requiere `api/migrations/2026-08-pos-sale.sql` (user_id nullable + channel/served_by). Falta: roles finos (hoy admin-only).
-- **Fase 2 — Impresión:** cola `print_jobs` + agente + renderer ESC/POS 80mm (comanda + ticket). Aquí entra el hardware de red.
+- **Fase 2 — Impresión: ✅ IMPLEMENTADA (2026-08-14).** Cola `print_jobs` + agente + renderer ESC/POS 80mm. El server arma el ESC/POS en `api/printing.php` y encola; el agente (`tools/print-agent/`, PowerShell, sin instalar nada) hace polling y manda por TCP 9100. Requiere `api/migrations/2026-08-print-jobs.sql` y `print_token` en `api/config.php`. Degrada con gracia: sin migración no se encola nada y los botones del panel caen al print del navegador.
+  - **Hardware real del local (confirmado 2026-08-14):** una térmica en `192.168.0.250:9100` (driver "Generic / Text Only"), estación `cocina`, ESC/POS y corte automático verificados en papel. Hay una EPSON TSTE-CC3100 en `192.168.0.101` que estaba apagada y por ahora queda afuera.
+  - **Por defecto se imprime SOLO la comanda** al cobrar/aceptar (`print_auto`), porque hay una sola impresora; el ticket del cliente sale a pedido con el botón del panel.
 - **Fase 3 — Operación:** KDS cocina, reportes avanzados, cajón de dinero, afinado multi-sucursal.
 - **Fase 4 — (futuro, si se decide):** fiscal AFIP (factura electrónica / controlador). Proyecto aparte.
 
@@ -121,5 +125,5 @@ Reutiliza `create.php` (recompute de precios server-side) para la carga de líne
 ## 8. Puntos abiertos (a decidir antes de Fase 1/2)
 1. **QR/MercadoPago:** ¿solo registrar el medio "QR" a mano, o integrar cobro real (API MP)? Empezar registrando a mano es lo simple.
 2. **Multi-sucursal:** ¿una sola caja/local ahora, o desde el día 1 pensar varias? (afecta `location` en todas las tablas — conviene dejar el campo aunque haya una sola).
-3. **Impresoras concretas:** marca/modelo y si soportan CloudPRNT (definiría agente vs polling directo).
+3. ~~**Impresoras concretas:** marca/modelo y si soportan CloudPRNT (definiría agente vs polling directo).~~ **Resuelto (2026-08-14):** se fue por agente + TCP 9100 contra `192.168.0.250`.
 4. **Puntos en venta de mostrador:** ¿se acreditan siempre que se identifique al socio, con la misma tasa que online?

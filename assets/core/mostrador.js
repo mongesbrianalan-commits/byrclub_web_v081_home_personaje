@@ -551,7 +551,7 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) { setStatus(data.error || "No se pudo cobrar. Probá de nuevo.", "error"); return; }
-      showSuccess(data.sale);
+      showSuccess(data.sale, data.printed);
     } catch (e) {
       setStatus("No hay conexión. Probá de nuevo.", "error");
     } finally {
@@ -562,7 +562,7 @@
 
   const METHOD_LABELS = { efectivo: "Efectivo", debito: "Débito", credito: "Crédito", qr: "QR", transfer: "Transferencia" };
 
-  function showSuccess(sale) {
+  function showSuccess(sale, printed) {
     const idEl = $("[data-success-id]");
     if (idEl) idEl.textContent = "#" + sale.id;
     const methodEl = $("[data-success-method]");
@@ -602,12 +602,55 @@
       }
     }
 
-    // Impresión de comanda/ticket de esta venta (requiere print-ticket.js).
+    // Impresión. La comanda ya salió sola al cobrar (el server la encoló y el
+    // agente del local la imprime); estos botones son para volver a sacarla o
+    // para el ticket del cliente, que no se imprime en cada venta.
     const forPrint = Object.assign({ fulfillment: "mostrador" }, sale);
-    const pc = $("[data-print-comanda]");
-    const pt = $("[data-print-ticket]");
-    if (pc) pc.onclick = () => { if (window.BYRPrint) window.BYRPrint.comanda(forPrint); };
-    if (pt) pt.onclick = () => { if (window.BYRPrint) window.BYRPrint.ticket(forPrint); };
+    const note = $("[data-print-note]");
+    const auto = Array.isArray(printed) ? printed : [];
+    if (note) {
+      note.style.color = "#9bd1ff";
+      note.textContent = auto.includes("comanda")
+        ? "🖨️ La comanda ya salió en la cocina."
+        : "";
+    }
+
+    const wirePrint = (el, kind, label) => {
+      if (!el) return;
+      const idle = "🖨️ " + label;
+      el.textContent = idle;
+      el.disabled = false;
+      el.onclick = async () => {
+        el.disabled = true;
+        el.textContent = "Enviando…";
+        try {
+          const res = await fetch("/api/admin/print-job.php", {
+            method: "POST", credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: sale.id, kind }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo imprimir.");
+          el.textContent = "✅ " + label;
+          if (note) { note.style.color = "#9bd1ff"; note.textContent = "Mandado a la impresora del local."; }
+          setTimeout(() => { el.textContent = idle; el.disabled = false; }, 2500);
+        } catch (e) {
+          el.textContent = idle;
+          el.disabled = false;
+          // Respaldo: el diálogo de impresión del navegador.
+          if (window.BYRPrint) {
+            if (note) { note.style.color = "#9bd1ff"; note.textContent = "La impresora del local no está disponible. Abrimos el diálogo de impresión."; }
+            window.BYRPrint[kind](forPrint);
+          } else if (note) {
+            note.style.color = "#ffb0b0";
+            note.textContent = e.message;
+          }
+        }
+      };
+    };
+
+    wirePrint($("[data-print-comanda]"), "comanda", "Comanda");
+    wirePrint($("[data-print-ticket]"), "ticket", "Ticket");
 
     show(layoutEl, false);
     show(heroEl, false);

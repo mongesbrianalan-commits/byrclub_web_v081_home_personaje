@@ -1,0 +1,18 @@
+{
+  "_ayuda": "Copiar este archivo como config.json y completar. config.json NO se sube a GitHub porque tiene el token.",
+
+  "apiBase": "https://byrclub.com/api/",
+
+  "_token": "Tiene que ser EXACTAMENTE el mismo 'print_token' que esta en api/config.php del hosting.",
+  "token": "PEGAR_ACA_EL_TOKEN",
+
+  "_station": "Nombre de esta estacion. Con una sola impresora, dejar 'cocina'.",
+  "station": "cocina",
+
+  "_printerIp": "IP de la termica en la red del local. La de BYR Docksud es 192.168.0.250.",
+  "printerIp": "192.168.0.250",
+  "printerPort": 9100,
+
+  "_pollSeconds": "Cada cuantos segundos pregunta si hay algo para imprimir.",
+  "pollSeconds": 4
+}

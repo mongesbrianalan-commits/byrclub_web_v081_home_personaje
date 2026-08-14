@@ -36,4 +36,28 @@ return [
      * el admin ve el número y lo puede ajustar antes de acreditar.
      */
     'order_points_per_amount' => 100,
+
+    /*
+     * Impresión térmica (comandas y tickets).
+     *
+     * 'print_token' es la contraseña que comparte el agente que corre en la PC
+     * del local (tools/print-agent/) para venir a buscar los trabajos. Poné una
+     * cadena larga y al azar, y la MISMA en la configuración del agente.
+     * Vacío = la impresión por cola queda apagada.
+     */
+    'print_token' => '',
+
+    /*
+     * Qué se imprime solo al cobrar una venta o aceptar un pedido.
+     * Con una sola impresora conviene dejar solo la comanda (el ticket del
+     * cliente queda a un botón en el panel). Con dos: ['comanda', 'ticket'].
+     */
+    'print_auto' => ['comanda'],
+
+    /*
+     * A qué estación va cada cosa. Con una sola impresora, dejar las dos en
+     * 'cocina' (que es el nombre de estación que usa el agente por defecto).
+     */
+    'print_station_comanda' => 'cocina',
+    'print_station_ticket'  => 'cocina',
 ];

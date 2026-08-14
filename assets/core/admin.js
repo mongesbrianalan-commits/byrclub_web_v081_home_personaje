@@ -1072,24 +1072,52 @@
       }
     }
 
-    // Impresión (comanda para cocina; ticket para caja). Requiere print-ticket.js.
-    if (o.status !== "cancelled" && window.BYRPrint) {
+    // Impresión: va derecho a la térmica del local (cola print_jobs, la saca el
+    // agente). Si la cola no está disponible (falta la migración, o se está
+    // usando el panel desde otro lado), cae al diálogo de impresión del
+    // navegador, que es lo que había antes y sigue sirviendo.
+    if (o.status !== "cancelled") {
       const pr = document.createElement("div");
       pr.className = "oa-print-row";
-      const comandaBtn = document.createElement("button");
-      comandaBtn.type = "button";
-      comandaBtn.className = "oa-print-btn";
-      comandaBtn.textContent = "🖨️ Comanda";
-      comandaBtn.addEventListener("click", () => window.BYRPrint.comanda(o));
-      pr.append(comandaBtn);
+      const note = document.createElement("small");
+      note.className = "oa-print-note";
+
+      const addPrintBtn = (label, kind) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "oa-print-btn";
+        const idle = "🖨️ " + label;
+        btn.textContent = idle;
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          btn.textContent = "Enviando…";
+          note.className = "oa-print-note";
+          note.textContent = "";
+          try {
+            await api("admin/print-job.php", { orderId: o.id, kind });
+            btn.textContent = "✅ " + label;
+            note.textContent = "Mandado a la impresora del local.";
+            setTimeout(() => { btn.textContent = idle; btn.disabled = false; }, 2500);
+          } catch (error) {
+            btn.textContent = idle;
+            btn.disabled = false;
+            if (window.BYRPrint) {
+              note.textContent = "La impresora del local no está disponible. Abrimos el diálogo de impresión.";
+              window.BYRPrint[kind](o);
+            } else {
+              note.className = "oa-print-note error";
+              note.textContent = error.message;
+            }
+          }
+        });
+        pr.append(btn);
+      };
+
+      addPrintBtn("Comanda", "comanda");
       if (currentRole !== "cocina") {
-        const ticketBtn = document.createElement("button");
-        ticketBtn.type = "button";
-        ticketBtn.className = "oa-print-btn";
-        ticketBtn.textContent = "🖨️ Ticket";
-        ticketBtn.addEventListener("click", () => window.BYRPrint.ticket(o));
-        pr.append(ticketBtn);
+        addPrintBtn("Ticket", "ticket");
       }
+      pr.append(note);
       card.append(pr);
     }
 
