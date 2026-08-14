@@ -66,6 +66,8 @@
 .cart-line .cl-options { color: #ffe79a; font-weight: 700; font-size: .76rem; line-height: 1.2; margin: 2px 0; }
 .cart-line .cl-note { color: #cfe0ff; font-weight: 700; font-size: .74rem; line-height: 1.2; margin: 2px 0; }
 .cart-line .cl-price { color: #9bd1ff; font-weight: 700; font-size: .82rem; }
+.cart-line .cl-edit { margin-top: 5px; border: 0; background: rgba(255,213,31,.14); color: #ffe79a; font-weight: 800; font-size: .76rem; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
+.cart-line .cl-edit:hover { background: rgba(255,213,31,.24); }
 .cart-line .qty-btn { width: 30px; height: 30px; font-size: 1.05rem; border-radius: 9px; box-shadow: 0 3px 0 #0438a0; }
 .cart-line .qty-num { min-width: 22px; font-size: 1rem; }
 

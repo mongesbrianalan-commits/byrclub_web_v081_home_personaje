@@ -333,6 +333,15 @@
       pr.className = "cl-price";
       pr.textContent = money(it.unitPrice) + " × " + it.qty + " = " + money(it.unitPrice * it.qty);
       info.append(pr);
+      // Las burgers (con opciones) se pueden editar: reabre el popup con lo elegido.
+      if (it.isOption) {
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "cl-edit";
+        edit.textContent = "✏️ Editar";
+        edit.addEventListener("click", () => editLineOptions(it));
+        info.append(edit);
+      }
       line.append(info, qtyControls(it.lineId));
       cartItemsEl.append(line);
     });
@@ -378,17 +387,23 @@
     return { delta, text: parts.join(" · ") };
   }
 
-  function openOptionsModal(p) {
+  function openOptionsModal(p, editLine) {
     const groups = optionSets[p.optionSet];
     if (!groups) { addSimple(p); return; }
 
-    // Estado de la selección. Los "single" obligatorios arrancan en la 1ra opción.
+    // Estado de la selección. Si estamos EDITANDO una línea, arranca con lo ya
+    // elegido; si no, los "single" obligatorios arrancan en la 1ra opción.
+    const prev = editLine && editLine.optionsPayload ? editLine.optionsPayload : null;
     const selection = {};
     groups.forEach((g) => {
       if (g.type === "single") {
-        selection[g.id] = g.required && g.options.length ? g.options[0].id : "";
+        if (prev && prev[g.id] !== undefined) {
+          selection[g.id] = prev[g.id];
+        } else {
+          selection[g.id] = g.required && g.options.length ? g.options[0].id : "";
+        }
       } else {
-        selection[g.id] = [];
+        selection[g.id] = prev && Array.isArray(prev[g.id]) ? prev[g.id].slice() : [];
       }
     });
 
@@ -445,7 +460,7 @@
     });
 
     // Nota libre por producto (aclaraciones tipo "sin cebolla", "sin tomate").
-    let noteText = "";
+    let noteText = editLine && editLine.note ? editLine.note : "";
     const noteGroup = document.createElement("div");
     noteGroup.className = "opt-group opt-note-group";
     const noteTitle = document.createElement("div");
@@ -456,6 +471,7 @@
     noteInput.rows = 2;
     noteInput.maxLength = 200;
     noteInput.placeholder = "Ej: sin cebolla, sin tomate…";
+    noteInput.value = noteText;
     noteInput.addEventListener("input", () => { noteText = noteInput.value; });
     noteGroup.append(noteTitle, noteInput);
     groupsWrap.append(noteGroup);
@@ -469,9 +485,13 @@
     const addBtn = document.createElement("button");
     addBtn.type = "button";
     addBtn.className = "opt-add-btn";
-    addBtn.textContent = "Agregar al pedido";
+    addBtn.textContent = editLine ? "Guardar cambios" : "Agregar al pedido";
     addBtn.addEventListener("click", () => {
-      addWithOptions(p, groups, selection, noteText);
+      if (editLine) {
+        updateLineOptions(editLine, p, groups, selection, noteText);
+      } else {
+        addWithOptions(p, groups, selection, noteText);
+      }
       closeModal();
     });
     foot.append(totalWrap, addBtn);
@@ -541,6 +561,40 @@
       });
     }
     renderCart();
+  }
+
+  // Guarda los cambios de opciones/nota EN la misma línea (editar en vez de sumar
+  // una nueva). Si la nueva combinación coincide con otra línea, las une.
+  function updateLineOptions(line, p, groups, selection, note) {
+    const pt = priceAndText(groups, selection);
+    const payload = {};
+    groups.forEach((g) => {
+      const v = selection[g.id];
+      if (g.type === "single") { if (v) payload[g.id] = v; }
+      else if (Array.isArray(v) && v.length) { payload[g.id] = v.slice(); }
+    });
+    const noteClean = (note || "").replace(/\s+/g, " ").trim().slice(0, 200);
+    const newLineId = "o:" + p.slug + ":" + signature(payload) + (noteClean ? "|n:" + noteClean : "");
+    const qty = line.qty;
+
+    cart.delete(line.lineId);
+    const existing = cart.get(newLineId);
+    if (existing) {
+      existing.qty = Math.min(existing.qty + qty, 50);
+    } else {
+      cart.set(newLineId, {
+        lineId: newLineId, slug: p.slug, name: p.name, unitPrice: p.price + pt.delta,
+        qty: Math.min(qty, 50), optionsText: pt.text, optionsPayload: payload, note: noteClean, isOption: true,
+      });
+    }
+    renderCart();
+  }
+
+  // Reabre el popup con lo ya elegido, para editar una línea del carrito.
+  function editLineOptions(line) {
+    const p = productBySlug.get(line.slug);
+    if (!p) return;
+    openOptionsModal(p, line);
   }
 
   function closeModal() {
