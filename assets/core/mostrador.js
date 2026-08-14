@@ -38,6 +38,7 @@
   if (!menuList) return;
 
   const cart = new Map();
+  const productBySlug = new Map();
   let optionSets = {};
   let customerEmail = "";   // socio resuelto (vacío = consumidor final)
   let cajaOpen = false;
@@ -130,7 +131,7 @@
       h2.textContent = cat.label;
       const grid = document.createElement("div");
       grid.className = "menu-grid";
-      cat.products.forEach((p) => grid.append(productCard(p)));
+      cat.products.forEach((p) => { productBySlug.set(p.slug, p); grid.append(productCard(p)); });
       section.append(h2, grid);
       menuList.append(section);
     });
@@ -233,6 +234,14 @@
       pr.className = "cl-price";
       pr.textContent = money(it.unitPrice) + " × " + it.qty + " = " + money(it.unitPrice * it.qty);
       info.append(pr);
+      if (it.isOption) {
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "cl-edit";
+        edit.textContent = "✏️ Editar";
+        edit.addEventListener("click", () => editLineOptions(it));
+        info.append(edit);
+      }
       line.append(info, qtyControls(it.lineId));
       cartItemsEl.append(line);
     });
@@ -267,14 +276,21 @@
     return { delta, text: parts.join(" · ") };
   }
 
-  function openOptionsModal(p) {
+  function openOptionsModal(p, editLine) {
     const groups = optionSets[p.optionSet];
     if (!groups) { addSimple(p); return; }
 
+    // Si editamos una línea, arranca con lo ya elegido.
+    const prev = editLine && editLine.optionsPayload ? editLine.optionsPayload : null;
     const selection = {};
     groups.forEach((g) => {
-      if (g.type === "single") selection[g.id] = g.required && g.options.length ? g.options[0].id : "";
-      else selection[g.id] = [];
+      if (g.type === "single") {
+        selection[g.id] = (prev && prev[g.id] !== undefined)
+          ? prev[g.id]
+          : (g.required && g.options.length ? g.options[0].id : "");
+      } else {
+        selection[g.id] = prev && Array.isArray(prev[g.id]) ? prev[g.id].slice() : [];
+      }
     });
 
     const overlay = document.createElement("div");
@@ -322,7 +338,7 @@
     });
 
     // Aclaración libre (ej: "sin cebolla").
-    let noteText = "";
+    let noteText = editLine && editLine.note ? editLine.note : "";
     const noteGroup = document.createElement("div");
     noteGroup.className = "opt-group opt-note-group";
     const noteTitle = document.createElement("div");
@@ -333,6 +349,7 @@
     noteInput.rows = 2;
     noteInput.maxLength = 200;
     noteInput.placeholder = "Ej: sin cebolla, sin tomate…";
+    noteInput.value = noteText;
     noteInput.addEventListener("input", () => { noteText = noteInput.value; });
     noteGroup.append(noteTitle, noteInput);
     groupsWrap.append(noteGroup);
@@ -346,8 +363,12 @@
     const addBtn = document.createElement("button");
     addBtn.type = "button";
     addBtn.className = "opt-add-btn";
-    addBtn.textContent = "Agregar al pedido";
-    addBtn.addEventListener("click", () => { addWithOptions(p, groups, selection, noteText); closeModal(); });
+    addBtn.textContent = editLine ? "Guardar cambios" : "Agregar al pedido";
+    addBtn.addEventListener("click", () => {
+      if (editLine) updateLineOptions(editLine, p, groups, selection, noteText);
+      else addWithOptions(p, groups, selection, noteText);
+      closeModal();
+    });
     foot.append(totalWrap, addBtn);
 
     modal.append(head, groupsWrap, foot);
@@ -408,6 +429,38 @@
       });
     }
     renderCart();
+  }
+
+  // Editar una línea: actualiza la MISMA línea (respeta qty, une si coincide).
+  function updateLineOptions(line, p, groups, selection, note) {
+    const pt = priceAndText(groups, selection);
+    const payload = {};
+    groups.forEach((g) => {
+      const v = selection[g.id];
+      if (g.type === "single") { if (v) payload[g.id] = v; }
+      else if (Array.isArray(v) && v.length) payload[g.id] = v.slice();
+    });
+    const noteClean = (note || "").replace(/\s+/g, " ").trim().slice(0, 200);
+    const newLineId = "o:" + p.slug + ":" + signature(payload) + (noteClean ? "|n:" + noteClean : "");
+    const qty = line.qty;
+
+    cart.delete(line.lineId);
+    const existing = cart.get(newLineId);
+    if (existing) {
+      existing.qty = Math.min(existing.qty + qty, 50);
+    } else {
+      cart.set(newLineId, {
+        lineId: newLineId, slug: p.slug, name: p.name, unitPrice: p.price + pt.delta,
+        qty: Math.min(qty, 50), optionsText: pt.text, optionsPayload: payload, note: noteClean, isOption: true,
+      });
+    }
+    renderCart();
+  }
+
+  function editLineOptions(line) {
+    const p = productBySlug.get(line.slug);
+    if (!p) return;
+    openOptionsModal(p, line);
   }
 
   function closeModal() {
