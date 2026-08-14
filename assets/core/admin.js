@@ -871,6 +871,19 @@
       ptsInput.value = String(o.pointsSuggested || 0);
       field.append(ptsInput);
 
+      const payField = document.createElement("label");
+      payField.className = "auth-field";
+      payField.innerHTML = `<span>Cobro (${money(o.itemsTotal)})</span>`;
+      const paySelect = document.createElement("select");
+      paySelect.innerHTML =
+        `<option value="efectivo">💵 Efectivo</option>` +
+        `<option value="debito">💳 Débito</option>` +
+        `<option value="credito">💳 Crédito</option>` +
+        `<option value="qr">📱 QR</option>` +
+        `<option value="transfer">🏦 Transferencia</option>` +
+        `<option value="">— No registrar cobro</option>`;
+      payField.append(paySelect);
+
       const confirmBtn = document.createElement("button");
       confirmBtn.type = "button";
       confirmBtn.className = "oa-confirm-btn";
@@ -892,9 +905,11 @@
         try {
           const r = await api("admin/orders-confirm.php", {
             orderId: o.id,
-            points: isNaN(points) ? o.pointsSuggested : points
+            points: isNaN(points) ? o.pointsSuggested : points,
+            paymentMethod: paySelect.value
           });
           let msg = `✅ Pedido confirmado · +${fmt(r.pointsAwarded)} pts (nuevo saldo: ${fmt(r.newBalance)}).`;
+          if (r.paymentRecorded) msg += ` Cobrado en ${METHOD_LABELS[r.paymentMethod] || r.paymentMethod}.`;
           if (r.couponApplied === true) msg += " Cupón canjeado.";
           else if (r.couponApplied === false) msg += " (El cupón ya no estaba disponible.)";
           setStatus(ordersAdminStatus, msg, "ok");
@@ -923,7 +938,7 @@
         }
       });
 
-      row.append(field, confirmBtn, cancelBtn, lineSt);
+      row.append(field, payField, confirmBtn, cancelBtn, lineSt);
       card.append(row);
     } else if (o.status === "confirmed" && o.pointsAwarded !== null) {
       const p = document.createElement("div");
@@ -1079,11 +1094,190 @@
     return row;
   }
 
+  /* ---------------------------------------------------------
+     Caja (POS Fase 1) — apertura, cobros, movimientos, cierre
+  --------------------------------------------------------- */
+
+  const cajaPanel = document.querySelector("[data-caja-panel]");
+  const cajaMsg = document.querySelector("[data-caja-msg]");
+
+  const METHOD_LABELS = {
+    efectivo: "Efectivo", debito: "Débito", credito: "Crédito",
+    qr: "QR", transfer: "Transferencia"
+  };
+
+  async function loadCaja() {
+    if (!cajaPanel) return;
+    setStatus(cajaMsg, "Cargando caja…", "");
+    try {
+      const res = await fetch(`${API}admin/caja-status.php`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo cargar la caja.");
+      setStatus(cajaMsg, "", "");
+      if (data.ready === false) {
+        cajaPanel.innerHTML = `<div class="caja-block">⚙️ Falta correr la migración <b>2026-08-caja.sql</b> en phpMyAdmin para activar la caja.</div>`;
+        return;
+      }
+      if (data.open) renderCajaOpen(data.session, data.totals);
+      else renderCajaClosed();
+    } catch (error) {
+      setStatus(cajaMsg, error.message, "error");
+    }
+  }
+
+  function renderCajaClosed() {
+    cajaPanel.innerHTML = `
+      <div class="caja-state">
+        <div class="caja-badge caja-badge-off">● Caja cerrada</div>
+        <label class="auth-field">
+          <span>Fondo inicial <small>(efectivo con el que arrancás)</small></span>
+          <input type="number" min="0" inputmode="numeric" placeholder="Ej: 20000" data-caja-float>
+        </label>
+        <button type="button" class="auth-submit" data-caja-open-btn>Abrir caja 💵</button>
+      </div>`;
+    cajaPanel.querySelector("[data-caja-open-btn]").addEventListener("click", openCaja);
+  }
+
+  async function openCaja() {
+    const openingFloat = parseInt(cajaPanel.querySelector("[data-caja-float]").value, 10) || 0;
+    const btn = cajaPanel.querySelector("[data-caja-open-btn]");
+    btn.disabled = true; btn.textContent = "Abriendo…";
+    try {
+      await api("admin/caja-open.php", { openingFloat });
+      setStatus(cajaMsg, "✅ Caja abierta.", "ok");
+      loadCaja();
+    } catch (error) {
+      setStatus(cajaMsg, error.message, "error");
+      btn.disabled = false; btn.textContent = "Abrir caja 💵";
+    }
+  }
+
+  function methodRows(byMethod) {
+    return Object.keys(METHOD_LABELS).map((m) =>
+      `<div class="caja-line"><span>${METHOD_LABELS[m]}</span><b>${money(byMethod[m] || 0)}</b></div>`
+    ).join("");
+  }
+
+  function renderCajaOpen(session, totals) {
+    cajaPanel.innerHTML = `
+      <div class="caja-state">
+        <div class="caja-badge caja-badge-on">● Caja abierta</div>
+        <div class="caja-meta">Abierta ${escapeHtml(fmtDateTime(session.openedAt))} · Fondo inicial <b>${money(session.openingFloat)}</b></div>
+
+        <div class="caja-block">
+          <h3>Ventas del turno (X)</h3>
+          ${methodRows(totals.byMethod)}
+          <div class="caja-line caja-line-total"><span>Total ventas</span><b>${money(totals.salesTotal)}</b></div>
+          <div class="caja-line"><span>Ingresos de caja</span><b>${money(totals.cashIn)}</b></div>
+          <div class="caja-line"><span>Egresos de caja</span><b>- ${money(totals.cashOut)}</b></div>
+          <div class="caja-line caja-line-total"><span>Efectivo esperado</span><b>${money(totals.expectedCash)}</b></div>
+        </div>
+
+        <div class="caja-block">
+          <h3>Movimiento de efectivo</h3>
+          <div class="admin-grid2">
+            <label class="auth-field"><span>Tipo</span>
+              <select data-mov-type>
+                <option value="out">Egreso (sale plata)</option>
+                <option value="in">Ingreso (entra plata)</option>
+              </select>
+            </label>
+            <label class="auth-field"><span>Monto</span>
+              <input type="number" min="1" inputmode="numeric" placeholder="Ej: 5000" data-mov-amount>
+            </label>
+          </div>
+          <label class="auth-field"><span>Motivo <small>(opcional)</small></span>
+            <input type="text" placeholder="Ej: pago proveedor" data-mov-reason>
+          </label>
+          <button type="button" class="admin-btn-inline" data-mov-btn>Registrar movimiento</button>
+        </div>
+
+        <div class="caja-block">
+          <h3>Cerrar caja (arqueo)</h3>
+          <label class="auth-field"><span>Efectivo contado a mano <small>(opcional)</small></span>
+            <input type="number" min="0" inputmode="numeric" placeholder="Ej: ${totals.expectedCash}" data-caja-counted>
+          </label>
+          <button type="button" class="auth-submit" data-caja-close-btn>Cerrar caja y ver Z 🔒</button>
+        </div>
+      </div>`;
+    cajaPanel.querySelector("[data-mov-btn]").addEventListener("click", addMovement);
+    cajaPanel.querySelector("[data-caja-close-btn]").addEventListener("click", closeCaja);
+  }
+
+  async function addMovement() {
+    const type = cajaPanel.querySelector("[data-mov-type]").value;
+    const amount = parseInt(cajaPanel.querySelector("[data-mov-amount]").value, 10) || 0;
+    const reason = cajaPanel.querySelector("[data-mov-reason]").value.trim();
+    if (amount <= 0) { setStatus(cajaMsg, "Poné un monto mayor a cero.", "error"); return; }
+    const btn = cajaPanel.querySelector("[data-mov-btn]");
+    btn.disabled = true; btn.textContent = "Registrando…";
+    try {
+      await api("admin/caja-movement.php", { type, amount, reason });
+      setStatus(cajaMsg, "✅ Movimiento registrado.", "ok");
+      loadCaja();
+    } catch (error) {
+      setStatus(cajaMsg, error.message, "error");
+      btn.disabled = false; btn.textContent = "Registrar movimiento";
+    }
+  }
+
+  async function closeCaja() {
+    const countedRaw = cajaPanel.querySelector("[data-caja-counted]").value;
+    const btn = cajaPanel.querySelector("[data-caja-close-btn]");
+    btn.disabled = true; btn.textContent = "Cerrando…";
+    try {
+      const body = countedRaw === "" ? {} : { countedCash: parseInt(countedRaw, 10) || 0 };
+      const r = await api("admin/caja-close.php", body);
+      renderZ(r.z);
+      setStatus(cajaMsg, "✅ Caja cerrada.", "ok");
+    } catch (error) {
+      setStatus(cajaMsg, error.message, "error");
+      btn.disabled = false; btn.textContent = "Cerrar caja y ver Z 🔒";
+    }
+  }
+
+  function renderZ(z) {
+    const diffTxt = z.difference === null
+      ? "—"
+      : (z.difference === 0 ? "✅ Sin diferencia"
+        : (z.difference > 0 ? `▲ Sobra ${money(z.difference)}` : `▼ Falta ${money(-z.difference)}`));
+
+    cajaPanel.innerHTML = `
+      <div class="caja-state">
+        <div class="caja-badge caja-badge-off">Reporte Z · turno #${z.sessionId}</div>
+        <div class="caja-block">
+          <h3>Ventas</h3>
+          ${methodRows(z.totals.byMethod)}
+          <div class="caja-line caja-line-total"><span>Total ventas</span><b>${money(z.totals.salesTotal)}</b></div>
+        </div>
+        <div class="caja-block">
+          <h3>Efectivo</h3>
+          <div class="caja-line"><span>Fondo inicial</span><b>${money(z.openingFloat)}</b></div>
+          <div class="caja-line"><span>Ventas efectivo</span><b>${money(z.totals.byMethod.efectivo || 0)}</b></div>
+          <div class="caja-line"><span>Ingresos</span><b>${money(z.totals.cashIn)}</b></div>
+          <div class="caja-line"><span>Egresos</span><b>- ${money(z.totals.cashOut)}</b></div>
+          <div class="caja-line caja-line-total"><span>Esperado</span><b>${money(z.expectedCash)}</b></div>
+          <div class="caja-line"><span>Contado</span><b>${z.countedCash === null ? "—" : money(z.countedCash)}</b></div>
+          <div class="caja-line caja-line-total"><span>Diferencia</span><b>${diffTxt}</b></div>
+        </div>
+        <button type="button" class="auth-submit" data-caja-new-btn>Abrir una nueva caja</button>
+      </div>`;
+    cajaPanel.querySelector("[data-caja-new-btn]").addEventListener("click", loadCaja);
+  }
+
+  function initCaja() {
+    if (!cajaPanel) return;
+    const cajaTabBtn = document.querySelector('[data-tab-btn="caja"]');
+    if (cajaTabBtn) cajaTabBtn.addEventListener("click", loadCaja);
+    loadCaja();
+  }
+
   checkAdmin().then(() => {
     if (panel && !panel.hidden) {
       initBirthdays();
       loadProdeTeamsDatalist();
       initOrders();
+      initCaja();
       loadMenuAdmin();
     }
   });

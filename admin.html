@@ -62,6 +62,21 @@
     .match-pick b { color: var(--yellow); }
     .match-pick small { display: block; color: #9bd1ff; font-weight: 700; margin-top: 2px; }
 
+    /* --- Caja (POS) --- */
+    .caja-state { display: flex; flex-direction: column; gap: 14px; }
+    .caja-badge { align-self: flex-start; font-weight: 900; text-transform: uppercase; font-size: .74rem; padding: 6px 13px; border-radius: 999px; }
+    .caja-badge-on { background: rgba(78,230,109,.16); color: #b8ffcb; border: 1px solid rgba(78,230,109,.4); }
+    .caja-badge-off { background: rgba(255,120,120,.14); color: #ffb0b0; border: 1px solid rgba(255,120,120,.36); }
+    .caja-meta { color: #cfe4ff; font-weight: 700; font-size: .9rem; }
+    .caja-meta b { color: var(--yellow); }
+    .caja-block { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 14px 16px; }
+    .caja-block h3 { font-family: "Lilita One"; font-size: 1.05rem; margin: 0 0 10px; }
+    .caja-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; font-weight: 700; font-size: .92rem; }
+    .caja-line b { color: #cfe4ff; }
+    .caja-line-total { border-top: 1px dashed rgba(255,255,255,.18); margin-top: 4px; padding-top: 9px; }
+    .caja-line-total span { font-weight: 800; }
+    .caja-line-total b { color: var(--yellow); font-size: 1.02rem; }
+
     /* --- Pedidos (admin) --- */
     .orders-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .orders-filter .admin-tab-btn { flex: 0 0 auto; }
@@ -141,6 +156,7 @@
       <nav class="admin-tabs" role="tablist">
         <button type="button" class="admin-tab-btn is-active" data-tab-btn="clientes">👤 Clientes</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="pedidos">🛒 Pedidos</button>
+        <button type="button" class="admin-tab-btn" data-tab-btn="caja">💵 Caja</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="menu">🍔 Menú</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="canjes">🎟️ Canjes</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="cumples">🎂 Cumpleaños</button>
@@ -229,6 +245,15 @@
         <div class="orders-admin-list" data-orders-admin-list></div>
       </div>
       </div><!-- /tab pedidos -->
+
+      <div class="admin-tab" data-tab="caja" hidden>
+      <div class="admin-block">
+        <h2>💵 Caja</h2>
+        <p class="admin-hint-line">💡 Abrí la caja al empezar el turno. Al confirmar un pedido elegís el medio de pago y se suma acá. Al cerrar hacés el arqueo.</p>
+        <p class="auth-form-status" data-caja-msg></p>
+        <div data-caja-panel></div>
+      </div>
+      </div><!-- /tab caja -->
 
       <div class="admin-tab" data-tab="menu" hidden>
       <div class="admin-block">
