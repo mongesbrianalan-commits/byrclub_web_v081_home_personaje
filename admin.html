@@ -113,6 +113,16 @@
 
     /* --- Menú (admin) --- */
     .menu-admin-list { display: flex; flex-direction: column; gap: 10px; }
+
+    /* En PC el panel usa el ancho de la pantalla (no "modo celu"). El login y el
+       cartel de acceso restringido siguen angostos. */
+    @media (min-width: 900px) {
+      .admin-main { max-width: 1100px; }
+      [data-admin-panel].auth-card { width: 100%; max-width: 100%; }
+      .admin-tab-btn { flex: 0 1 auto; }
+      .orders-admin-list,
+      .menu-admin-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+    }
     .ma-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 14px; padding: 10px 14px; flex-wrap: wrap; }
     .ma-emoji { font-size: 1.5rem; flex: 0 0 auto; }
     .ma-info { flex: 1 1 160px; min-width: 0; }
