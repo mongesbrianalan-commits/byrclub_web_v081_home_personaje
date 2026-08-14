@@ -13,7 +13,7 @@ $pdo = db();
 require_role($pdo, ['cajero', 'cocina']);
 
 $status = $_GET['status'] ?? '';
-$allowed = ['pending', 'confirmed', 'cancelled'];
+$allowed = ['pending', 'confirmed', 'preparing', 'on_the_way', 'delivered', 'cancelled'];
 
 $sql = 'SELECT o.id, o.user_id, o.status, o.fulfillment, o.customer_name, o.customer_phone,
                o.address, o.notes, o.items_total, o.points_suggested, o.points_awarded,
@@ -22,7 +22,10 @@ $sql = 'SELECT o.id, o.user_id, o.status, o.fulfillment, o.customer_name, o.cust
           FROM orders o
           JOIN users u ON u.id = o.user_id';
 $params = [];
-if (in_array($status, $allowed, true)) {
+if ($status === 'active') {
+    // "En curso": aceptados que todavía se están preparando/entregando.
+    $sql .= ' WHERE o.status IN ("confirmed", "preparing", "on_the_way")';
+} elseif (in_array($status, $allowed, true)) {
     $sql .= ' WHERE o.status = ?';
     $params[] = $status;
 }

@@ -23,6 +23,8 @@
   const checkoutForm = $("[data-checkout-form]");
   const addressField = $("[data-address-field]");
   const addressInput = $("[data-address]");
+  const pickupField  = $("[data-pickup-field]");
+  const pickupInput  = $("[data-pickup-name]");
   const phoneInput   = $("[data-phone]");
   const couponField  = $("[data-coupon-field]");
   const couponSelect = $("[data-coupon]");
@@ -62,30 +64,9 @@
      Render del menú
   ========================================================= */
 
-  // Bloque de foto (o placeholder con el emoji del rubro si no hay imagen).
-  function productPhoto(p) {
-    const box = document.createElement("div");
-    box.className = "product-photo";
-    if (p.image) {
-      const img = document.createElement("img");
-      img.src = p.image;
-      img.alt = p.name;
-      img.loading = "lazy";
-      box.append(img);
-    } else {
-      box.classList.add("is-placeholder");
-      const em = document.createElement("span");
-      em.className = "product-photo-emoji";
-      em.textContent = p.emoji || "🍔";
-      box.append(em);
-    }
-    return box;
-  }
-
   function productCard(p) {
     const card = document.createElement("article");
     card.className = "product-card";
-    card.append(productPhoto(p));
 
     const body = document.createElement("div");
     body.className = "product-body";
@@ -564,6 +545,7 @@
       if (!u) { window.location.replace("ingresar.html?next=/pedir.html"); return false; }
       if (!u.isAdmin) { window.location.replace("index.html"); return false; }
       if (u.whatsapp && !phoneInput.value) phoneInput.value = u.whatsapp;
+      if (u.name && !pickupInput.value) pickupInput.value = u.name;
       if (mainEl) mainEl.hidden = false;
       return true;
     } catch (e) {
@@ -572,15 +554,22 @@
     }
   }
 
+  function applyFulfillment(kind) {
+    const isDelivery = kind === "delivery";
+    show(addressField, isDelivery);
+    show(pickupField, !isDelivery);
+  }
+
   function initFulfillment() {
     const opts = document.querySelectorAll("[data-fulfill-opt]");
     opts.forEach((opt) => {
       const input = opt.querySelector("input");
       input.addEventListener("change", () => {
         opts.forEach((o) => o.classList.toggle("is-active", o === opt));
-        show(addressField, opt.getAttribute("data-fulfill-opt") === "delivery");
+        applyFulfillment(opt.getAttribute("data-fulfill-opt"));
       });
     });
+    applyFulfillment(currentFulfillment()); // estado inicial (por defecto: retiro)
   }
 
   function currentFulfillment() {
@@ -612,6 +601,7 @@
       items,
       fulfillment,
       address: fulfillment === "delivery" ? address : "",
+      pickupName: fulfillment === "pickup" ? pickupInput.value.trim() : "",
       phone: phoneInput.value.trim(),
       notes: notesInput.value.trim(),
       couponCode: couponSelect.value || "",
@@ -677,6 +667,39 @@
     show(heroEl, false);
     show(successEl, true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    pollOrderStatus(order.id);
+  }
+
+  // Estado del pedido en vivo en la pantalla de éxito (se actualiza solo).
+  const SUCCESS_STAGES = {
+    pending:    "🟡 Recibido",
+    confirmed:  "✅ Aceptado",
+    preparing:  "👨‍🍳 En preparación",
+    on_the_way: "🛵 En camino",
+    delivered:  "🎉 ¡Entregado!",
+    cancelled:  "❌ Cancelado",
+  };
+  let statusPollTimer = null;
+
+  function pollOrderStatus(orderId) {
+    const stEl = $("[data-success-state]");
+    if (!stEl) return;
+    clearInterval(statusPollTimer);
+    stEl.textContent = SUCCESS_STAGES.pending;
+    async function tick() {
+      try {
+        const res = await fetch("/api/orders/mine.php", { credentials: "same-origin" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const o = (data.orders || []).find((x) => x.id === orderId);
+        if (!o) return;
+        stEl.textContent = SUCCESS_STAGES[o.status] || o.status;
+        if (o.status === "delivered" || o.status === "cancelled") clearInterval(statusPollTimer);
+      } catch (e) { /* reintenta en el próximo tick */ }
+    }
+    tick();
+    statusPollTimer = setInterval(tick, 20000);
   }
 
   function escapeHtml(s) {
@@ -686,6 +709,7 @@
   }
 
   function resetForNewOrder() {
+    clearInterval(statusPollTimer);
     cart.clear();
     couponSelect.value = "";
     notesInput.value = "";

@@ -85,6 +85,11 @@
               </div>
             </div>
 
+            <label class="auth-field" data-pickup-field>
+              <span>Nombre de quien retira</span>
+              <input type="text" data-pickup-name placeholder="Tu nombre" autocomplete="name">
+            </label>
+
             <label class="auth-field" data-address-field hidden>
               <span>Dirección de entrega</span>
               <input type="text" data-address placeholder="Calle, número, entre calles…" autocomplete="street-address">
@@ -120,7 +125,8 @@
       <div class="success-card">
         <div class="success-emoji">✅</div>
         <h2>¡Pedido enviado!</h2>
-        <p>Tu pedido <strong data-success-id>#0</strong> quedó registrado. Lo estamos preparando; cuando lo confirmemos vas a ver los puntos sumados en tu perfil.</p>
+        <p>Tu pedido <strong data-success-id>#0</strong> quedó registrado. Seguí su estado acá o en <b>Mis pedidos</b>.</p>
+        <div class="success-state" data-success-state>🟡 Recibido</div>
         <div class="success-summary" data-success-summary></div>
         <div class="success-actions">
           <a class="auth-submit" href="perfil.html">Ver mis pedidos</a>

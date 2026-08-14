@@ -17,9 +17,12 @@
   const errorEl = section.querySelector("[data-orders-error]");
 
   const STATUS = {
-    pending:   { label: "Pendiente",  cls: "pending" },
-    confirmed: { label: "Confirmado", cls: "confirmed" },
-    cancelled: { label: "Cancelado",  cls: "cancelled" },
+    pending:    { label: "Recibido",       cls: "pending" },
+    confirmed:  { label: "Aceptado",       cls: "confirmed" },
+    preparing:  { label: "En preparación", cls: "preparing" },
+    on_the_way: { label: "En camino",      cls: "onway" },
+    delivered:  { label: "Entregado",      cls: "delivered" },
+    cancelled:  { label: "Cancelado",      cls: "cancelled" },
   };
 
   function money(n) { return "$" + Number(n || 0).toLocaleString("es-AR"); }
@@ -83,7 +86,7 @@
     total.className = "order-card-total";
     total.textContent = money(o.itemsTotal);
     const pts = document.createElement("span");
-    if (o.status === "confirmed") {
+    if (o.pointsAwarded !== null && o.status !== "cancelled") {
       pts.className = "order-card-points earned";
       pts.textContent = "🪙 +" + Number(o.pointsAwarded || 0).toLocaleString("es-AR") + " pts";
     } else if (o.status === "cancelled") {
@@ -91,7 +94,7 @@
       pts.textContent = "";
     } else {
       pts.className = "order-card-points pending";
-      pts.textContent = "🪙 ~" + Number(o.pointsSuggested || 0).toLocaleString("es-AR") + " pts al confirmar";
+      pts.textContent = "🪙 ~" + Number(o.pointsSuggested || 0).toLocaleString("es-AR") + " pts al aceptar";
     }
     foot.append(total, pts);
 

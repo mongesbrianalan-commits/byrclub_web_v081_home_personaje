@@ -846,10 +846,21 @@
   }
 
   const ORDER_STATUS = {
-    pending:   { label: "Pendiente",  cls: "pending" },
-    confirmed: { label: "Confirmado", cls: "confirmed" },
-    cancelled: { label: "Cancelado",  cls: "cancelled" }
+    pending:    { label: "Recibido",       cls: "pending" },
+    confirmed:  { label: "Aceptado",       cls: "confirmed" },
+    preparing:  { label: "En preparación", cls: "preparing" },
+    on_the_way: { label: "En camino",      cls: "onway" },
+    delivered:  { label: "Entregado",      cls: "delivered" },
+    cancelled:  { label: "Cancelado",      cls: "cancelled" }
   };
+
+  // Próximo estado según el actual y la forma de entrega (retiro salta "en camino").
+  function nextStage(status, fulfillment) {
+    if (status === "confirmed") return "preparing";
+    if (status === "preparing") return fulfillment === "delivery" ? "on_the_way" : "delivered";
+    if (status === "on_the_way") return "delivered";
+    return null;
+  }
 
   async function loadOrders() {
     if (!ordersList) return;
@@ -1000,11 +1011,46 @@
 
       row.append(field, payField, confirmBtn, cancelBtn, lineSt);
       card.append(row);
-    } else if (o.status === "confirmed" && o.pointsAwarded !== null) {
-      const p = document.createElement("div");
-      p.className = "oa-fulfill";
-      p.innerHTML = `🪙 Se acreditaron <b style="color:var(--green)">+${fmt(o.pointsAwarded)}</b> puntos.`;
-      card.append(p);
+    } else if (o.status !== "cancelled") {
+      // Pedido aceptado (o más avanzado): mostrar puntos + control de estado.
+      if (o.pointsAwarded !== null) {
+        const p = document.createElement("div");
+        p.className = "oa-fulfill";
+        p.innerHTML = `🪙 Se acreditaron <b style="color:var(--green)">+${fmt(o.pointsAwarded)}</b> puntos.`;
+        card.append(p);
+      }
+      const next = currentRole !== "cocina" ? nextStage(o.status, o.fulfillment) : null;
+      if (next) {
+        const row = document.createElement("div");
+        row.className = "oa-confirm-row";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "oa-confirm-btn";
+        const nextLabel = (ORDER_STATUS[next] || {}).label || next;
+        btn.textContent = "Marcar: " + nextLabel;
+        const lineSt = document.createElement("small");
+        lineSt.className = "oa-line-status auth-form-status";
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          btn.textContent = "Guardando…";
+          try {
+            await api("admin/orders-status.php", { orderId: o.id, status: next });
+            setStatus(ordersAdminStatus, `Pedido #${o.id} → ${nextLabel}.`, "ok");
+            loadOrders();
+          } catch (error) {
+            setStatus(ordersAdminStatus, error.message, "error");
+            btn.disabled = false;
+            btn.textContent = "Marcar: " + nextLabel;
+          }
+        });
+        row.append(btn, lineSt);
+        card.append(row);
+      } else if (o.status === "delivered") {
+        const d = document.createElement("div");
+        d.className = "oa-fulfill";
+        d.textContent = "✅ Entregado.";
+        card.append(d);
+      }
     }
 
     return card;

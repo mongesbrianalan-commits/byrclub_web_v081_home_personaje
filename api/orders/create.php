@@ -33,6 +33,7 @@ $in          = body_json();
 $itemsIn     = is_array($in['items'] ?? null) ? $in['items'] : [];
 $fulfillment = ($in['fulfillment'] ?? 'pickup') === 'delivery' ? 'delivery' : 'pickup';
 $address     = trim((string) ($in['address'] ?? ''));
+$pickupName  = trim((string) ($in['pickupName'] ?? ''));
 $notes       = trim((string) ($in['notes'] ?? ''));
 $phone       = trim((string) ($in['phone'] ?? '')) ?: (string) ($user['whatsapp'] ?? '');
 $couponCode  = strtoupper(trim((string) ($in['couponCode'] ?? '')));
@@ -43,6 +44,12 @@ if (!$itemsIn) {
 if ($fulfillment === 'delivery' && $address === '') {
     json_out(['error' => 'Para delivery necesitamos tu dirección.'], 422);
 }
+
+/* Para retiro, el nombre de quien retira (si lo puso) reemplaza el de la cuenta
+   como snapshot de contacto; el pedido igual queda ligado al socio por user_id. */
+$customerName = ($fulfillment === 'pickup' && $pickupName !== '')
+    ? (function_exists('mb_substr') ? mb_substr($pickupName, 0, 120) : substr($pickupName, 0, 120))
+    : (string) $user['name'];
 
 /* --- Traemos los productos reales (disponibles) para casar lo pedido --- */
 $keys = [];
@@ -174,7 +181,7 @@ try {
     $ins->execute([
         $id,
         $fulfillment,
-        $user['name'],
+        $customerName,
         $phone !== '' ? $phone : null,
         $fulfillment === 'delivery' ? $address : null,
         $notes !== '' ? $notes : null,

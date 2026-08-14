@@ -90,6 +90,9 @@
     .oa-badge { font-weight: 900; text-transform: uppercase; font-size: .72rem; padding: 5px 11px; border-radius: 999px; }
     .oa-badge.pending { background: rgba(255,213,31,.16); color: #ffe79a; border: 1px solid rgba(255,213,31,.4); }
     .oa-badge.confirmed { background: rgba(78,230,109,.16); color: #b8ffcb; border: 1px solid rgba(78,230,109,.4); }
+    .oa-badge.preparing { background: rgba(120,180,255,.16); color: #bcd8ff; border: 1px solid rgba(120,180,255,.4); }
+    .oa-badge.onway { background: rgba(255,180,80,.16); color: #ffd39a; border: 1px solid rgba(255,180,80,.4); }
+    .oa-badge.delivered { background: rgba(78,230,109,.2); color: #b8ffcb; border: 1px solid rgba(78,230,109,.5); }
     .oa-badge.cancelled { background: rgba(255,120,120,.14); color: #ffb0b0; border: 1px solid rgba(255,120,120,.36); }
     .oa-customer { font-weight: 800; margin-bottom: 4px; }
     .oa-customer a { color: #25d366; text-decoration: none; margin-left: 6px; }
@@ -254,8 +257,9 @@
       <div class="admin-block">
         <h2>🛒 Pedidos de clientes</h2>
         <div class="orders-filter" data-orders-filter>
-          <button type="button" class="admin-tab-btn is-active" data-orders-status="pending">⏳ Pendientes</button>
-          <button type="button" class="admin-tab-btn" data-orders-status="confirmed">✅ Confirmados</button>
+          <button type="button" class="admin-tab-btn is-active" data-orders-status="pending">⏳ Recibidos</button>
+          <button type="button" class="admin-tab-btn" data-orders-status="active">🔥 En curso</button>
+          <button type="button" class="admin-tab-btn" data-orders-status="delivered">✅ Entregados</button>
           <button type="button" class="admin-tab-btn" data-orders-status="">Todos</button>
           <button type="button" class="admin-btn-inline" data-orders-refresh style="min-height:0;padding:9px 16px">↻ Actualizar</button>
         </div>
