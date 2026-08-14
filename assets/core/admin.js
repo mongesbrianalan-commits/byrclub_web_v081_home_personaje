@@ -1317,19 +1317,169 @@
      Editar un pedido pendiente (agregar/cambiar/quitar ítems)
   --------------------------------------------------------- */
 
-  let editableProducts = []; // productos simples (sin opciones) para agregar
+  /* Menú completo para el editor: TODAS las categorías, incluidas las
+     hamburguesas (que se agregan con su popup de opciones). */
+  let menuForEdit = { categories: [], optionSets: {} };
 
   async function loadEditableProducts() {
     try {
       const res = await fetch(`${API}menu.php?staff=1`, { credentials: "same-origin" });
       const data = await res.json();
-      const cats = Array.isArray(data.categories) ? data.categories : [];
-      const out = [];
-      cats.forEach((c) => (c.products || []).forEach((p) => {
-        if (!p.optionSet) out.push({ slug: p.slug, name: p.name, price: p.price });
-      }));
-      editableProducts = out;
-    } catch (e) { editableProducts = []; }
+      menuForEdit = {
+        categories: Array.isArray(data.categories) ? data.categories : [],
+        optionSets: data.optionSets || {},
+      };
+    } catch (e) {
+      menuForEdit = { categories: [], optionSets: {} };
+    }
+  }
+
+  function findProductBySlug(slug) {
+    if (!slug) return null;
+    for (const c of menuForEdit.categories) {
+      const p = (c.products || []).find((x) => x.slug === slug);
+      if (p) return p;
+    }
+    return null;
+  }
+
+  /* ---------------------------------------------------------
+     Popup de opciones (papas / bebida / adicionales)
+
+     Mismo criterio que pedir.html y el mostrador: el navegador solo junta qué
+     eligieron; el precio real lo recalcula el server con byr_resolve_options().
+     Acá el total es solo una vista previa.
+  --------------------------------------------------------- */
+
+  function openOptionsPopup({ product, confirmLabel, withQty, onConfirm }) {
+    const groups = menuForEdit.optionSets[product.optionSet] || [];
+
+    const overlay = document.createElement("div");
+    overlay.className = "oa-opt-overlay";
+    const card = document.createElement("div");
+    card.className = "oa-opt-card";
+    overlay.append(card);
+
+    const head = document.createElement("div");
+    head.className = "oa-opt-head";
+    head.innerHTML = `<b>${escapeHtml(product.name)}</b><span>${money(product.price)}</span>`;
+    card.append(head);
+
+    groups.forEach((g) => {
+      const gEl = document.createElement("div");
+      gEl.className = "oa-opt-group";
+      const h = document.createElement("div");
+      h.className = "oa-opt-title";
+      h.textContent = g.title + (g.required ? " *" : "");
+      gEl.append(h);
+
+      g.options.forEach((o, i) => {
+        const lab = document.createElement("label");
+        lab.className = "oa-opt-row";
+        const input = document.createElement("input");
+        input.type = g.type === "single" ? "radio" : "checkbox";
+        input.name = "oaopt_" + g.id;
+        input.value = o.id;
+        // En los grupos obligatorios ya viene marcada la primera (la de $0),
+        // así agregar algo simple es un clic y listo.
+        if (g.type === "single" && g.required && i === 0) input.checked = true;
+        input.addEventListener("change", paintTotal);
+        const nm = document.createElement("span");
+        nm.className = "oa-opt-name";
+        nm.textContent = o.name;
+        const pr = document.createElement("span");
+        pr.className = "oa-opt-price";
+        pr.textContent = o.price ? "+" + money(o.price) : "";
+        lab.append(input, nm, pr);
+        gEl.append(lab);
+      });
+      card.append(gEl);
+    });
+
+    const noteWrap = document.createElement("div");
+    noteWrap.className = "oa-opt-group";
+    noteWrap.innerHTML = '<div class="oa-opt-title">Aclaración (opcional)</div>';
+    const noteInput = document.createElement("input");
+    noteInput.type = "text";
+    noteInput.className = "oa-opt-note";
+    noteInput.placeholder = "ej: sin cebolla";
+    noteInput.maxLength = 200;
+    noteWrap.append(noteInput);
+    card.append(noteWrap);
+
+    const qtyInput = document.createElement("input");
+    if (withQty) {
+      const qWrap = document.createElement("div");
+      qWrap.className = "oa-opt-group oa-opt-qty";
+      qWrap.innerHTML = '<div class="oa-opt-title">Cantidad</div>';
+      qtyInput.type = "number";
+      qtyInput.min = "1";
+      qtyInput.max = "50";
+      qtyInput.value = "1";
+      qtyInput.addEventListener("input", paintTotal);
+      qWrap.append(qtyInput);
+      card.append(qWrap);
+    }
+
+    const foot = document.createElement("div");
+    foot.className = "oa-opt-foot";
+    const totalEl = document.createElement("div");
+    totalEl.className = "oa-opt-total";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "oa-opt-cancel";
+    cancelBtn.textContent = "Cancelar";
+    const okBtn = document.createElement("button");
+    okBtn.type = "button";
+    okBtn.className = "oa-opt-ok";
+    okBtn.textContent = confirmLabel || "Agregar";
+    foot.append(totalEl, cancelBtn, okBtn);
+    card.append(foot);
+
+    function collect() {
+      const out = {};
+      groups.forEach((g) => {
+        const inputs = card.querySelectorAll(`input[name="oaopt_${g.id}"]`);
+        const marked = Array.from(inputs).filter((i) => i.checked);
+        if (g.type === "single") {
+          if (marked[0]) out[g.id] = marked[0].value;
+        } else if (marked.length) {
+          out[g.id] = marked.map((i) => i.value);
+        }
+      });
+      return out;
+    }
+
+    function paintTotal() {
+      let delta = 0;
+      groups.forEach((g) => {
+        const inputs = card.querySelectorAll(`input[name="oaopt_${g.id}"]`);
+        Array.from(inputs).filter((i) => i.checked).forEach((i) => {
+          const o = g.options.find((x) => x.id === i.value);
+          if (o) delta += Number(o.price) || 0;
+        });
+      });
+      const qty = withQty ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
+      totalEl.textContent = money((product.price + delta) * qty);
+    }
+
+    function close() {
+      document.removeEventListener("keydown", onKey);
+      overlay.remove();
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    cancelBtn.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", onKey);
+    okBtn.addEventListener("click", () => {
+      const qty = withQty ? Math.max(1, Math.min(50, parseInt(qtyInput.value, 10) || 1)) : 1;
+      close();
+      onConfirm({ options: collect(), note: noteInput.value.trim(), qty });
+    });
+
+    paintTotal();
+    document.body.append(overlay);
   }
 
   function miniBtn(txt, fn) {
@@ -1362,6 +1512,23 @@
       nm.textContent = ln.name + (ln.options ? " (" + ln.options + ")" : "");
       const ctl = document.createElement("div");
       ctl.className = "oa-edit-qty";
+
+      // Si esa línea es de un producto con opciones, se pueden corregir.
+      const prod = findProductBySlug(ln.productSlug);
+      if (prod && prod.optionSet) {
+        ctl.append(miniBtn("✏️", () => {
+          openOptionsPopup({
+            product: prod,
+            confirmLabel: "Guardar",
+            withQty: false,
+            onConfirm: (sel) => editOrder({
+              orderId: o.id, action: "setItemOptions", itemId: ln.id,
+              options: sel.options, note: sel.note,
+            }),
+          });
+        }));
+      }
+
       ctl.append(
         miniBtn("−", () => editOrder({ orderId: o.id, action: "setItemQty", itemId: ln.id, qty: ln.qty - 1 })),
         Object.assign(document.createElement("span"), { className: "oa-edit-num", textContent: String(ln.qty) }),
@@ -1371,18 +1538,48 @@
       box.append(r);
     });
 
+    /* --- Agregar: TODO el menú, agrupado por categoría --- */
     const add = document.createElement("div");
     add.className = "oa-edit-add";
     const sel = document.createElement("select");
-    sel.innerHTML = '<option value="">➕ Agregar producto…</option>' +
-      editableProducts.map((p) => `<option value="${escapeHtml(p.slug)}">${escapeHtml(p.name)} · ${money(p.price)}</option>`).join("");
-    const addBtn = miniBtn("Agregar", () => { if (sel.value) editOrder({ orderId: o.id, action: "addItem", slug: sel.value, qty: 1 }); });
+    sel.className = "oa-edit-select";
+
+    let optionsHtml = '<option value="">➕ Agregar del menú…</option>';
+    menuForEdit.categories.forEach((c) => {
+      const prods = c.products || [];
+      if (!prods.length) return;
+      optionsHtml += `<optgroup label="${escapeHtml(c.label)}">` +
+        prods.map((p) =>
+          `<option value="${escapeHtml(p.slug)}">${escapeHtml(p.name)} · ${money(p.price)}${p.optionSet ? " ⚙️" : ""}</option>`
+        ).join("") +
+        "</optgroup>";
+    });
+    sel.innerHTML = optionsHtml;
+
+    const addBtn = miniBtn("Agregar", () => {
+      const p = findProductBySlug(sel.value);
+      if (!p) return;
+      if (p.optionSet) {
+        // Hamburguesas: primero las opciones (papas, bebida, adicionales).
+        openOptionsPopup({
+          product: p,
+          confirmLabel: "Agregar",
+          withQty: true,
+          onConfirm: (choice) => editOrder({
+            orderId: o.id, action: "addItem", slug: p.slug,
+            qty: choice.qty, options: choice.options, note: choice.note,
+          }),
+        });
+      } else {
+        editOrder({ orderId: o.id, action: "addItem", slug: p.slug, qty: 1 });
+      }
+    });
     add.append(sel, addBtn);
     box.append(add);
 
     const hint = document.createElement("small");
     hint.className = "oa-edit-hint";
-    hint.textContent = "Se agregan bebidas, papas, entradas y postres. Las hamburguesas van desde el mostrador.";
+    hint.textContent = "Se puede agregar cualquier cosa del menú. Las marcadas con ⚙️ abren sus opciones (papas, bebida, adicionales).";
     box.append(hint);
     return box;
   }

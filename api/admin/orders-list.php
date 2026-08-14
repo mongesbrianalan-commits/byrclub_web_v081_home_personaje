@@ -45,9 +45,14 @@ if (!$orders) {
 /* Ítems de todos los pedidos en una sola consulta. */
 $ids          = array_column($orders, 'id');
 $placeholders = implode(',', array_fill(0, count($ids), '?'));
+/* Se trae también el slug del producto: el editor del panel lo necesita para
+   saber si esa línea lleva opciones (papas/bebida/adicionales). */
 $stmt = $pdo->prepare(
-    "SELECT id, order_id, name, options, unit_price, qty, subtotal
-       FROM order_items WHERE order_id IN ($placeholders) ORDER BY id ASC"
+    "SELECT oi.id, oi.order_id, oi.name, oi.options, oi.unit_price, oi.qty, oi.subtotal,
+            oi.product_id, p.slug AS product_slug
+       FROM order_items oi
+       LEFT JOIN products p ON p.id = oi.product_id
+      WHERE oi.order_id IN ($placeholders) ORDER BY oi.id ASC"
 );
 $stmt->execute($ids);
 
@@ -60,6 +65,7 @@ foreach ($stmt->fetchAll() as $it) {
         'unitPrice' => (int) $it['unit_price'],
         'qty'      => (int) $it['qty'],
         'subtotal' => (int) $it['subtotal'],
+        'productSlug' => $it['product_slug'],
     ];
 }
 
