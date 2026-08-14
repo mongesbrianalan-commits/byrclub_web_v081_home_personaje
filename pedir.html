@@ -58,6 +58,8 @@
       <!-- Carrito + checkout -->
       <aside class="order-cart" aria-label="Tu pedido">
         <div class="cart-inner">
+          <div class="cart-sheet-handle" aria-hidden="true"></div>
+          <button type="button" class="cart-sheet-close" data-cart-close aria-label="Cerrar">✕</button>
           <h2 class="cart-title">🛒 Tu pedido</h2>
 
           <div class="cart-items" data-cart-items aria-live="polite">
@@ -120,7 +122,10 @@
       </aside>
     </div>
 
-    <!-- Barra flotante (mobile): saltar al carrito / finalizar -->
+    <!-- Fondo del bottom sheet (mobile) -->
+    <div class="cart-sheet-overlay" data-cart-overlay hidden></div>
+
+    <!-- Barra flotante (mobile): abre el carrito como ventana hacia arriba -->
     <button type="button" class="cart-fab" data-cart-fab hidden>
       <span class="cart-fab-count" data-cart-fab-count>0</span>
       <span class="cart-fab-label">Ver pedido</span>

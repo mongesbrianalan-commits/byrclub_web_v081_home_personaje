@@ -32,6 +32,9 @@
   const cartFab      = $("[data-cart-fab]");
   const cartFabCount = $("[data-cart-fab-count]");
   const cartFabTotal = $("[data-cart-fab-total]");
+  const cartOverlay  = $("[data-cart-overlay]");
+  const cartCloseBtn = $("[data-cart-close]");
+  const orderCartEl  = document.querySelector(".order-cart");
   const submitBtn    = $("[data-submit]");
   const statusEl     = $("[data-order-status]");
   const successEl    = $("[data-order-success]");
@@ -263,10 +266,33 @@
     if (!cartFab) return;
     let qty = 0;
     cart.forEach((it) => { qty += it.qty; });
-    if (qty === 0) { show(cartFab, false); return; }
+    if (qty === 0) {
+      show(cartFab, false);
+      if (orderCartEl) orderCartEl.classList.remove("is-open"); // carrito vacío: cerrar el sheet
+      show(cartOverlay, false);
+      document.body.style.overflow = "";
+      return;
+    }
     if (cartFabCount) cartFabCount.textContent = String(qty);
     if (cartFabTotal) cartFabTotal.textContent = money(cartTotal());
     show(cartFab, true);
+  }
+
+  // Bottom sheet (mobile): el carrito sube desde abajo en vez de scrollear.
+  function openCartSheet() {
+    if (!orderCartEl) return;
+    orderCartEl.classList.add("is-open");
+    show(cartOverlay, true);
+    show(cartFab, false);
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeCartSheet() {
+    if (!orderCartEl) return;
+    orderCartEl.classList.remove("is-open");
+    show(cartOverlay, false);
+    document.body.style.overflow = "";
+    updateFab();
   }
 
   function renderCart() {
@@ -679,6 +705,9 @@
       }
     }
 
+    if (orderCartEl) orderCartEl.classList.remove("is-open");
+    show(cartOverlay, false);
+    document.body.style.overflow = "";
     show(layoutEl, false);
     show(heroEl, false);
     show(cartFab, false);
@@ -776,12 +805,12 @@
     loadCoupons();
     renderCart();
     checkoutForm.addEventListener("submit", submitOrder);
-    if (cartFab) {
-      cartFab.addEventListener("click", () => {
-        const cartEl = document.querySelector(".order-cart");
-        if (cartEl) cartEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
+    if (cartFab) cartFab.addEventListener("click", openCartSheet);
+    if (cartOverlay) cartOverlay.addEventListener("click", closeCartSheet);
+    if (cartCloseBtn) cartCloseBtn.addEventListener("click", closeCartSheet);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && orderCartEl && orderCartEl.classList.contains("is-open")) closeCartSheet();
+    });
     const newOrderBtn = $("[data-new-order]");
     if (newOrderBtn) newOrderBtn.addEventListener("click", resetForNewOrder);
   }
