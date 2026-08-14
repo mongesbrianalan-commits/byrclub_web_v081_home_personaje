@@ -12,7 +12,10 @@ if exist "%LAUNCHER%" (
 )
 
 echo Cerrando el agente si esta corriendo...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process -Filter \"Name='powershell.exe'\" | Where-Object { $_.CommandLine -like '*byr-print-agent.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
+rem OJO: hay que excluir el proceso actual ($PID). Su propia linea de comandos
+rem contiene "byr-print-agent.ps1", asi que sin el filtro se mata a si mismo
+rem antes de llegar a cerrar el agente de verdad.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process -Filter \"Name='powershell.exe'\" | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*-File*byr-print-agent.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
 echo.
 echo Listo.
 pause

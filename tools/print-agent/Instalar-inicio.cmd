@@ -25,7 +25,12 @@ if exist "%LAUNCHER%" (
   echo.
   echo LISTO. El agente va a arrancar solo cada vez que se prenda la PC.
   echo.
-  echo Arrancandolo ahora tambien...
+  rem Si ya habia uno corriendo lo cerramos, para no dejar dos dando vueltas
+  rem si alguien corre este instalador mas de una vez.
+  rem OJO: hay que excluir el proceso actual ($PID). Su propia linea de comandos
+  rem contiene "byr-print-agent.ps1", asi que sin el filtro se mata a si mismo.
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process -Filter \"Name='powershell.exe'\" | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*-File*byr-print-agent.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }" 2>nul
+  echo Arrancandolo ahora...
   start "" wscript "%LAUNCHER%"
   echo.
   echo Para ver que esta haciendo, abri: agente.log
