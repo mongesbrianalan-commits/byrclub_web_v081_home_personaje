@@ -500,8 +500,13 @@ footer{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:3
   .home-v08 .character-glow{width:437px;height:437px}
 }
 @media (max-width:700px){
+  /* Menos recargado en mobile: ocultamos los doodles chicos (uno de ellos, una
+     estrella amarilla, se metia detras del boton amarillo y parecia un glitch). */
+  .home-v08 .hero-doodles,.home-v08 .doodle{display:none}
+  .home-v08 .hero h1{margin:14px 0 12px}
   .home-v08 .hero h1 strong{font-size:4.3rem}
-  .home-v08 .hero-manifesto{font-size:2rem!important}
+  .home-v08 .hero-manifesto{font-size:1.7rem!important}
+  .home-v08 .hero-actions{margin:22px 0 0}
   .home-v08 .hero-visual{min-height:460px}
   .home-v08 .character-scene{height:460px}
   .home-v08 .character-art{width:385px;height:437px}
