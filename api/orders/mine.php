@@ -10,14 +10,17 @@ require_once __DIR__ . '/../helpers.php';
 $id  = require_auth();
 $pdo = db();
 
+/* El envío es una columna nueva: si la migración no está corrida, se pide 0. */
+$shipSel = byr_shipping_ready($pdo) ? 'shipping_cost' : '0 AS shipping_cost';
+
 $stmt = $pdo->prepare(
-    'SELECT id, status, fulfillment, address, notes, items_total,
+    "SELECT id, status, fulfillment, address, notes, items_total, $shipSel,
             points_suggested, points_awarded, coupon_code, coupon_label,
             created_at, confirmed_at
        FROM orders
       WHERE user_id = ?
-      ORDER BY (status = "pending") DESC, created_at DESC
-      LIMIT 50'
+      ORDER BY (status = \"pending\") DESC, created_at DESC
+      LIMIT 50"
 );
 $stmt->execute([$id]);
 $orders = $stmt->fetchAll();
@@ -59,6 +62,8 @@ foreach ($orders as $o) {
         'address'        => $o['address'],
         'notes'          => $o['notes'],
         'itemsTotal'     => (int) $o['items_total'],
+        'shippingCost'   => (int) $o['shipping_cost'],
+        'total'          => (int) $o['items_total'] + (int) $o['shipping_cost'],
         'pointsSuggested' => (int) $o['points_suggested'],
         'pointsAwarded'  => $o['points_awarded'] === null ? null : (int) $o['points_awarded'],
         'couponCode'     => $o['coupon_code'],

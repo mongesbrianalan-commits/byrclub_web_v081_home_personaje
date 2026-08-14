@@ -38,6 +38,15 @@ return [
     'order_points_per_amount' => 100,
 
     /*
+     * Costo de envío del delivery, en pesos. Es fijo para toda la zona.
+     * El retiro en el local no paga envío, y el envío NO suma puntos
+     * (los puntos se calculan sobre la comida).
+     * Cambiarlo acá NO altera los pedidos ya hechos: cada pedido guarda
+     * cuánto se le cobró de envío.
+     */
+    'delivery_fee' => 490,
+
+    /*
      * Impresión térmica (comandas y tickets).
      *
      * 'print_token' es la contraseña que comparte el agente que corre en la PC

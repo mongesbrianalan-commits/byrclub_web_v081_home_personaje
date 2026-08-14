@@ -98,5 +98,8 @@ if ($rate < 1) {
 json_out([
     'categories'      => $categories,
     'pointsPerAmount' => $rate,
+    /* Costo de envío, para mostrarlo en el carrito antes de crear el pedido.
+       El precio que vale es igual el que recalcula el server al confirmar. */
+    'deliveryFee'     => byr_shipping_ready(db()) ? byr_delivery_fee() : 0,
     'optionSets'      => byr_option_sets(), // definiciones para armar el popup
 ]);

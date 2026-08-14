@@ -48,9 +48,10 @@ if ($payAmount !== null && $payAmount < 0) {
 $pdo->beginTransaction();
 try {
     /* Tomamos el pedido y lo bloqueamos hasta el commit. */
+    $shipSel = byr_shipping_ready($pdo) ? 'shipping_cost' : '0 AS shipping_cost';
     $stmt = $pdo->prepare(
-        'SELECT user_id, status, items_total, points_suggested, coupon_code, coupon_label
-           FROM orders WHERE id = ? FOR UPDATE'
+        "SELECT user_id, status, items_total, $shipSel, points_suggested, coupon_code, coupon_label
+           FROM orders WHERE id = ? FOR UPDATE"
     );
     $stmt->execute([$orderId]);
     $order = $stmt->fetch();
@@ -120,7 +121,10 @@ try {
             $pdo->rollBack();
             json_out(['error' => 'Abrí la caja antes de cobrar.', 'code' => 'no-session'], 409);
         }
-        $amt = $payAmount !== null ? $payAmount : (int) $order['items_total'];
+        /* Se cobra la comida MÁS el envío (items_total es solo la comida). */
+        $amt = $payAmount !== null
+            ? $payAmount
+            : (int) $order['items_total'] + (int) $order['shipping_cost'];
         $payIns = $pdo->prepare(
             'INSERT INTO payments (order_id, session_id, method, amount, created_by)
              VALUES (?, ?, ?, ?, ?)'

@@ -66,6 +66,15 @@
             <p class="cart-empty" data-cart-empty>Todavía no agregaste nada. Elegí de la carta 👈</p>
           </div>
 
+          <!-- Subtotal y envío solo aparecen si eligió delivery. -->
+          <div class="cart-total-row cart-sub-row" data-cart-sub-row hidden>
+            <span>Subtotal</span>
+            <strong data-cart-subtotal>$0</strong>
+          </div>
+          <div class="cart-total-row cart-sub-row" data-cart-ship-row hidden>
+            <span>🛵 Envío</span>
+            <strong data-cart-shipping>$0</strong>
+          </div>
           <div class="cart-total-row">
             <span>Total</span>
             <strong data-cart-total>$0</strong>

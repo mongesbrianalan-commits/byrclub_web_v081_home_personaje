@@ -261,9 +261,15 @@ function byr_escpos_ticket(array $o): string
     }
 
     $b .= byr_print_rule();
+    /* El envío es aparte de la comida: si lo hubo, va como renglón propio. */
+    $shipping = (int) ($o['shippingCost'] ?? 0);
+    if ($shipping > 0) {
+        $b .= byr_print_row(byr_t('Subtotal'), byr_print_money($o['itemsTotal'] ?? 0));
+        $b .= byr_print_row(byr_t('Envío'), byr_print_money($shipping));
+    }
     $b .= BYR_GS . '!' . "\x01";
     /* En doble ancho el renglón mide 24 columnas, no 48. */
-    $b .= byr_print_row(byr_t('TOTAL'), byr_print_money($o['itemsTotal'] ?? 0), 24);
+    $b .= byr_print_row(byr_t('TOTAL'), byr_print_money((int) ($o['itemsTotal'] ?? 0) + $shipping), 24);
     $b .= BYR_GS . '!' . "\x00";
 
     if (!empty($o['paymentMethod'])) {
@@ -334,8 +340,9 @@ function byr_print_when(array $o): string
  */
 function byr_print_load_order(PDO $pdo, int $orderId): ?array
 {
-    $cols = 'id, user_id, status, fulfillment, customer_name, customer_phone, address, notes,
-             items_total, points_awarded, coupon_label, created_at';
+    $ship = byr_shipping_ready($pdo) ? 'shipping_cost' : '0 AS shipping_cost';
+    $cols = "id, user_id, status, fulfillment, customer_name, customer_phone, address, notes,
+             items_total, $ship, points_awarded, coupon_label, created_at";
     try {
         $stmt = $pdo->prepare("SELECT $cols, channel FROM orders WHERE id = ?");
         $stmt->execute([$orderId]);
@@ -384,6 +391,7 @@ function byr_print_load_order(PDO $pdo, int $orderId): ?array
         'notes'         => $row['notes'],
         'couponLabel'   => $row['coupon_label'],
         'itemsTotal'    => (int) $row['items_total'],
+        'shippingCost'  => (int) $row['shipping_cost'],
         'pointsAwarded' => $row['points_awarded'] !== null ? (int) $row['points_awarded'] : null,
         'paymentMethod' => $method,
         'createdAt'     => $row['created_at'],

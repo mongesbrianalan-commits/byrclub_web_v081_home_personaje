@@ -84,7 +84,11 @@
     foot.className = "order-card-foot";
     const total = document.createElement("span");
     total.className = "order-card-total";
-    total.textContent = money(o.itemsTotal);
+    // Lo que pagó: comida + envío (los pedidos viejos no tienen envío).
+    total.textContent = money(o.total != null ? o.total : o.itemsTotal);
+    if (o.shippingCost > 0) {
+      total.title = "Incluye " + money(o.shippingCost) + " de envío";
+    }
     const pts = document.createElement("span");
     if (o.pointsAwarded !== null && o.status !== "cancelled") {
       pts.className = "order-card-points earned";

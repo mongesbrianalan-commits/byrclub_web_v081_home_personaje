@@ -87,14 +87,20 @@
       "</div>"
     ).join("");
 
+    const shipping = Number(o.shippingCost || 0);
+    const shipRows = shipping > 0
+      ? '<div class="row"><span>Subtotal</span><span>' + money(o.itemsTotal) + "</span></div>" +
+        '<div class="row"><span>Envío</span><span>' + money(shipping) + "</span></div>"
+      : "";
+
     return doc(
       '<div class="c big">BYR DOCKSUD</div>' +
       '<div class="c small">Comprobante no fiscal</div>' +
       "<hr>" +
       '<div class="row"><span>Pedido #' + esc(o.id) + "</span><span>" + esc(fmtDateTime(o.createdAt)) + "</span></div>" +
       "<div>" + fulfillLabel(o) + (o.customerName ? " · " + esc(o.customerName) : "") + "</div>" +
-      "<hr>" + items + "<hr>" +
-      '<div class="row tot"><span>TOTAL</span><span>' + money(o.itemsTotal) + "</span></div>" +
+      "<hr>" + items + "<hr>" + shipRows +
+      '<div class="row tot"><span>TOTAL</span><span>' + money(Number(o.itemsTotal || 0) + shipping) + "</span></div>" +
       (o.paymentMethod ? '<div class="small">Pago: ' + esc(METHODS[o.paymentMethod] || o.paymentMethod) + "</div>" : "") +
       '<hr><div class="c">¡Gracias por tu compra!</div>' +
       '<div class="c small">BYR Club · Dock Sud</div>'

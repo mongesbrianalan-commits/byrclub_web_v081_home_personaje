@@ -181,7 +181,14 @@ if ($couponCode !== '') {
     $couponLabel = $coupon['prize_label'];
 }
 
-/* --- Puntos sugeridos por la tasa configurable (1 punto cada $X) --- */
+/* --- Envío: fijo para delivery, gratis para retiro ---------------------
+   Se congela en el pedido (columna shipping_cost) para que un cambio de
+   precio futuro no reescriba lo que este cliente pagó. */
+$shippingReady = byr_shipping_ready($pdo);
+$shipping      = ($fulfillment === 'delivery' && $shippingReady) ? byr_delivery_fee() : 0;
+
+/* --- Puntos sugeridos por la tasa configurable (1 punto cada $X) ---
+   Se calculan sobre la COMIDA: el envío no suma puntos. */
 $rate           = (int) byr_setting('order_points_per_amount', 100);
 if ($rate < 1) {
     $rate = 100;
@@ -191,13 +198,16 @@ $pointsSuggested = intdiv($itemsTotal, $rate);
 /* --- Insert transaccional: orden + ítems --- */
 $pdo->beginTransaction();
 try {
+    /* Sin la migración del envío, se guarda igual que antes (sin la columna). */
+    $shipCol = $shippingReady ? ', shipping_cost' : '';
+    $shipVal = $shippingReady ? ', ?' : '';
     $ins = $pdo->prepare(
-        'INSERT INTO orders
+        "INSERT INTO orders
            (user_id, status, fulfillment, customer_name, customer_phone, address, notes,
-            items_total, points_suggested, coupon_code, coupon_label)
-         VALUES (?, "pending", ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            items_total, points_suggested, coupon_code, coupon_label$shipCol)
+         VALUES (?, \"pending\", ?, ?, ?, ?, ?, ?, ?, ?, ?$shipVal)"
     );
-    $ins->execute([
+    $params = [
         $id,
         $fulfillment,
         $customerName,
@@ -208,7 +218,11 @@ try {
         $pointsSuggested,
         $couponCode !== '' ? $couponCode : null,
         $couponLabel,
-    ]);
+    ];
+    if ($shippingReady) {
+        $params[] = $shipping;
+    }
+    $ins->execute($params);
     $orderId = (int) $pdo->lastInsertId();
 
     $insItem = $pdo->prepare(
@@ -236,12 +250,14 @@ try {
 json_out([
     'ok'    => true,
     'order' => [
-        'id'          => $orderId,
-        'status'      => 'pending',
-        'fulfillment' => $fulfillment,
-        'itemsTotal'  => $itemsTotal,
-        'items'       => $lines,
-        'couponCode'  => $couponCode !== '' ? $couponCode : null,
-        'couponLabel' => $couponLabel,
+        'id'           => $orderId,
+        'status'       => 'pending',
+        'fulfillment'  => $fulfillment,
+        'itemsTotal'   => $itemsTotal,
+        'shippingCost' => $shipping,
+        'total'        => $itemsTotal + $shipping,
+        'items'        => $lines,
+        'couponCode'   => $couponCode !== '' ? $couponCode : null,
+        'couponLabel'  => $couponLabel,
     ],
 ]);

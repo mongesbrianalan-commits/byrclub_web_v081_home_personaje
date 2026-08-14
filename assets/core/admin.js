@@ -841,6 +841,108 @@
   const ordersRefresh = document.querySelector("[data-orders-refresh]");
   let ordersFilterStatus = "pending";
 
+  /* ---------------------------------------------------------
+     Campanita de pedido nuevo
+
+     Cada 15s se le pregunta al server el id del último pedido pendiente. Si
+     subió respecto del que ya vimos, es que entró uno: suena y aparece el
+     cartel. Sondear un endpoint que devuelve dos números es mucho más barato
+     que recargar la lista entera.
+  --------------------------------------------------------- */
+
+  const bellToggle   = document.querySelector("[data-bell-toggle]");
+  const bellHint     = document.querySelector("[data-bell-hint]");
+  const newOrderBox  = document.querySelector("[data-new-order-alert]");
+  const newOrderText = document.querySelector("[data-new-order-text]");
+  const newOrderSee  = document.querySelector("[data-new-order-see]");
+
+  const BELL_KEY = "byr_admin_bell";
+  let bellOn = localStorage.getItem(BELL_KEY) !== "0"; // prendida por defecto
+  let lastSeenOrderId = null;   // null = todavía no sondeamos nunca
+  let audioCtx = null;
+  let ordersPollTimer = null;
+
+  /* La campanita se sintetiza en el navegador: no hay que subir ningún archivo
+     de audio y suena igual sin internet. Son dos notas, como un timbre. */
+  function playBell() {
+    try {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        audioCtx = new Ctx();
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+
+      const now = audioCtx.currentTime;
+      // Dos "ding" seguidos, el segundo más agudo.
+      [[880, 0], [1174, 0.18]].forEach(([freq, delay]) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        // Ataque corto y caída larga: suena a campana, no a alarma.
+        gain.gain.setValueAtTime(0.0001, now + delay);
+        gain.gain.exponentialRampToValueAtTime(0.35, now + delay + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.9);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now + delay);
+        osc.stop(now + delay + 1);
+      });
+    } catch (e) {
+      /* si el navegador no deja sonar, queda el aviso visual */
+    }
+  }
+
+  function paintBellToggle() {
+    if (!bellToggle) return;
+    bellToggle.classList.toggle("is-off", !bellOn);
+    bellToggle.textContent = bellOn ? "🔔 Campanita" : "🔕 Campanita";
+    bellToggle.setAttribute("aria-pressed", bellOn ? "true" : "false");
+    if (bellHint) {
+      bellHint.textContent = bellOn
+        ? "💡 Suena cuando entra un pedido de la web. Dejá esta pestaña abierta."
+        : "🔕 La campanita está apagada: los pedidos nuevos solo se ven en la lista.";
+    }
+  }
+
+  function showNewOrderAlert(count) {
+    if (!newOrderBox) return;
+    if (newOrderText) {
+      newOrderText.textContent = count > 1
+        ? `🔔 ¡Entraron ${count} pedidos nuevos!`
+        : "🔔 ¡Entró un pedido nuevo!";
+    }
+    newOrderBox.hidden = false;
+  }
+
+  async function pollNewOrders() {
+    try {
+      const data = await api("admin/orders-ping.php", {});
+      const lastId = Number(data.lastId) || 0;
+
+      // La primera vuelta solo toma nota: si no, suena apenas se abre el panel
+      // por pedidos que ya estaban ahí.
+      if (lastSeenOrderId === null) {
+        lastSeenOrderId = lastId;
+        return;
+      }
+      if (lastId > lastSeenOrderId) {
+        lastSeenOrderId = lastId;
+        if (bellOn) playBell();
+        showNewOrderAlert(Number(data.pending) || 1);
+        loadOrders();
+      }
+    } catch (error) {
+      /* Sin conexión o sesión vencida: se reintenta en la próxima vuelta. */
+    }
+  }
+
+  function startOrdersPolling() {
+    if (ordersPollTimer) return;
+    pollNewOrders();
+    ordersPollTimer = setInterval(pollNewOrders, 15000);
+  }
+
   function money(n) {
     return "$" + fmt(n);
   }
@@ -853,6 +955,12 @@
     delivered:  { label: "Entregado",      cls: "delivered" },
     cancelled:  { label: "Cancelado",      cls: "cancelled" }
   };
+
+  // Lo que realmente paga el cliente: comida + envío. Los pedidos viejos (y los
+  // de mostrador) no tienen envío, así que cae en itemsTotal.
+  function orderTotal(o) {
+    return o.total != null ? o.total : (o.itemsTotal || 0) + (o.shippingCost || 0);
+  }
 
   // Próximo estado según el actual y la forma de entrega (retiro salta "en camino").
   function nextStage(status, fulfillment) {
@@ -916,6 +1024,11 @@
       ? `<div class="oa-fulfill">📝 ${escapeHtml(o.notes)}</div>`
       : "";
 
+    // El envío va aparte: `itemsTotal` es solo la comida.
+    const shipHtml = o.shippingCost > 0
+      ? `<div class="oa-ship"><span>🛵 Envío</span><span>${money(o.shippingCost)}</span></div>`
+      : "";
+
     card.innerHTML = `
       <div class="oa-top">
         <div class="oa-id">Pedido #${o.id} <small>· ${escapeHtml(fmtDateTime(o.createdAt))}</small></div>
@@ -926,7 +1039,8 @@
       ${notesHtml}
       <ul class="oa-items">${itemsHtml}</ul>
       ${couponHtml}
-      <div class="oa-total"><span>Total</span><b>${money(o.itemsTotal)}</b></div>
+      ${shipHtml}
+      <div class="oa-total"><span>Total</span><b>${money(orderTotal(o))}</b></div>
     `;
 
     if (o.status === "pending" && currentRole !== "cocina") {
@@ -944,7 +1058,7 @@
 
       const payField = document.createElement("label");
       payField.className = "auth-field";
-      payField.innerHTML = `<span>Cobro (${money(o.itemsTotal)})</span>`;
+      payField.innerHTML = `<span>Cobro (${money(orderTotal(o))})</span>`;
       const paySelect = document.createElement("select");
       paySelect.innerHTML =
         `<option value="efectivo">💵 Efectivo</option>` +
@@ -1125,6 +1239,81 @@
   }
 
   /* ---------------------------------------------------------
+     Estadísticas: delivery vs. retiro vs. mostrador
+  --------------------------------------------------------- */
+
+  const statsGrid   = document.querySelector("[data-stats-grid]");
+  const statsPeriod = document.querySelector("[data-stats-period]");
+  const statsStatus = document.querySelector("[data-stats-status]");
+  let statsData = null;
+  let statsRange = "today";
+
+  const STAT_KINDS = [
+    { key: "delivery",  label: "🛵 Delivery" },
+    { key: "pickup",    label: "🏪 Retiro (take away)" },
+    { key: "mostrador", label: "🧾 Mostrador" },
+  ];
+
+  async function loadOrderStats() {
+    if (!statsGrid) return;
+    // La cocina no ve plata facturada: se le esconde el bloque entero.
+    if (currentRole === "cocina") {
+      const block = statsGrid.closest(".admin-block");
+      if (block) block.hidden = true;
+      return;
+    }
+    setStatus(statsStatus, "Cargando…", "");
+    try {
+      statsData = await api("admin/stats.php", {});
+      renderStats();
+      setStatus(statsStatus, "", "");
+    } catch (error) {
+      setStatus(statsStatus, error.message, "error");
+    }
+  }
+
+  function renderStats() {
+    if (!statsGrid || !statsData) return;
+    const p = (statsData.periods || {})[statsRange] || {};
+
+    // El porcentaje se calcula sobre los pedidos de la WEB (delivery + retiro),
+    // que es la comparación que importa; el mostrador es otro canal.
+    const web = (p.delivery ? p.delivery.n : 0) + (p.pickup ? p.pickup.n : 0);
+
+    statsGrid.innerHTML = "";
+    STAT_KINDS.forEach((k) => {
+      const d = p[k.key] || { n: 0, total: 0 };
+      const tile = document.createElement("div");
+      tile.className = "stat-tile" + (d.n === 0 ? " is-empty" : "");
+
+      let shareHtml = "";
+      if (k.key !== "mostrador" && web > 0) {
+        shareHtml = `<div class="st-share">${Math.round((d.n / web) * 100)}% de los pedidos web</div>`;
+      }
+
+      tile.innerHTML = `
+        <div class="st-label">${k.label}</div>
+        <div class="st-n">${fmt(d.n)}</div>
+        <div class="st-sub">${money(d.total)} facturado</div>
+        ${shareHtml}
+      `;
+      statsGrid.append(tile);
+    });
+  }
+
+  if (statsPeriod) {
+    statsPeriod.querySelectorAll("[data-stats-range]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        statsRange = btn.getAttribute("data-stats-range");
+        statsPeriod.querySelectorAll("[data-stats-range]").forEach((b) => {
+          b.classList.toggle("is-active", b === btn);
+        });
+        renderStats();
+      });
+    });
+  }
+
+  /* ---------------------------------------------------------
      Editar un pedido pendiente (agregar/cambiar/quitar ítems)
   --------------------------------------------------------- */
 
@@ -1226,9 +1415,37 @@
     // Recargar la lista cada vez que se ENTRA a la pestaña Pedidos, así no
     // queda "vieja" si el admin dejó el panel abierto y llegó un pedido nuevo.
     const pedidosTabBtn = document.querySelector('[data-tab-btn="pedidos"]');
-    if (pedidosTabBtn) pedidosTabBtn.addEventListener("click", loadOrders);
+    if (pedidosTabBtn) {
+      pedidosTabBtn.addEventListener("click", () => {
+        loadOrders();
+        if (newOrderBox) newOrderBox.hidden = true; // ya lo vio
+      });
+    }
+
+    /* --- Campanita --- */
+    paintBellToggle();
+    if (bellToggle) {
+      bellToggle.addEventListener("click", () => {
+        bellOn = !bellOn;
+        localStorage.setItem(BELL_KEY, bellOn ? "1" : "0");
+        paintBellToggle();
+        // Al prenderla suena una vez: sirve de prueba y, de paso, destraba el
+        // audio del navegador (que exige un clic antes de dejar sonar nada).
+        if (bellOn) playBell();
+      });
+    }
+    if (newOrderSee) {
+      newOrderSee.addEventListener("click", () => {
+        newOrderBox.hidden = true;
+        if (pedidosTabBtn) pedidosTabBtn.click();
+        loadOrders();
+      });
+    }
+    startOrdersPolling();
+
     loadEditableProducts(); // productos para el editor de pedidos pendientes
     loadOrders();
+    loadOrderStats();
   }
 
   /* ---------------------------------------------------------

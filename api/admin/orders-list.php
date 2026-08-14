@@ -15,12 +15,15 @@ require_role($pdo, ['cajero', 'cocina']);
 $status = $_GET['status'] ?? '';
 $allowed = ['pending', 'confirmed', 'preparing', 'on_the_way', 'delivered', 'cancelled'];
 
-$sql = 'SELECT o.id, o.user_id, o.status, o.fulfillment, o.customer_name, o.customer_phone,
-               o.address, o.notes, o.items_total, o.points_suggested, o.points_awarded,
+/* El envío es una columna nueva: si la migración no está corrida, se pide 0. */
+$shipSel = byr_shipping_ready($pdo) ? 'o.shipping_cost' : '0 AS shipping_cost';
+
+$sql = "SELECT o.id, o.user_id, o.status, o.fulfillment, o.customer_name, o.customer_phone,
+               o.address, o.notes, o.items_total, $shipSel, o.points_suggested, o.points_awarded,
                o.coupon_code, o.coupon_label, o.created_at, o.confirmed_at,
                u.email AS customer_email
           FROM orders o
-          JOIN users u ON u.id = o.user_id';
+          JOIN users u ON u.id = o.user_id";
 $params = [];
 if ($status === 'active') {
     // "En curso": aceptados que todavía se están preparando/entregando.
@@ -73,6 +76,8 @@ foreach ($orders as $o) {
         'address'        => $o['address'],
         'notes'          => $o['notes'],
         'itemsTotal'     => (int) $o['items_total'],
+        'shippingCost'   => (int) $o['shipping_cost'],
+        'total'          => (int) $o['items_total'] + (int) $o['shipping_cost'],
         'pointsSuggested' => (int) $o['points_suggested'],
         'pointsAwarded'  => $o['points_awarded'] === null ? null : (int) $o['points_awarded'],
         'couponCode'     => $o['coupon_code'],

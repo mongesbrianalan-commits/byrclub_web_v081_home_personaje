@@ -19,6 +19,10 @@
   const cartItemsEl  = $("[data-cart-items]");
   const cartEmptyEl  = $("[data-cart-empty]");
   const cartTotalEl  = $("[data-cart-total]");
+  const cartSubRow   = $("[data-cart-sub-row]");
+  const cartShipRow  = $("[data-cart-ship-row]");
+  const cartSubtotalEl = $("[data-cart-subtotal]");
+  const cartShippingEl = $("[data-cart-shipping]");
   const pointsHint   = $("[data-cart-points-hint]");
   const checkoutForm = $("[data-checkout-form]");
   const addressField = $("[data-address-field]");
@@ -46,6 +50,7 @@
   /* cart: lineId -> { lineId, slug, name, unitPrice, qty, optionsText, optionsPayload, isOption } */
   const cart = new Map();
   let pointsPerAmount = 100;
+  let deliveryFee = 0;       // lo manda el server en menu.php (envío fijo del delivery)
   let isMember = false;      // ¿está logueado? (si no, pide como invitado)
   let lastOrderPhone = "";   // teléfono del último pedido (para seguir el estado sin login)
   let optionSets = {};
@@ -257,10 +262,40 @@
     return box;
   }
 
+  // Solo la comida (sin envío). Es la base de los puntos.
   function cartTotal() {
     let t = 0;
     cart.forEach((it) => { t += it.unitPrice * it.qty; });
     return t;
+  }
+
+  // Envío: fijo si eligió delivery, gratis si retira. El server lo vuelve a
+  // calcular al crear el pedido; esto es solo para que el cliente lo vea antes.
+  function shippingCost() {
+    return currentFulfillment() === "delivery" ? deliveryFee : 0;
+  }
+
+  /* Pinta subtotal / envío / total. Las dos primeras filas solo aparecen
+     cuando hay envío, para no ensuciar el carrito de los que retiran. */
+  function renderTotals() {
+    if (!cartTotalEl) return;
+    const sub  = cartTotal();
+    const ship = cart.size === 0 ? 0 : shippingCost();
+
+    show(cartSubRow, ship > 0);
+    show(cartShipRow, ship > 0);
+    if (cartSubtotalEl) cartSubtotalEl.textContent = money(sub);
+    if (cartShippingEl) cartShippingEl.textContent = money(ship);
+    cartTotalEl.textContent = money(sub + ship);
+
+    // Los puntos salen de la comida: el flete no suma.
+    const pts = Math.floor(sub / pointsPerAmount);
+    if (pts > 0 && cart.size > 0) {
+      pointsHint.textContent = "🎉 Con este pedido sumás ~" + pts.toLocaleString("es-AR") + " puntos al confirmarse.";
+      show(pointsHint, true);
+    } else {
+      show(pointsHint, false);
+    }
   }
 
   // Barra flotante (mobile): cantidad de ítems + total, o se oculta si está vacío.
@@ -276,7 +311,7 @@
       return;
     }
     if (cartFabCount) cartFabCount.textContent = String(qty);
-    if (cartFabTotal) cartFabTotal.textContent = money(cartTotal());
+    if (cartFabTotal) cartFabTotal.textContent = money(cartTotal() + shippingCost());
     show(cartFab, true);
   }
 
@@ -302,8 +337,7 @@
     if (cart.size === 0) {
       cartItemsEl.append(cartEmptyEl);
       show(cartEmptyEl, true);
-      cartTotalEl.textContent = money(0);
-      show(pointsHint, false);
+      renderTotals();
       show(checkoutForm, false);
       updateFab();
       return;
@@ -348,17 +382,7 @@
       cartItemsEl.append(line);
     });
 
-    const total = cartTotal();
-    cartTotalEl.textContent = money(total);
-
-    const pts = Math.floor(total / pointsPerAmount);
-    if (pts > 0) {
-      pointsHint.textContent = "🎉 Con este pedido sumás ~" + pts.toLocaleString("es-AR") + " puntos al confirmarse.";
-      show(pointsHint, true);
-    } else {
-      show(pointsHint, false);
-    }
-
+    renderTotals();
     show(checkoutForm, true);
     updateFab();
   }
@@ -655,6 +679,7 @@
 
   function applyFulfillment(kind) {
     show(addressField, kind === "delivery");
+    renderTotals(); // el envío entra o sale del total según la forma de entrega
   }
 
   function initFulfillment() {
@@ -751,11 +776,18 @@
         summary.append(row);
       });
       const totalRow = document.createElement("div");
+      // Si hubo envío, se muestra aparte para que el total no sorprenda.
+      if (order.shippingCost > 0) {
+        const sRow = document.createElement("div");
+        sRow.className = "ss-line";
+        sRow.innerHTML = "<span>🛵 Envío</span><span>" + money(order.shippingCost) + "</span>";
+        summary.append(sRow);
+      }
       totalRow.className = "ss-line ss-total";
       const ta = document.createElement("span");
       ta.textContent = order.fulfillment === "delivery" ? "Total (delivery)" : "Total (retiro)";
       const tb = document.createElement("b");
-      tb.textContent = money(order.itemsTotal);
+      tb.textContent = money(order.total != null ? order.total : order.itemsTotal);
       totalRow.append(ta, tb);
       summary.append(totalRow);
       if (order.couponLabel) {
@@ -861,6 +893,7 @@
       if (res.status === 401) return; // el guard ya redirige
       const data = await res.json();
       pointsPerAmount = Number(data.pointsPerAmount) || 100;
+      deliveryFee = Number(data.deliveryFee) || 0;
       optionSets = data.optionSets || {};
       const cats = Array.isArray(data.categories) ? data.categories : [];
       show(menuLoading, false);

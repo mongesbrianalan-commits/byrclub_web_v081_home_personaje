@@ -123,6 +123,22 @@
     .oa-items li { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: .92rem; }
     .oa-items li span:last-child { color: #9bd1ff; white-space: nowrap; }
     .oa-coupon { background: rgba(255,213,31,.12); border: 1px solid rgba(255,213,31,.3); border-radius: 12px; padding: 8px 12px; font-weight: 800; color: #ffe79a; margin-bottom: 10px; font-size: .9rem; }
+    .oa-ship { display: flex; justify-content: space-between; font-weight: 800; font-size: .92rem; color: #ffd39a; margin-bottom: 2px; }
+    /* --- Aviso de pedido nuevo (campanita) --- */
+    .new-order-alert { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: rgba(78,230,109,.14); border: 2px solid rgba(78,230,109,.5); color: #d6ffe1; font-weight: 900; border-radius: 16px; padding: 12px 16px; margin-bottom: 12px; animation: noaPulse 1.1s ease-in-out infinite; }
+    .new-order-alert .noa-btn { border: 0; border-radius: 12px; padding: 8px 16px; background: var(--green); color: #04331a; font-weight: 900; cursor: pointer; }
+    @keyframes noaPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(78,230,109,.4); } 50% { box-shadow: 0 0 0 10px rgba(78,230,109,0); } }
+    @media (prefers-reduced-motion: reduce) { .new-order-alert { animation: none; } }
+    .bell-toggle.is-off { opacity: .55; }
+    /* --- Estadísticas de pedidos --- */
+    .stats-period { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .stat-tile { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 14px 16px; }
+    .stat-tile .st-label { font-weight: 800; font-size: .88rem; color: #9bd1ff; margin-bottom: 6px; }
+    .stat-tile .st-n { font-family: "Lilita One"; font-size: 2.1rem; line-height: 1; color: var(--yellow); }
+    .stat-tile .st-sub { font-weight: 700; font-size: .84rem; color: #cfe4ff; margin-top: 6px; }
+    .stat-tile .st-share { font-weight: 800; font-size: .8rem; color: #b8ffcb; margin-top: 2px; }
+    .stat-tile.is-empty .st-n { color: rgba(255,255,255,.35); }
     .oa-total { border-top: 2px dashed rgba(255,255,255,.18); padding-top: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; font-family: "Lilita One"; font-size: 1.2rem; }
     .oa-total b { color: var(--yellow); }
     .oa-confirm-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
@@ -294,15 +310,35 @@
       <div class="admin-tab" data-tab="pedidos" hidden>
       <div class="admin-block">
         <h2>🛒 Pedidos de clientes</h2>
+
+        <!-- Aviso de pedido nuevo: suena la campanita y aparece este cartel. -->
+        <div class="new-order-alert" data-new-order-alert hidden>
+          <span data-new-order-text>🔔 ¡Entró un pedido nuevo!</span>
+          <button type="button" class="noa-btn" data-new-order-see>Ver</button>
+        </div>
+
         <div class="orders-filter" data-orders-filter>
           <button type="button" class="admin-tab-btn is-active" data-orders-status="pending">⏳ Recibidos</button>
           <button type="button" class="admin-tab-btn" data-orders-status="active">🔥 En curso</button>
           <button type="button" class="admin-tab-btn" data-orders-status="delivered">✅ Entregados</button>
           <button type="button" class="admin-tab-btn" data-orders-status="">Todos</button>
           <button type="button" class="admin-btn-inline" data-orders-refresh style="min-height:0;padding:9px 16px">↻ Actualizar</button>
+          <button type="button" class="admin-btn-inline bell-toggle" data-bell-toggle style="min-height:0;padding:9px 16px">🔔 Campanita</button>
         </div>
+        <p class="admin-hint-line" data-bell-hint style="margin-top:0"></p>
         <p class="auth-form-status" data-orders-admin-status></p>
         <div class="orders-admin-list" data-orders-admin-list></div>
+      </div>
+
+      <div class="admin-block">
+        <h2>📊 Delivery vs. retiro</h2>
+        <div class="stats-period" data-stats-period>
+          <button type="button" class="admin-tab-btn is-active" data-stats-range="today">Hoy</button>
+          <button type="button" class="admin-tab-btn" data-stats-range="week">Últimos 7 días</button>
+          <button type="button" class="admin-tab-btn" data-stats-range="all">Desde siempre</button>
+        </div>
+        <div class="stats-grid" data-stats-grid></div>
+        <p class="auth-form-status" data-stats-status></p>
       </div>
       </div><!-- /tab pedidos -->
 

@@ -52,6 +52,35 @@ function byr_setting(string $key, $default = null)
     return $cfg[$key] ?? $default;
 }
 
+/**
+ * Costo de envío del delivery (ARS enteros). Fijo para toda la zona por ahora;
+ * se cambia desde config.php con 'delivery_fee' sin tocar código. El retiro en
+ * el local no paga envío.
+ */
+function byr_delivery_fee(): int
+{
+    $fee = (int) byr_setting('delivery_fee', 490);
+    return $fee > 0 ? $fee : 0;
+}
+
+/**
+ * ¿Está corrida la migración del costo de envío (2026-08-delivery-fee.sql)?
+ * Mientras no lo esté, los pedidos se guardan como antes (sin envío) en vez de
+ * fallar. Cachea el resultado.
+ */
+function byr_shipping_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $ready = (bool) $pdo->query("SHOW COLUMNS FROM orders LIKE 'shipping_cost'")->fetch();
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
 /** Emite una respuesta JSON y corta la ejecución. */
 function json_out($data, int $code = 200): void
 {
