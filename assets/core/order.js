@@ -29,6 +29,9 @@
   const couponField  = $("[data-coupon-field]");
   const couponSelect = $("[data-coupon]");
   const notesInput   = $("[data-notes]");
+  const cartFab      = $("[data-cart-fab]");
+  const cartFabCount = $("[data-cart-fab-count]");
+  const cartFabTotal = $("[data-cart-fab-total]");
   const submitBtn    = $("[data-submit]");
   const statusEl     = $("[data-order-status]");
   const successEl    = $("[data-order-success]");
@@ -255,6 +258,17 @@
     return t;
   }
 
+  // Barra flotante (mobile): cantidad de ítems + total, o se oculta si está vacío.
+  function updateFab() {
+    if (!cartFab) return;
+    let qty = 0;
+    cart.forEach((it) => { qty += it.qty; });
+    if (qty === 0) { show(cartFab, false); return; }
+    if (cartFabCount) cartFabCount.textContent = String(qty);
+    if (cartFabTotal) cartFabTotal.textContent = money(cartTotal());
+    show(cartFab, true);
+  }
+
   function renderCart() {
     cartItemsEl.textContent = "";
     if (cart.size === 0) {
@@ -263,6 +277,7 @@
       cartTotalEl.textContent = money(0);
       show(pointsHint, false);
       show(checkoutForm, false);
+      updateFab();
       return;
     }
     show(cartEmptyEl, false);
@@ -308,6 +323,7 @@
     }
 
     show(checkoutForm, true);
+    updateFab();
   }
 
   /* =========================================================
@@ -665,6 +681,7 @@
 
     show(layoutEl, false);
     show(heroEl, false);
+    show(cartFab, false);
     show(successEl, true);
     window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -759,6 +776,12 @@
     loadCoupons();
     renderCart();
     checkoutForm.addEventListener("submit", submitOrder);
+    if (cartFab) {
+      cartFab.addEventListener("click", () => {
+        const cartEl = document.querySelector(".order-cart");
+        if (cartEl) cartEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
     const newOrderBtn = $("[data-new-order]");
     if (newOrderBtn) newOrderBtn.addEventListener("click", resetForNewOrder);
   }
