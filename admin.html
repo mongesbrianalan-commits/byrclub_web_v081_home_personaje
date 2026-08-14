@@ -76,6 +76,12 @@
     .caja-line-total { border-top: 1px dashed rgba(255,255,255,.18); margin-top: 4px; padding-top: 9px; }
     .caja-line-total span { font-weight: 800; }
     .caja-line-total b { color: var(--yellow); font-size: 1.02rem; }
+    .caja-hist-card { margin-bottom: 12px; }
+    .caja-hist-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: "Lilita One"; font-size: 1.05rem; margin-bottom: 2px; }
+    .caja-hist-diff { font-family: "Baloo 2", sans-serif; font-size: .78rem; font-weight: 900; color: #9bd1ff; }
+    .caja-diff-up { color: #ffd39a; }
+    .caja-diff-down { color: #ff9d9d; }
+    .caja-hist-when { color: #9bd1ff; font-weight: 700; font-size: .82rem; margin-bottom: 8px; }
 
     /* --- Pedidos (admin) --- */
     .orders-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
@@ -288,6 +294,13 @@
         <p style="margin:0 0 14px"><a class="auth-submit" href="mostrador.html" style="display:inline-block;width:auto;padding:11px 20px;text-decoration:none">🧾 Ir a venta de mostrador →</a></p>
         <p class="auth-form-status" data-caja-msg></p>
         <div data-caja-panel></div>
+      </div>
+
+      <div class="admin-block">
+        <h2>📊 Historial de cierres</h2>
+        <p class="admin-hint-line">💡 Cada turno cerrado con sus ventas por medio de pago y la diferencia del arqueo.</p>
+        <p class="auth-form-status" data-caja-hist-msg></p>
+        <div data-caja-hist></div>
       </div>
       </div><!-- /tab caja -->
 

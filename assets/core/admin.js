@@ -1227,6 +1227,8 @@
 
   const cajaPanel = document.querySelector("[data-caja-panel]");
   const cajaMsg = document.querySelector("[data-caja-msg]");
+  const cajaHist = document.querySelector("[data-caja-hist]");
+  const cajaHistMsg = document.querySelector("[data-caja-hist-msg]");
 
   const METHOD_LABELS = {
     efectivo: "Efectivo", debito: "Débito", credito: "Crédito",
@@ -1247,9 +1249,50 @@
       }
       if (data.open) renderCajaOpen(data.session, data.totals);
       else renderCajaClosed();
+      loadCajaHistory();
     } catch (error) {
       setStatus(cajaMsg, error.message, "error");
     }
+  }
+
+  async function loadCajaHistory() {
+    if (!cajaHist) return;
+    setStatus(cajaHistMsg, "Cargando historial…", "");
+    try {
+      const res = await fetch(`${API}admin/caja-history.php`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo cargar el historial.");
+      setStatus(cajaHistMsg, "", "");
+      renderCajaHistory(data.sessions || []);
+    } catch (error) {
+      setStatus(cajaHistMsg, error.message, "error");
+    }
+  }
+
+  function renderCajaHistory(sessions) {
+    if (!sessions.length) {
+      cajaHist.innerHTML = `<p class="oa-empty">Todavía no hay cierres de caja.</p>`;
+      return;
+    }
+    cajaHist.innerHTML = sessions.map((s) => {
+      const diff = s.difference;
+      const diffTxt = diff === null ? "—"
+        : (diff === 0 ? "✅ Sin diferencia"
+          : (diff > 0 ? `▲ Sobra ${money(diff)}` : `▼ Falta ${money(-diff)}`));
+      const diffCls = diff === null || diff === 0 ? "" : (diff > 0 ? "caja-diff-up" : "caja-diff-down");
+      return `
+        <div class="caja-block caja-hist-card">
+          <div class="caja-hist-head">
+            <span>Turno #${s.id}</span>
+            <span class="caja-hist-diff ${diffCls}">${diffTxt}</span>
+          </div>
+          <div class="caja-hist-when">${escapeHtml(fmtDateTime(s.openedAt))} → ${escapeHtml(fmtDateTime(s.closedAt))}${s.closedBy ? " · " + escapeHtml(s.closedBy) : ""}</div>
+          ${methodRows(s.byMethod)}
+          <div class="caja-line caja-line-total"><span>Total ventas</span><b>${money(s.salesTotal)}</b></div>
+          <div class="caja-line"><span>Efectivo esperado</span><b>${s.expectedCash === null ? "—" : money(s.expectedCash)}</b></div>
+          <div class="caja-line"><span>Efectivo contado</span><b>${s.countedCash === null ? "—" : money(s.countedCash)}</b></div>
+        </div>`;
+    }).join("");
   }
 
   function renderCajaClosed() {
