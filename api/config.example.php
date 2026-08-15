@@ -49,12 +49,15 @@ return [
     /*
      * Alias (o CBU) para las transferencias. Si el cliente elige "Transferencia"
      * al hacer el pedido, se le muestra esto para que sepa a dónde mandar la
-     * plata. Vacío = no se le muestra nada y lo tiene que preguntar.
+     * plata.
+     *
+     * Si no se pone acá, se usa el que está por defecto en api/menu.php
+     * (BYRDOCKSUD.MP). Poner un valor acá lo pisa, sin tocar código.
      *
      * OJO: esto NO cobra online. El cliente transfiere por su cuenta; el cobro
      * se registra en la caja igual que siempre, cuando el staff acepta el pedido.
      */
-    'transfer_alias' => '',
+    'transfer_alias' => 'BYRDOCKSUD.MP',
 
     /*
      * Impresión térmica (comandas y tickets).

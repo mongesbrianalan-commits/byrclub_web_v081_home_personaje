@@ -105,7 +105,7 @@ json_out([
        Si no está corrida la migración, se manda vacío y el checkout no
        pregunta nada (sigue funcionando como antes). */
     'paymentPrefs'    => byr_payment_pref_ready(db()) ? byr_payment_prefs() : [],
-    'transferAlias'   => (string) byr_setting('transfer_alias', ''),
+    'transferAlias'   => (string) byr_setting('transfer_alias', 'BYRDOCKSUD.MP'),
     /* Definiciones para armar el popup. El set 'staff' (adicionales para
        cualquier producto, nada obligatorio) solo se le manda al panel. */
     'optionSets'      => $isStaff
