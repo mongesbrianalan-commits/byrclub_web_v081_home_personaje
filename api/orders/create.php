@@ -28,8 +28,22 @@ $address     = trim((string) ($in['address'] ?? ''));
 $pickupName  = trim((string) ($in['pickupName'] ?? ''));
 $guestName   = trim((string) ($in['name'] ?? ''));
 $notes       = trim((string) ($in['notes'] ?? ''));
-$phone       = trim((string) ($in['phone'] ?? ''));
-$couponCode  = strtoupper(trim((string) ($in['couponCode'] ?? '')));
+$phone        = trim((string) ($in['phone'] ?? ''));
+$couponCode   = strtoupper(trim((string) ($in['couponCode'] ?? '')));
+$paymentPref  = trim((string) ($in['paymentPref'] ?? ''));
+$cashHint     = array_key_exists('cashHint', $in) && $in['cashHint'] !== '' && $in['cashHint'] !== null
+    ? (int) $in['cashHint'] : null;
+
+if ($paymentPref !== '' && !in_array($paymentPref, byr_payment_prefs(), true)) {
+    json_out(['error' => 'Elegí cómo vas a pagar.'], 422);
+}
+/* El "¿con cuánto pagás?" solo tiene sentido en efectivo. */
+if ($paymentPref !== 'efectivo') {
+    $cashHint = null;
+}
+if ($cashHint !== null && ($cashHint < 0 || $cashHint > 10000000)) {
+    $cashHint = null;
+}
 
 if (!$itemsIn) {
     json_out(['error' => 'Tu pedido está vacío.'], 422);
@@ -186,6 +200,7 @@ if ($couponCode !== '') {
    precio futuro no reescriba lo que este cliente pagó. */
 $shippingReady = byr_shipping_ready($pdo);
 $shipping      = ($fulfillment === 'delivery' && $shippingReady) ? byr_delivery_fee() : 0;
+$paymentReady  = byr_payment_pref_ready($pdo);
 
 /* --- Puntos sugeridos por la tasa configurable (1 punto cada $X) ---
    Se calculan sobre la COMIDA: el envío no suma puntos. */
@@ -198,15 +213,8 @@ $pointsSuggested = intdiv($itemsTotal, $rate);
 /* --- Insert transaccional: orden + ítems --- */
 $pdo->beginTransaction();
 try {
-    /* Sin la migración del envío, se guarda igual que antes (sin la columna). */
-    $shipCol = $shippingReady ? ', shipping_cost' : '';
-    $shipVal = $shippingReady ? ', ?' : '';
-    $ins = $pdo->prepare(
-        "INSERT INTO orders
-           (user_id, status, fulfillment, customer_name, customer_phone, address, notes,
-            items_total, points_suggested, coupon_code, coupon_label$shipCol)
-         VALUES (?, \"pending\", ?, ?, ?, ?, ?, ?, ?, ?, ?$shipVal)"
-    );
+    /* Las columnas de migraciones posteriores (envío, medio de pago) se suman
+       solo si están: así el pedido se guarda igual aunque falte correr una. */
     $params = [
         $id,
         $fulfillment,
@@ -219,9 +227,24 @@ try {
         $couponCode !== '' ? $couponCode : null,
         $couponLabel,
     ];
+    $extraCols = '';
     if ($shippingReady) {
+        $extraCols .= ', shipping_cost';
         $params[] = $shipping;
     }
+    if ($paymentReady) {
+        $extraCols .= ', payment_pref, cash_hint';
+        $params[] = $paymentPref !== '' ? $paymentPref : null;
+        $params[] = $cashHint;
+    }
+    $extraVals = str_repeat(', ?', substr_count($extraCols, ','));
+
+    $ins = $pdo->prepare(
+        "INSERT INTO orders
+           (user_id, status, fulfillment, customer_name, customer_phone, address, notes,
+            items_total, points_suggested, coupon_code, coupon_label$extraCols)
+         VALUES (?, \"pending\", ?, ?, ?, ?, ?, ?, ?, ?, ?$extraVals)"
+    );
     $ins->execute($params);
     $orderId = (int) $pdo->lastInsertId();
 
@@ -256,6 +279,8 @@ json_out([
         'itemsTotal'   => $itemsTotal,
         'shippingCost' => $shipping,
         'total'        => $itemsTotal + $shipping,
+        'paymentPref'  => $paymentReady && $paymentPref !== '' ? $paymentPref : null,
+        'cashHint'     => $paymentReady ? $cashHint : null,
         'items'        => $lines,
         'couponCode'   => $couponCode !== '' ? $couponCode : null,
         'couponLabel'  => $couponLabel,

@@ -15,11 +15,14 @@ require_role($pdo, ['cajero', 'cocina']);
 $status = $_GET['status'] ?? '';
 $allowed = ['pending', 'confirmed', 'preparing', 'on_the_way', 'delivered', 'cancelled'];
 
-/* El envío es una columna nueva: si la migración no está corrida, se pide 0. */
+/* Columnas de migraciones posteriores: si no están corridas, se piden vacías. */
 $shipSel = byr_shipping_ready($pdo) ? 'o.shipping_cost' : '0 AS shipping_cost';
+$paySel  = byr_payment_pref_ready($pdo)
+    ? 'o.payment_pref, o.cash_hint'
+    : 'NULL AS payment_pref, NULL AS cash_hint';
 
 $sql = "SELECT o.id, o.user_id, o.status, o.fulfillment, o.customer_name, o.customer_phone,
-               o.address, o.notes, o.items_total, $shipSel, o.points_suggested, o.points_awarded,
+               o.address, o.notes, o.items_total, $shipSel, $paySel, o.points_suggested, o.points_awarded,
                o.coupon_code, o.coupon_label, o.created_at, o.confirmed_at,
                u.email AS customer_email
           FROM orders o
@@ -84,6 +87,8 @@ foreach ($orders as $o) {
         'itemsTotal'     => (int) $o['items_total'],
         'shippingCost'   => (int) $o['shipping_cost'],
         'total'          => (int) $o['items_total'] + (int) $o['shipping_cost'],
+        'paymentPref'    => $o['payment_pref'],
+        'cashHint'       => $o['cash_hint'] !== null ? (int) $o['cash_hint'] : null,
         'pointsSuggested' => (int) $o['points_suggested'],
         'pointsAwarded'  => $o['points_awarded'] === null ? null : (int) $o['points_awarded'],
         'couponCode'     => $o['coupon_code'],

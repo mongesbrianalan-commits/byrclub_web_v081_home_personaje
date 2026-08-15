@@ -47,6 +47,16 @@ return [
     'delivery_fee' => 490,
 
     /*
+     * Alias (o CBU) para las transferencias. Si el cliente elige "Transferencia"
+     * al hacer el pedido, se le muestra esto para que sepa a dónde mandar la
+     * plata. Vacío = no se le muestra nada y lo tiene que preguntar.
+     *
+     * OJO: esto NO cobra online. El cliente transfiere por su cuenta; el cobro
+     * se registra en la caja igual que siempre, cuando el staff acepta el pedido.
+     */
+    'transfer_alias' => '',
+
+    /*
      * Impresión térmica (comandas y tickets).
      *
      * 'print_token' es la contraseña que comparte el agente que corre en la PC

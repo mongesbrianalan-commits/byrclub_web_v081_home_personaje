@@ -200,6 +200,22 @@ function byr_escpos_comanda(array $o): string
     if (!empty($o['customerPhone'])) {
         $b .= byr_print_wrap(byr_t('Tel: ' . $o['customerPhone']));
     }
+
+    /* Cómo dijo que paga. Va en la comanda porque es la hoja que viaja con el
+       pedido: el que reparte tiene que saber si sale con cambio o no. */
+    if (!empty($o['paymentPref'])) {
+        $total = (int) ($o['itemsTotal'] ?? 0) + (int) ($o['shippingCost'] ?? 0);
+        $b .= BYR_ESC . 'E' . "\x01";
+        $b .= byr_print_wrap(byr_t('PAGA: ' . strtoupper($o['paymentPref'])
+            . ' - ' . byr_print_money($total)));
+        $hint = (int) ($o['cashHint'] ?? 0);
+        if ($o['paymentPref'] === 'efectivo' && $hint > 0) {
+            $b .= byr_print_wrap(byr_t('Abona con ' . byr_print_money($hint)
+                . ($hint >= $total ? ' - vuelto ' . byr_print_money($hint - $total) : '')));
+        }
+        $b .= BYR_ESC . 'E' . "\x00";
+    }
+
     $b .= byr_print_rule();
 
     foreach (($o['items'] ?? []) as $ln) {
@@ -341,8 +357,11 @@ function byr_print_when(array $o): string
 function byr_print_load_order(PDO $pdo, int $orderId): ?array
 {
     $ship = byr_shipping_ready($pdo) ? 'shipping_cost' : '0 AS shipping_cost';
+    $pay  = byr_payment_pref_ready($pdo)
+        ? 'payment_pref, cash_hint'
+        : 'NULL AS payment_pref, NULL AS cash_hint';
     $cols = "id, user_id, status, fulfillment, customer_name, customer_phone, address, notes,
-             items_total, $ship, points_awarded, coupon_label, created_at";
+             items_total, $ship, $pay, points_awarded, coupon_label, created_at";
     try {
         $stmt = $pdo->prepare("SELECT $cols, channel FROM orders WHERE id = ?");
         $stmt->execute([$orderId]);
@@ -392,6 +411,8 @@ function byr_print_load_order(PDO $pdo, int $orderId): ?array
         'couponLabel'   => $row['coupon_label'],
         'itemsTotal'    => (int) $row['items_total'],
         'shippingCost'  => (int) $row['shipping_cost'],
+        'paymentPref'   => $row['payment_pref'],
+        'cashHint'      => $row['cash_hint'] !== null ? (int) $row['cash_hint'] : null,
         'pointsAwarded' => $row['points_awarded'] !== null ? (int) $row['points_awarded'] : null,
         'paymentMethod' => $method,
         'createdAt'     => $row['created_at'],

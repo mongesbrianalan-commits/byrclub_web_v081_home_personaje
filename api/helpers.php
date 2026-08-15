@@ -81,6 +81,33 @@ function byr_shipping_ready(PDO $pdo): bool
     return $ready;
 }
 
+/**
+ * Medios de pago que el CLIENTE puede declarar al pedir por la web.
+ * Es más corta que la lista de la caja (byr_payment_methods()) a propósito:
+ * tarjeta y QR solo tienen sentido presencialmente, con el posnet en la mano.
+ */
+function byr_payment_prefs(): array
+{
+    return ['efectivo', 'transferencia'];
+}
+
+/**
+ * ¿Está corrida la migración del medio de pago (2026-08-payment-pref.sql)?
+ * Mientras no lo esté, el pedido se guarda sin ese dato en vez de fallar.
+ */
+function byr_payment_pref_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $ready = (bool) $pdo->query("SHOW COLUMNS FROM orders LIKE 'payment_pref'")->fetch();
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
 /** Emite una respuesta JSON y corta la ejecución. */
 function json_out($data, int $code = 200): void
 {

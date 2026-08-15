@@ -115,6 +115,28 @@
               <input type="text" data-address placeholder="Calle, número, entre calles…" autocomplete="street-address">
             </label>
 
+            <!-- Cómo va a pagar. No se cobra acá: es para que el local sepa
+                 con qué se va a encontrar (y salga con el vuelto contado). -->
+            <div class="checkout-block" data-payment-block hidden>
+              <span class="checkout-label">¿Cómo vas a pagar?</span>
+              <div class="fulfillment-toggle" role="radiogroup" aria-label="Forma de pago">
+                <label class="fulfill-opt is-active" data-pay-opt="efectivo">
+                  <input type="radio" name="paymentPref" value="efectivo" checked>
+                  <span>💵 Efectivo</span>
+                </label>
+                <label class="fulfill-opt" data-pay-opt="transferencia">
+                  <input type="radio" name="paymentPref" value="transferencia">
+                  <span>🏦 Transferencia</span>
+                </label>
+              </div>
+              <p class="checkout-pay-hint" data-transfer-hint hidden></p>
+            </div>
+
+            <label class="auth-field" data-cash-field hidden>
+              <span>¿Con cuánto pagás? (opcional)</span>
+              <input type="number" data-cash-hint inputmode="numeric" min="0" step="100" placeholder="ej: 20000">
+            </label>
+
             <label class="auth-field" data-coupon-field hidden>
               <span>Usar un cupón <small>(opcional)</small></span>
               <select data-coupon>

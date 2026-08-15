@@ -1029,6 +1029,20 @@
       ? `<div class="oa-ship"><span>🛵 Envío</span><span>${money(o.shippingCost)}</span></div>`
       : "";
 
+    /* Cómo dijo el cliente que va a pagar. Es una DECLARACIÓN, no un cobro:
+       el cobro real se registra al aceptar el pedido. */
+    let payHtml = "";
+    if (o.paymentPref) {
+      const esEfectivo = o.paymentPref === "efectivo";
+      let txt = esEfectivo ? "💵 Paga en efectivo" : "🏦 Paga por transferencia";
+      if (esEfectivo && o.cashHint) {
+        const vuelto = o.cashHint - orderTotal(o);
+        txt += ` con ${money(o.cashHint)}`;
+        if (vuelto >= 0) txt += ` · vuelto ${money(vuelto)}`;
+      }
+      payHtml = `<div class="oa-pay">${txt}</div>`;
+    }
+
     card.innerHTML = `
       <div class="oa-top">
         <div class="oa-id">Pedido #${o.id} <small>· ${escapeHtml(fmtDateTime(o.createdAt))}</small></div>
@@ -1036,6 +1050,7 @@
       </div>
       <div class="oa-customer">${escapeHtml(o.customerName || "—")}${waLink}</div>
       <div class="oa-fulfill">${fulfillHtml}</div>
+      ${payHtml}
       ${notesHtml}
       <ul class="oa-items">${itemsHtml}</ul>
       ${couponHtml}
@@ -1067,6 +1082,11 @@
         `<option value="qr">📱 QR</option>` +
         `<option value="transfer">🏦 Transferencia</option>` +
         `<option value="">— No registrar cobro</option>`;
+      // Si el cliente declaró cómo iba a pagar, viene preseleccionado (igual se
+      // puede cambiar: manda lo que realmente pagó, no lo que dijo).
+      if (o.paymentPref) {
+        paySelect.value = o.paymentPref === "transferencia" ? "transfer" : "efectivo";
+      }
       payField.append(paySelect);
 
       const confirmBtn = document.createElement("button");

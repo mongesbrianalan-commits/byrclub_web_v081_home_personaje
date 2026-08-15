@@ -86,6 +86,9 @@
 .cart-checkout { margin-top: 16px; display: flex; flex-direction: column; }
 .checkout-block { margin-bottom: 12px; }
 .checkout-label { display: block; font-weight: 800; color: #cfe4ff; margin-bottom: 8px; font-size: .9rem; }
+/* Aviso del alias de transferencia (solo si el local lo configuró). */
+.checkout-pay-hint { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(155,209,255,.12); border: 1px solid rgba(155,209,255,.3); color: #cfe4ff; font-weight: 700; font-size: .85rem; }
+.checkout-pay-hint b { color: #fff; user-select: all; }
 .fulfillment-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .fulfill-opt { position: relative; cursor: pointer; text-align: center; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); border-radius: 14px; padding: 12px 8px; font-weight: 800; font-size: .9rem; transition: .12s; }
 .fulfill-opt input { position: absolute; opacity: 0; pointer-events: none; }

@@ -101,6 +101,11 @@ json_out([
     /* Costo de envío, para mostrarlo en el carrito antes de crear el pedido.
        El precio que vale es igual el que recalcula el server al confirmar. */
     'deliveryFee'     => byr_shipping_ready(db()) ? byr_delivery_fee() : 0,
+    /* Medios de pago que puede declarar el cliente, y a dónde transferir.
+       Si no está corrida la migración, se manda vacío y el checkout no
+       pregunta nada (sigue funcionando como antes). */
+    'paymentPrefs'    => byr_payment_pref_ready(db()) ? byr_payment_prefs() : [],
+    'transferAlias'   => (string) byr_setting('transfer_alias', ''),
     /* Definiciones para armar el popup. El set 'staff' (adicionales para
        cualquier producto, nada obligatorio) solo se le manda al panel. */
     'optionSets'      => $isStaff

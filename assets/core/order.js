@@ -27,6 +27,10 @@
   const checkoutForm = $("[data-checkout-form]");
   const addressField = $("[data-address-field]");
   const addressInput = $("[data-address]");
+  const paymentBlock = $("[data-payment-block]");
+  const transferHint = $("[data-transfer-hint]");
+  const cashField    = $("[data-cash-field]");
+  const cashInput    = $("[data-cash-hint]");
   const nameInput    = $("[data-order-name]");
   const guestHint    = $("[data-guest-hint]");
   const phoneInput   = $("[data-phone]");
@@ -51,6 +55,8 @@
   const cart = new Map();
   let pointsPerAmount = 100;
   let deliveryFee = 0;       // lo manda el server en menu.php (envío fijo del delivery)
+  let paymentPrefs = [];     // medios que puede declarar el cliente (vacío = no se pregunta)
+  let transferAlias = "";    // alias para transferir, si el local lo configuró
   let isMember = false;      // ¿está logueado? (si no, pide como invitado)
   let lastOrderPhone = "";   // teléfono del último pedido (para seguir el estado sin login)
   let optionSets = {};
@@ -682,6 +688,50 @@
     renderTotals(); // el envío entra o sale del total según la forma de entrega
   }
 
+  /* =========================================================
+     Cómo va a pagar
+
+     No se cobra nada acá: el cliente solo declara con qué va a pagar, para que
+     el local sepa con qué se va a encontrar (y el que reparte salga con el
+     vuelto contado). El cobro real lo registra el staff en la caja.
+  ========================================================= */
+
+  function currentPayment() {
+    const checked = document.querySelector('input[name="paymentPref"]:checked');
+    return checked ? checked.value : "";
+  }
+
+  function applyPayment(kind) {
+    // "¿Con cuánto pagás?" solo tiene sentido con efectivo.
+    show(cashField, kind === "efectivo");
+    if (kind !== "efectivo" && cashInput) cashInput.value = "";
+
+    if (transferHint) {
+      const mostrar = kind === "transferencia" && transferAlias !== "";
+      if (mostrar) {
+        transferHint.innerHTML = "Transferí a <b>" + escapeHtml(transferAlias) +
+          "</b> y mandanos el comprobante por WhatsApp cuando confirmemos el pedido.";
+      }
+      show(transferHint, mostrar);
+    }
+  }
+
+  function initPayment() {
+    // Si el local todavía no corrió la migración, no se pregunta nada.
+    if (!paymentBlock || !paymentPrefs.length) return;
+    show(paymentBlock, true);
+
+    const opts = document.querySelectorAll("[data-pay-opt]");
+    opts.forEach((opt) => {
+      const input = opt.querySelector("input");
+      input.addEventListener("change", () => {
+        opts.forEach((o) => o.classList.toggle("is-active", o === opt));
+        applyPayment(opt.getAttribute("data-pay-opt"));
+      });
+    });
+    applyPayment(currentPayment());
+  }
+
   function initFulfillment() {
     const opts = document.querySelectorAll("[data-fulfill-opt]");
     opts.forEach((opt) => {
@@ -733,6 +783,9 @@
       phone,
       notes: notesInput.value.trim(),
       couponCode: couponSelect.value || "",
+      paymentPref: paymentPrefs.length ? currentPayment() : "",
+      cashHint: (paymentPrefs.length && currentPayment() === "efectivo" && cashInput)
+        ? cashInput.value : "",
     };
 
     submitBtn.disabled = true;
@@ -782,6 +835,14 @@
         sRow.className = "ss-line";
         sRow.innerHTML = "<span>🛵 Envío</span><span>" + money(order.shippingCost) + "</span>";
         summary.append(sRow);
+      }
+      if (order.paymentPref) {
+        const pRow = document.createElement("div");
+        pRow.className = "ss-line";
+        const label = order.paymentPref === "transferencia" ? "🏦 Transferencia" : "💵 Efectivo";
+        const extra = order.cashHint ? " (con " + money(order.cashHint) + ")" : "";
+        pRow.innerHTML = "<span>Pagás con</span><span>" + label + extra + "</span>";
+        summary.append(pRow);
       }
       totalRow.className = "ss-line ss-total";
       const ta = document.createElement("span");
@@ -894,7 +955,10 @@
       const data = await res.json();
       pointsPerAmount = Number(data.pointsPerAmount) || 100;
       deliveryFee = Number(data.deliveryFee) || 0;
+      paymentPrefs = Array.isArray(data.paymentPrefs) ? data.paymentPrefs : [];
+      transferAlias = String(data.transferAlias || "");
       optionSets = data.optionSets || {};
+      initPayment(); // recién ahora sabemos si hay que preguntar y con qué alias
       const cats = Array.isArray(data.categories) ? data.categories : [];
       show(menuLoading, false);
       if (!cats.length) {
@@ -914,6 +978,8 @@
     if (!allowed) return;
 
     initFulfillment();
+    // initPayment() NO va acá: necesita los datos de menu.php, así que lo
+    // llama loadMenu() cuando llegan.
     loadMenu();
     loadCoupons();
     renderCart();
