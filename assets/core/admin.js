@@ -1351,7 +1351,39 @@
      Acá el total es solo una vista previa.
   --------------------------------------------------------- */
 
-  function openOptionsPopup({ product, confirmLabel, withQty, onConfirm }) {
+  /**
+   * Reconstruye qué opciones tenía una línea a partir del texto guardado.
+   *
+   * En `order_items` se guarda el texto ("Simples · Coca-Cola · 📝 sin cebolla"),
+   * no los ids. Para poder abrir el popup con lo que el cliente ya había
+   * elegido, se parte ese texto por sus separadores y se comparan los pedazos
+   * con los nombres de las opciones. Se compara el pedazo ENTERO, no "que
+   * contenga": si no, "Extra cheddar" engancharía con "Cheddar para hamburguesa".
+   */
+  function parseChosenOptions(optionsText, groups) {
+    const raw = String(optionsText || "");
+    const noteIdx = raw.indexOf("📝");
+    const optsPart = noteIdx >= 0 ? raw.slice(0, noteIdx) : raw;
+    const note = noteIdx >= 0
+      ? raw.slice(noteIdx + 2).replace(/^\s*·?\s*/, "").trim()
+      : "";
+
+    const segments = optsPart.split(/[·,]/).map((s) => s.trim()).filter(Boolean);
+    const chosen = {};
+    groups.forEach((g) => {
+      g.options.forEach((o) => {
+        if (!segments.includes(o.name)) return;
+        if (g.type === "single") {
+          chosen[g.id] = o.id;
+        } else {
+          chosen[g.id] = (chosen[g.id] || []).concat(o.id);
+        }
+      });
+    });
+    return { chosen, note };
+  }
+
+  function openOptionsPopup({ product, confirmLabel, withQty, preset, onConfirm }) {
     const groups = menuForEdit.optionSets[product.optionSet] || [];
 
     const overlay = document.createElement("div");
@@ -1380,9 +1412,18 @@
         input.type = g.type === "single" ? "radio" : "checkbox";
         input.name = "oaopt_" + g.id;
         input.value = o.id;
-        // En los grupos obligatorios ya viene marcada la primera (la de $0),
-        // así agregar algo simple es un clic y listo.
-        if (g.type === "single" && g.required && i === 0) input.checked = true;
+        if (preset) {
+          // Editando: arranca con lo que la línea ya tenía, para que abrir el
+          // lápiz a escribir una aclaración no borre las papas ni la bebida.
+          const sel = preset.chosen[g.id];
+          input.checked = g.type === "single"
+            ? sel === o.id
+            : Array.isArray(sel) && sel.indexOf(o.id) !== -1;
+        } else if (g.type === "single" && g.required && i === 0) {
+          // Agregando: los grupos obligatorios vienen con la primera (la de $0)
+          // marcada, así sumar algo simple es un clic y listo.
+          input.checked = true;
+        }
         input.addEventListener("change", paintTotal);
         const nm = document.createElement("span");
         nm.className = "oa-opt-name";
@@ -1396,14 +1437,26 @@
       card.append(gEl);
     });
 
+    /* Red de seguridad: si es un pedido viejo del que no se pudo reconocer la
+       opción obligatoria, se marca la primera. Sin esto el server rechazaría
+       el guardado con "Falta elegir" y el cajero no entendería por qué. */
+    groups.forEach((g) => {
+      if (g.type !== "single" || !g.required) return;
+      const inputs = card.querySelectorAll(`input[name="oaopt_${g.id}"]`);
+      if (inputs.length && !Array.from(inputs).some((i) => i.checked)) {
+        inputs[0].checked = true;
+      }
+    });
+
     const noteWrap = document.createElement("div");
     noteWrap.className = "oa-opt-group";
     noteWrap.innerHTML = '<div class="oa-opt-title">Aclaración (opcional)</div>';
     const noteInput = document.createElement("input");
     noteInput.type = "text";
     noteInput.className = "oa-opt-note";
-    noteInput.placeholder = "ej: sin cebolla";
+    noteInput.placeholder = "ej: sin cebolla, sin hielo, para llevar";
     noteInput.maxLength = 200;
+    if (preset && preset.note) noteInput.value = preset.note;
     noteWrap.append(noteInput);
     card.append(noteWrap);
 
@@ -1513,14 +1566,19 @@
       const ctl = document.createElement("div");
       ctl.className = "oa-edit-qty";
 
-      // Si esa línea es de un producto con opciones, se pueden corregir.
+      /* Lápiz en TODAS las líneas: en las hamburguesas para corregir papas,
+         bebida y adicionales; en una gaseosa o unas papas, para dejarle una
+         aclaración a la cocina ("sin hielo"). El popup abre con lo que la
+         línea ya tenía, así editar una cosa no pisa las otras. */
       const prod = findProductBySlug(ln.productSlug);
-      if (prod && prod.optionSet) {
+      if (prod) {
+        const groups = menuForEdit.optionSets[prod.optionSet] || [];
         ctl.append(miniBtn("✏️", () => {
           openOptionsPopup({
             product: prod,
             confirmLabel: "Guardar",
             withQty: false,
+            preset: parseChosenOptions(ln.options, groups),
             onConfirm: (sel) => editOrder({
               orderId: o.id, action: "setItemOptions", itemId: ln.id,
               options: sel.options, note: sel.note,
@@ -1579,7 +1637,7 @@
 
     const hint = document.createElement("small");
     hint.className = "oa-edit-hint";
-    hint.textContent = "Se puede agregar cualquier cosa del menú. Las marcadas con ⚙️ abren sus opciones (papas, bebida, adicionales).";
+    hint.textContent = "Se puede agregar cualquier cosa del menú (⚙️ = abre sus opciones). Con ✏️ cambiás opciones o le dejás una aclaración a la cocina.";
     box.append(hint);
     return box;
   }
