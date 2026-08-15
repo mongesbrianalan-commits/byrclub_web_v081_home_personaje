@@ -1368,23 +1368,48 @@
       ? raw.slice(noteIdx + 2).replace(/^\s*·?\s*/, "").trim()
       : "";
 
-    const segments = optsPart.split(/[·,]/).map((s) => s.trim()).filter(Boolean);
+    /* Cada pedazo puede traer cantidad: "Cheddar para hamburguesa x2". */
+    const segments = optsPart.split(/[·,]/).map((s) => s.trim()).filter(Boolean)
+      .map((seg) => {
+        const m = seg.match(/^(.*?)\s+x(\d+)$/);
+        return m
+          ? { name: m[1].trim(), qty: Math.max(1, parseInt(m[2], 10) || 1) }
+          : { name: seg, qty: 1 };
+      });
+
     const chosen = {};
     groups.forEach((g) => {
       g.options.forEach((o) => {
-        if (!segments.includes(o.name)) return;
+        const hit = segments.find((s) => s.name === o.name);
+        if (!hit) return;
         if (g.type === "single") {
           chosen[g.id] = o.id;
         } else {
-          chosen[g.id] = (chosen[g.id] || []).concat(o.id);
+          chosen[g.id] = chosen[g.id] || {};
+          chosen[g.id][o.id] = hit.qty;
         }
       });
     });
     return { chosen, note };
   }
 
+  /**
+   * Qué opciones muestra el PANEL para un producto.
+   *
+   * Al pedir, solo las hamburguesas abren opciones. Editando desde el panel se
+   * muestran igual para todo (set 'staff': los mismos adicionales, pero nada
+   * obligatorio), así se le puede sumar una feta de cheddar a unas papas.
+   */
+  function editorSetKey(product) {
+    return product.optionSet || "staff";
+  }
+
+  function editorGroups(product) {
+    return menuForEdit.optionSets[editorSetKey(product)] || [];
+  }
+
   function openOptionsPopup({ product, confirmLabel, withQty, preset, onConfirm }) {
-    const groups = menuForEdit.optionSets[product.optionSet] || [];
+    const groups = editorGroups(product);
 
     const overlay = document.createElement("div");
     overlay.className = "oa-opt-overlay";
@@ -1397,6 +1422,17 @@
     head.innerHTML = `<b>${escapeHtml(product.name)}</b><span>${money(product.price)}</span>`;
     card.append(head);
 
+    /* Cantidades de los adicionales: { grupo: { opción: cuántas } }.
+       Los "single" (papas, bebida) siguen viviendo en los radios del DOM;
+       los "multi" necesitan un número, así que se llevan acá. */
+    const multiQty = {};
+    groups.forEach((g) => {
+      if (g.type === "single") return;
+      const prev = (preset && preset.chosen[g.id]) || {};
+      multiQty[g.id] = {};
+      g.options.forEach((o) => { multiQty[g.id][o.id] = Number(prev[o.id]) || 0; });
+    });
+
     groups.forEach((g) => {
       const gEl = document.createElement("div");
       gEl.className = "oa-opt-group";
@@ -1406,33 +1442,70 @@
       gEl.append(h);
 
       g.options.forEach((o, i) => {
-        const lab = document.createElement("label");
-        lab.className = "oa-opt-row";
-        const input = document.createElement("input");
-        input.type = g.type === "single" ? "radio" : "checkbox";
-        input.name = "oaopt_" + g.id;
-        input.value = o.id;
-        if (preset) {
-          // Editando: arranca con lo que la línea ya tenía, para que abrir el
-          // lápiz a escribir una aclaración no borre las papas ni la bebida.
-          const sel = preset.chosen[g.id];
-          input.checked = g.type === "single"
-            ? sel === o.id
-            : Array.isArray(sel) && sel.indexOf(o.id) !== -1;
-        } else if (g.type === "single" && g.required && i === 0) {
-          // Agregando: los grupos obligatorios vienen con la primera (la de $0)
-          // marcada, así sumar algo simple es un clic y listo.
-          input.checked = true;
-        }
-        input.addEventListener("change", paintTotal);
+        const price = document.createElement("span");
+        price.className = "oa-opt-price";
+        price.textContent = o.price ? "+" + money(o.price) : "";
         const nm = document.createElement("span");
         nm.className = "oa-opt-name";
         nm.textContent = o.name;
-        const pr = document.createElement("span");
-        pr.className = "oa-opt-price";
-        pr.textContent = o.price ? "+" + money(o.price) : "";
-        lab.append(input, nm, pr);
-        gEl.append(lab);
+
+        if (g.type === "single") {
+          const lab = document.createElement("label");
+          lab.className = "oa-opt-row";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "oaopt_" + g.id;
+          input.value = o.id;
+          if (preset) {
+            // Editando: arranca con lo que la línea ya tenía, para que abrir
+            // el lápiz a escribir una aclaración no borre papas ni bebida.
+            input.checked = preset.chosen[g.id] === o.id;
+          } else if (g.required && i === 0) {
+            // Agregando: los obligatorios vienen con la primera (la de $0)
+            // marcada, así sumar algo simple es un clic y listo.
+            input.checked = true;
+          }
+          input.addEventListener("change", paintTotal);
+          lab.append(input, nm, price);
+          gEl.append(lab);
+          return;
+        }
+
+        /* Adicionales: con cantidad, para pedir dos fetas de cheddar. */
+        const row = document.createElement("div");
+        row.className = "oa-opt-row";
+        const step = document.createElement("div");
+        step.className = "oa-opt-step";
+        const num = document.createElement("span");
+        num.className = "oa-opt-stepnum";
+
+        const paintQty = () => {
+          const n = multiQty[g.id][o.id];
+          num.textContent = String(n);
+          row.classList.toggle("is-on", n > 0);
+        };
+        const bump = (d) => {
+          const n = Math.max(0, Math.min(20, multiQty[g.id][o.id] + d));
+          multiQty[g.id][o.id] = n;
+          paintQty();
+          paintTotal();
+        };
+
+        const minus = document.createElement("button");
+        minus.type = "button";
+        minus.className = "oa-step-btn";
+        minus.textContent = "−";
+        minus.addEventListener("click", () => bump(-1));
+        const plus = document.createElement("button");
+        plus.type = "button";
+        plus.className = "oa-step-btn";
+        plus.textContent = "+";
+        plus.addEventListener("click", () => bump(1));
+
+        step.append(minus, num, plus);
+        row.append(nm, price, step);
+        paintQty();
+        gEl.append(row);
       });
       card.append(gEl);
     });
@@ -1489,31 +1562,48 @@
     foot.append(totalEl, cancelBtn, okBtn);
     card.append(foot);
 
+    /* Los adicionales con cantidad se mandan REPETIDOS: dos fetas de cheddar
+       viajan como ["cheddar","cheddar"]. El server cuenta las repeticiones,
+       cobra cada una y las escribe como "Cheddar para hamburguesa x2". */
     function collect() {
       const out = {};
       groups.forEach((g) => {
-        const inputs = card.querySelectorAll(`input[name="oaopt_${g.id}"]`);
-        const marked = Array.from(inputs).filter((i) => i.checked);
         if (g.type === "single") {
-          if (marked[0]) out[g.id] = marked[0].value;
-        } else if (marked.length) {
-          out[g.id] = marked.map((i) => i.value);
+          const marked = Array.from(card.querySelectorAll(`input[name="oaopt_${g.id}"]`))
+            .find((i) => i.checked);
+          if (marked) out[g.id] = marked.value;
+          return;
         }
+        const list = [];
+        g.options.forEach((o) => {
+          const n = multiQty[g.id][o.id] || 0;
+          for (let k = 0; k < n; k++) list.push(o.id);
+        });
+        if (list.length) out[g.id] = list;
       });
       return out;
     }
 
-    function paintTotal() {
+    function optionsDelta() {
       let delta = 0;
       groups.forEach((g) => {
-        const inputs = card.querySelectorAll(`input[name="oaopt_${g.id}"]`);
-        Array.from(inputs).filter((i) => i.checked).forEach((i) => {
-          const o = g.options.find((x) => x.id === i.value);
+        if (g.type === "single") {
+          const marked = Array.from(card.querySelectorAll(`input[name="oaopt_${g.id}"]`))
+            .find((i) => i.checked);
+          const o = marked && g.options.find((x) => x.id === marked.value);
           if (o) delta += Number(o.price) || 0;
+          return;
+        }
+        g.options.forEach((o) => {
+          delta += (Number(o.price) || 0) * (multiQty[g.id][o.id] || 0);
         });
       });
+      return delta;
+    }
+
+    function paintTotal() {
       const qty = withQty ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
-      totalEl.textContent = money((product.price + delta) * qty);
+      totalEl.textContent = money((product.price + optionsDelta()) * qty);
     }
 
     function close() {
@@ -1572,7 +1662,7 @@
          línea ya tenía, así editar una cosa no pisa las otras. */
       const prod = findProductBySlug(ln.productSlug);
       if (prod) {
-        const groups = menuForEdit.optionSets[prod.optionSet] || [];
+        const groups = editorGroups(prod);
         ctl.append(miniBtn("✏️", () => {
           openOptionsPopup({
             product: prod,
@@ -1614,23 +1704,21 @@
     });
     sel.innerHTML = optionsHtml;
 
+    /* Todo pasa por el popup: así cualquier producto puede llevar adicionales,
+       cantidad y aclaración. En los que no son hamburguesas no hay nada
+       obligatorio, así que confirmar es un solo clic. */
     const addBtn = miniBtn("Agregar", () => {
       const p = findProductBySlug(sel.value);
       if (!p) return;
-      if (p.optionSet) {
-        // Hamburguesas: primero las opciones (papas, bebida, adicionales).
-        openOptionsPopup({
-          product: p,
-          confirmLabel: "Agregar",
-          withQty: true,
-          onConfirm: (choice) => editOrder({
-            orderId: o.id, action: "addItem", slug: p.slug,
-            qty: choice.qty, options: choice.options, note: choice.note,
-          }),
-        });
-      } else {
-        editOrder({ orderId: o.id, action: "addItem", slug: p.slug, qty: 1 });
-      }
+      openOptionsPopup({
+        product: p,
+        confirmLabel: "Agregar",
+        withQty: true,
+        onConfirm: (choice) => editOrder({
+          orderId: o.id, action: "addItem", slug: p.slug,
+          qty: choice.qty, options: choice.options, note: choice.note,
+        }),
+      });
     });
     add.append(sel, addBtn);
     box.append(add);

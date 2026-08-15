@@ -101,5 +101,9 @@ json_out([
     /* Costo de envío, para mostrarlo en el carrito antes de crear el pedido.
        El precio que vale es igual el que recalcula el server al confirmar. */
     'deliveryFee'     => byr_shipping_ready(db()) ? byr_delivery_fee() : 0,
-    'optionSets'      => byr_option_sets(), // definiciones para armar el popup
+    /* Definiciones para armar el popup. El set 'staff' (adicionales para
+       cualquier producto, nada obligatorio) solo se le manda al panel. */
+    'optionSets'      => $isStaff
+        ? byr_option_sets()
+        : array_diff_key(byr_option_sets(), ['staff' => 1]),
 ]);

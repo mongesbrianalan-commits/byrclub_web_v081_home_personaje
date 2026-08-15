@@ -75,8 +75,13 @@ try {
         }
 
         /* Opciones (papas/bebida/adicionales) validadas y tarifadas por el server,
-           igual que en create.php y pos-sale.php. */
-        $setKey   = byr_option_set_for_category($prod['category']);
+           igual que en create.php y pos-sale.php.
+
+           Las burgers usan su set de siempre (papas obligatorias). Cualquier
+           otra cosa usa 'staff': los mismos adicionales pero nada obligatorio,
+           para poder sumarle una feta de cheddar a unas papas sin que el
+           sistema exija elegir "¿cómo querés las papas?" para una gaseosa. */
+        $setKey   = byr_option_set_for_category($prod['category']) ?? 'staff';
         $selected = is_array($in['options'] ?? null) ? $in['options'] : [];
         $opt      = byr_resolve_options($setKey, $selected);
         if (!$opt['ok']) {
@@ -115,7 +120,7 @@ try {
             json_out(['error' => 'Ese producto ya no existe: quitalo y agregá otro.'], 422);
         }
 
-        $setKey   = byr_option_set_for_category($prod['category']);
+        $setKey   = byr_option_set_for_category($prod['category']) ?? 'staff';
         $selected = is_array($in['options'] ?? null) ? $in['options'] : [];
         $opt      = byr_resolve_options($setKey, $selected);
         if (!$opt['ok']) {

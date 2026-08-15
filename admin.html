@@ -115,6 +115,12 @@
     .oa-opt-row input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: #4ee66d; }
     .oa-opt-name { flex: 1; font-weight: 700; font-size: .92rem; }
     .oa-opt-price { font-weight: 800; font-size: .85rem; color: #9bd1ff; white-space: nowrap; }
+    /* Adicionales con cantidad (dos fetas de cheddar, tres de panceta…) */
+    .oa-opt-row.is-on { background: rgba(78,230,109,.12); }
+    .oa-opt-step { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+    .oa-opt-stepnum { min-width: 20px; text-align: center; font-weight: 900; }
+    .oa-step-btn { width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: #fff; font-weight: 900; font-size: 1rem; line-height: 1; cursor: pointer; }
+    .oa-step-btn:hover { background: rgba(255,255,255,.18); }
     .oa-opt-note, .oa-opt-qty input { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); background: #16233a; color: #fff; font-weight: 700; }
     /* Pegado al pie: en una lista larga de adicionales, el botón de confirmar
        tiene que estar siempre a mano sin scrollear hasta el fondo. */

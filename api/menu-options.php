@@ -14,10 +14,18 @@
  *   options  [ { id, name, price(delta en $) } ]
  */
 
-/** Sets de opciones disponibles (hoy: 'burger'). */
+/**
+ * Sets de opciones disponibles.
+ *
+ *  'burger' — el que ve el cliente en pedir.html al pedir una hamburguesa.
+ *  'staff'  — el mismo, pero con NADA obligatorio. Es el que usa el panel para
+ *             editar un pedido: ahí se le puede sumar un adicional a cualquier
+ *             cosa (una gaseosa, unas papas), y no tendría sentido obligar a
+ *             elegir "¿cómo querés las papas?" para una Coca.
+ */
 function byr_option_sets(): array
 {
-    return [
+    $sets = [
         'burger' => [
             [
                 'id'       => 'papas',
@@ -71,6 +79,13 @@ function byr_option_sets(): array
             ],
         ],
     ];
+
+    $sets['staff'] = array_map(static function (array $g): array {
+        $g['required'] = false;
+        return $g;
+    }, $sets['burger']);
+
+    return $sets;
 }
 
 /** Qué set de opciones usa cada categoría (null = sin opciones, va directo al carrito). */
@@ -85,6 +100,11 @@ function byr_option_set_for_category(string $category): ?string
  * texto legible. Nunca confía en precios del cliente: los toma de acá.
  *
  * $selected: [ groupId => optionId(single) | [optionIds](multi) ]
+ *
+ * En los grupos 'multi' un id puede venir REPETIDO: así se piden dos fetas de
+ * cheddar (["cheddar","cheddar"]). Se cobra cada repetición y el texto sale
+ * como "Cheddar para hamburguesa x2".
+ *
  * Devuelve: ['ok'=>true,'delta'=>int,'text'=>string] o ['ok'=>false,'error'=>string]
  */
 function byr_resolve_options(?string $setKey, array $selected): array
@@ -123,14 +143,25 @@ function byr_resolve_options(?string $setKey, array $selected): array
             $parts[] = $byId[$sel]['name'];
         } else { // multi
             $arr = is_array($sel) ? $sel : ($sel !== null && $sel !== '' ? [$sel] : []);
-            $names = [];
+            /* Tope de cordura: nadie pide 60 adicionales en una hamburguesa. */
+            if (count($arr) > 60) {
+                return ['ok' => false, 'error' => 'Demasiados adicionales en "' . $g['title'] . '".'];
+            }
+
+            /* Se cuentan las repeticiones para cobrar cada una y mostrar "x2". */
+            $counts = [];
             foreach ($arr as $id) {
                 $id = (string) $id;
                 if (!isset($byId[$id])) {
                     return ['ok' => false, 'error' => 'Adicional inválido en "' . $g['title'] . '".'];
                 }
-                $delta  += (int) $byId[$id]['price'];
-                $names[] = $byId[$id]['name'];
+                $delta += (int) $byId[$id]['price'];
+                $counts[$id] = ($counts[$id] ?? 0) + 1;
+            }
+
+            $names = [];
+            foreach ($counts as $id => $n) {
+                $names[] = $byId[$id]['name'] . ($n > 1 ? ' x' . $n : '');
             }
             if ($names) {
                 $parts[] = implode(', ', $names);
