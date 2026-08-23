@@ -140,8 +140,23 @@
         Encontrá las 8 parejas para reclamar tu premio del día.
       </p>
 
-      <!-- Botón de QA: reiniciar el mismo día. Oculto en producción;
-           quitá el hidden para volver a probar el Memotest. -->
+      <!-- Aparece solo si el premio no se pudo guardar (sin conexión o
+           servidor caído). El tablero ya está resuelto: reintenta el
+           guardado, no vuelve a jugar la partida. -->
+      <button
+        class="retry-save-button"
+        id="retrySaveButton"
+        type="button"
+        hidden
+      >
+        Reintentar
+      </button>
+
+      <!-- Botón de QA: limpia la pista local y recarga. OJO: el límite de
+           1 partida por día ahora lo lleva el servidor (users.last_memory_play),
+           así que esto solo sirve si la partida de hoy sigue disponible.
+           Para volver a probar el mismo día hay que poner esa columna en NULL
+           desde phpMyAdmin. Oculto en producción: quitá el hidden para usarlo. -->
       <button
         class="test-reset-button"
         id="resetMemoryButton"

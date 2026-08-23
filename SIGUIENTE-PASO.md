@@ -1,17 +1,28 @@
 # Desde dónde arrancar
 
-Última sesión: **14/15 de agosto de 2026**, desde la PC del local.
+Última sesión: **23 de agosto de 2026**, desde la PC de casa.
 Todo lo de abajo ya está en GitHub y desplegado en byrclub.com.
 
-Antes que nada, en la PC de casa: **`git pull`**.
+Antes que nada, al cambiar de máquina: **`git pull`**.
 
 ---
 
-## ⚠️ Lo único que quedó pendiente de verdad
+## ⚠️ Migraciones pendientes (phpMyAdmin → base `u932188446_byrclub` → pestaña **SQL**)
 
-Falta correr **una migración** en phpMyAdmin (base `u932188446_byrclub`,
-pestaña **SQL**). Hasta que no se corra, el checkout **no le pregunta al
-cliente cómo va a pagar** — todo lo demás anda igual, no se rompe nada.
+**1. Memotest — límite diario (obligatoria para que el juego funcione).**
+Hasta que no se corra, el Memotest avisa "vuelve en un rato" y no deja jugar,
+a propósito: sin esta columna no se puede garantizar 1 partida por día.
+
+```sql
+ALTER TABLE users
+  ADD COLUMN last_memory_play DATE DEFAULT NULL AFTER last_roulette_spin;
+```
+
+(Está también en `api/migrations/2026-08-memory-daily.sql`.)
+
+**2. Cómo paga el cliente (viene de la sesión anterior).**
+Hasta que no se corra, el checkout **no le pregunta al cliente cómo va a
+pagar** — todo lo demás anda igual, no se rompe nada.
 
 ```sql
 ALTER TABLE orders
@@ -21,12 +32,43 @@ ALTER TABLE orders
 
 (Está también en `api/migrations/2026-08-payment-pref.sql`.)
 
-Las otras dos migraciones de esta sesión **ya las corriste**:
+Las de la sesión del local **ya las corriste**:
 `2026-08-print-jobs.sql` y `2026-08-delivery-fee.sql`.
 
 ---
 
-## Qué se hizo esta sesión
+## Sesión del 23 de agosto de 2026 (desde casa)
+
+### Memotest BYR — publicado, con el límite diario en el servidor
+
+El juego ya estaba entero y probado, escondido detrás de una tarjeta
+"Próximamente" en `juegos.html`. Ahora está **Disponible** (JUEGO 03) y el
+chip del hero dice 3 oportunidades.
+
+Antes de publicarlo se le arregló el agujero del "1 partida por día": ese
+límite vivía **solo en el navegador** (`localStorage`), así que borrando los
+datos del navegador o entrando desde otro celular se podía volver a jugar el
+mismo día y cobrar los puntos de nuevo. Ahora funciona como la ruleta:
+
+- `users.last_memory_play` guarda la fecha de la última partida.
+- `api/memory/status.php` (GET) dice si la partida de hoy sigue disponible.
+- `api/memory/finish.php` (POST) cierra la partida: chequea el día, **calcula
+  el premio ahí** (el navegador solo informa cuántos intentos hizo) y acredita
+  puntos y XP. Máximo posible: 120 puntos y 70 XP.
+- El `localStorage` quedó como pista para que no parpadee el tablero, pero
+  borrarlo ya no habilita otra partida.
+- Si se cae la red justo al terminar, aparece un botón **Reintentar**: el
+  tablero ya está resuelto, no hay que volver a jugar.
+
+**Lo que sigue sin poder verificar el servidor:** cuántos intentos declara el
+navegador. Alguien que sepa tocar la consola puede decir "lo hice en 8" y
+llevarse los 120 en vez de 60. Es una diferencia de 60 puntos, una vez por
+día. Cerrarlo del todo implica que el servidor arme el tablero y valide cada
+jugada — se puede hacer, pero es otro trabajo.
+
+---
+
+## Sesión anterior (14/15 de agosto, desde el local)
 
 ### 1. Impresión de comandas y tickets — ✅ andando en el local
 
@@ -89,9 +131,22 @@ pisable desde `config.php` con `'transfer_alias'`).
 
 ---
 
+## Para probar el Memotest (se puede desde casa)
+
+1. Correr la migración `2026-08-memory-daily.sql`.
+2. Entrar a **Juegos → Memotest BYR** y completar el tablero. Tiene que sumar
+   los puntos y mostrarlos en el perfil.
+3. **La prueba que importa:** borrar los datos del sitio en el navegador
+   (o abrir una ventana de incógnito) y volver a entrar al Memotest con la
+   misma cuenta. Tiene que decir *"Ya jugaste hoy"* con el tablero revelado,
+   y **no** tiene que volver a sumar puntos. Antes de este cambio, sumaba.
+4. Bonus: abrirlo en el celular con la misma cuenta → mismo resultado.
+
+---
+
 ## Para probar cuando vuelvas al local
 
-1. Correr la migración de arriba.
+1. Correr la migración de los medios de pago (la número 2 de arriba).
 2. Hacer un pedido de prueba desde el celular eligiendo **transferencia** →
    tiene que mostrar el alias BYRDOCKSUD.MP.
 3. Otro eligiendo **efectivo con $20.000** → el panel tiene que mostrar el

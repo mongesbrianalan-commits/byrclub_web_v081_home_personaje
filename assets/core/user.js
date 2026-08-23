@@ -70,6 +70,26 @@
     return JSON.parse(JSON.stringify(state));
   }
 
+  /*
+   * Reemplaza el estado completo por el que mandó el servidor.
+   * Lo usan los juegos que se resuelven del lado del servidor
+   * (el servidor ya sumó los puntos: acá solo nos ponemos al día,
+   * sin volver a sumar nada).
+   */
+  function replaceState(next) {
+    if (!next || typeof next !== "object") {
+      return false;
+    }
+
+    /* Guardamos y releemos: load() normaliza la forma del estado,
+       igual que cuando arranca la página. */
+    window.BYRStorage.save(next);
+    state = window.BYRStorage.load();
+    emitChange("server");
+
+    return true;
+  }
+
   function addXp(amount, reason = "XP ganado") {
     const safeAmount = Number(amount);
 
@@ -263,6 +283,7 @@ const reward = window.BYRPrizeRegistry?.getPrize(prize.id);
 
   window.BYRUser = {
   getState,
+  replaceState,
   getProgression,
   addXp,
   addPoints,

@@ -421,6 +421,21 @@ body {
   margin: 6px 0 4px;
 }
 
+/* Reintentar el guardado del premio (solo si falló la red). */
+.retry-save-button:not([hidden]) {
+  display: block;
+  margin: 12px auto 0;
+  padding: 10px 24px;
+  border-radius: var(--byr-radius-pill);
+  border: none;
+  background: linear-gradient(180deg, #ffe66c, var(--byr-yellow));
+  color: var(--byr-blue-950);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
 .test-reset-button:not([hidden]) {
   display: block;
   margin: 14px auto 0;

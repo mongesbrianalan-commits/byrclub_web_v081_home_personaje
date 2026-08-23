@@ -1,8 +1,15 @@
 (() => {
   "use strict";
 
+  /* La partida diaria la controla el SERVIDOR (api/memory/finish.php).
+     Estas dos claves son solo una pista local para no mostrar el tablero
+     jugable un segundo y tener que sacárselo cuando contesta el servidor:
+     borrarlas no habilita otra partida. */
   const STORAGE_KEY = "byr-memory-last-play";
   const RESULT_KEY = "byr-memory-result";
+
+  const STATUS_URL = "/api/memory/status.php";
+  const FINISH_URL = "/api/memory/finish.php";
 
   /* 8 parejas temáticas de BYR Club. */
   const CARD_ICONS = ["🍔", "🍟", "🥤", "⭐", "🎁", "💎", "🔥", "⚽"];
@@ -18,6 +25,7 @@
   const progressTitle = document.getElementById("progressTitle");
   const statusText = document.getElementById("memoryStatus");
   const resetButton = document.getElementById("resetMemoryButton");
+  const retryButton = document.getElementById("retrySaveButton");
 
   const characterImage = document.querySelector(".character-image");
 
@@ -37,6 +45,8 @@
   let moves = 0;
   let matchedPairs = 0;
   let isFinished = false;
+  let playedToday = false;
+  let isSaving = false;
 
   let timerId = null;
   let startTime = 0;
@@ -52,8 +62,21 @@
     ].join("-");
   }
 
-  function hasPlayedToday() {
-    return localStorage.getItem(STORAGE_KEY) === getTodayKey();
+  /* Le pregunta al servidor si la partida de hoy sigue disponible.
+     Devuelve null si no se pudo averiguar (sin conexión). */
+  async function fetchDailyStatus() {
+    try {
+      const res = await fetch(STATUS_URL, { credentials: "same-origin" });
+      const data = await res.json();
+
+      if (data && typeof data.playedToday === "boolean") {
+        return data;
+      }
+    } catch (error) {
+      /* sin conexión: nos quedamos con la pista local */
+    }
+
+    return null;
   }
 
   function shuffle(array) {
@@ -226,28 +249,6 @@
     lockBoard = false;
   }
 
-  function calculateReward() {
-    /* Base por completar + bonus por eficiencia (menos intentos = mejor). */
-    let points = 60;
-    let xp = 40;
-    let tier = "¡Tablero completado!";
-    let kicker = "¡Completaste el Memotest!";
-
-    if (moves <= TOTAL_PAIRS + 2) {
-      points += 60;
-      xp += 30;
-      tier = "¡Memoria de campeón!";
-      kicker = "¡Casi perfecto!";
-    } else if (moves <= TOTAL_PAIRS * 2) {
-      points += 30;
-      xp += 15;
-      tier = "¡Muy buena memoria!";
-      kicker = "¡Gran partida!";
-    }
-
-    return { points, xp, tier, kicker };
-  }
-
   function finishGame() {
     if (isFinished) {
       return;
@@ -257,22 +258,85 @@
     stopTimer();
     updateProgress();
 
-    const reward = calculateReward();
+    saveGame();
+  }
+
+  /* Cierra la partida contra el servidor: él controla que sea una por día,
+     calcula el premio y acredita los puntos. El cliente no decide nada de
+     eso, solo cuenta cuántos intentos hizo. */
+  async function saveGame() {
+    if (isSaving) {
+      return;
+    }
+
+    isSaving = true;
+    setRetryVisible(false);
+    statusText.textContent = "Guardando tu premio…";
 
     const previousState = window.BYRUser?.getState
       ? BYRUser.getState()
       : null;
+    const previousProgression = window.BYRUser?.getProgression
+      ? BYRUser.getProgression()
+      : null;
 
     const previousPoints = Number(previousState?.wallet?.points) || 0;
     const previousXp = Number(previousState?.progression?.xp) || 0;
-    const previousLevel = Number(previousState?.progression?.level) || 1;
+    const previousLevel = Number(previousProgression?.level) || 1;
 
-    if (window.BYRUser?.addPoints) {
-      BYRUser.addPoints(reward.points, "Memotest BYR");
+    let data;
+
+    try {
+      const res = await fetch(FINISH_URL, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moves, seconds: elapsedSeconds })
+      });
+
+      data = await res.json();
+
+      if (!res.ok) {
+        isSaving = false;
+
+        if (data && data.code === "already-played") {
+          /* Jugó en otro navegador o en otro celular. */
+          playedToday = true;
+          localStorage.setItem(STORAGE_KEY, getTodayKey());
+          statusText.textContent =
+            "Ya jugaste hoy. Mañana vas a tener una nueva partida.";
+          return;
+        }
+
+        statusText.textContent =
+          (data && data.error) ||
+          "No pudimos guardar tu premio. Probá de nuevo.";
+        setRetryVisible(true);
+        return;
+      }
+    } catch (error) {
+      isSaving = false;
+      statusText.textContent =
+        "Sin conexión: no pudimos guardar tu premio. Probá de nuevo.";
+      setRetryVisible(true);
+      return;
     }
 
-    if (window.BYRUser?.addXp) {
-      BYRUser.addXp(reward.xp, "Memotest BYR");
+    isSaving = false;
+
+    const reward = data.reward || {};
+
+    /* El servidor ya sumó puntos y XP: acá solo nos ponemos al día
+       con el estado que devolvió (no volvemos a sumar nada). */
+    if (data.state && window.BYRUser?.replaceState) {
+      BYRUser.replaceState(data.state);
+    } else if (data.state && window.BYRStorage?.save) {
+      window.BYRStorage.save(data.state);
+    }
+
+    window.dispatchEvent(new CustomEvent("byr:user-updated"));
+    if (window.BYRAppShell?.sync) {
+      BYRAppShell.sync();
     }
 
     if (window.BYRMissionEngine?.track) {
@@ -292,6 +356,7 @@
       completedAt: new Date().toISOString()
     };
 
+    playedToday = true;
     localStorage.setItem(STORAGE_KEY, getTodayKey());
     localStorage.setItem(RESULT_KEY, JSON.stringify(result));
 
@@ -335,9 +400,13 @@
     }
 
     const updatedState = BYRUser.getState();
+    const updatedProgression = window.BYRUser?.getProgression
+      ? BYRUser.getProgression()
+      : null;
+
     const updatedPoints = Number(updatedState?.wallet?.points) || 0;
     const updatedXp = Number(updatedState?.progression?.xp) || 0;
-    const updatedLevel = Number(updatedState?.progression?.level) || 1;
+    const updatedLevel = Number(updatedProgression?.level) || 1;
 
     BYRHUD.updatePoints({
       from: previousPoints,
@@ -444,24 +513,98 @@
       "Ya jugaste hoy. Mañana vas a tener una nueva partida.";
   }
 
+  /* Deja el tablero listo para una partida nueva. */
+  function startFreshBoard() {
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+    moves = 0;
+    matchedPairs = 0;
+    isFinished = false;
+    elapsedSeconds = 0;
+    stopTimer();
+    timeValue.textContent = formatTime(0);
+
+    buildBoard(false);
+    updateProgress();
+  }
+
+  function setRetryVisible(visible) {
+    if (retryButton) {
+      retryButton.hidden = !visible;
+    }
+  }
+
   function resetGame() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(RESULT_KEY);
     window.location.reload();
   }
 
-  function initializeGame() {
-    if (hasPlayedToday()) {
+  async function initializeGame() {
+    /* Arrancamos con la pista local para que no parpadee el tablero, pero
+       la palabra final sobre "ya jugaste hoy" la tiene el servidor. */
+    playedToday = localStorage.getItem(STORAGE_KEY) === getTodayKey();
+
+    if (playedToday) {
       loadCompletedState();
+    } else {
+      startFreshBoard();
+      lockBoard = true; /* hasta que el servidor confirme */
+      statusText.textContent = "Preparando tu partida…";
+    }
+
+    const status = await fetchDailyStatus();
+
+    if (!status) {
+      /* Sin conexión: dejamos jugar. Si al terminar sigue sin haber red,
+         el premio no se guarda y se avisa con el botón de reintentar. */
+      if (!playedToday) {
+        lockBoard = false;
+        statusText.textContent =
+          "Encontrá las 8 parejas para reclamar tu premio del día.";
+      }
       return;
     }
 
-    buildBoard(false);
-    updateProgress();
+    if (status.ready === false) {
+      /* Falta correr la migración: mejor avisar antes que dejar jugar
+         una partida entera y no poder acreditar el premio. */
+      lockBoard = true;
+      statusText.textContent =
+        "El Memotest vuelve en un rato. Mientras tanto, probá la ruleta o la raspadita.";
+      return;
+    }
+
+    if (status.playedToday) {
+      if (!playedToday) {
+        playedToday = true;
+        localStorage.setItem(STORAGE_KEY, getTodayKey());
+        loadCompletedState();
+      }
+      return;
+    }
+
+    if (playedToday) {
+      /* El servidor dice que la partida de hoy sigue disponible (cambió el
+         día, o la pista local quedó vieja): tablero nuevo. */
+      playedToday = false;
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(RESULT_KEY);
+      startFreshBoard();
+    }
+
+    lockBoard = false;
+    statusText.textContent =
+      "Encontrá las 8 parejas para reclamar tu premio del día.";
   }
 
   closeWinOverlay.addEventListener("click", closeOverlay);
   resetButton.addEventListener("click", resetGame);
+
+  if (retryButton) {
+    retryButton.addEventListener("click", saveGame);
+  }
 
   winOverlay.addEventListener("click", (event) => {
     if (event.target === winOverlay) {

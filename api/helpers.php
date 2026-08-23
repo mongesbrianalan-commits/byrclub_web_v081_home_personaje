@@ -108,6 +108,25 @@ function byr_payment_pref_ready(PDO $pdo): bool
     return $ready;
 }
 
+/**
+ * ¿Está corrida la migración del límite diario del Memotest
+ * (2026-08-memory-daily.sql)? Sin esa columna no se puede garantizar
+ * "1 partida por día", así que el juego avisa en vez de repartir puntos
+ * que se podrían cobrar dos veces. Cachea el resultado.
+ */
+function byr_memory_daily_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $ready = (bool) $pdo->query("SHOW COLUMNS FROM users LIKE 'last_memory_play'")->fetch();
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
 /** Emite una respuesta JSON y corta la ejecución. */
 function json_out($data, int $code = 200): void
 {
@@ -234,6 +253,8 @@ function public_user(array $row): array
         'referredBy'   => isset($row['referred_by']) ? (int) $row['referred_by'] : null,
         'lastRouletteSpin' => $row['last_roulette_spin'] ?? null,
         'rouletteSpunToday' => (($row['last_roulette_spin'] ?? null) === date('Y-m-d')),
+        'lastMemoryPlay'    => $row['last_memory_play'] ?? null,
+        'memoryPlayedToday' => (($row['last_memory_play'] ?? null) === date('Y-m-d')),
         'state'        => $state,
     ];
 }
