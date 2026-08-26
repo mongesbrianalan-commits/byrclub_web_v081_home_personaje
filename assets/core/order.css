@@ -219,20 +219,6 @@
 .opt-row input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--yellow); cursor: pointer; }
 .opt-row-name { flex: 1; font-weight: 700; }
 .opt-row-price { color: #9bd1ff; font-weight: 800; font-size: .9rem; white-space: nowrap; }
-
-/* --- Adicionales con cantidad -------------------------------------------
-   Los grupos 'multi' (papas, bebida, extras) dejaron de ser una tilde: ahora
-   cada opción tiene su −/+ para pedir dos Cocas o tres porciones de papas.
-   La fila se resalta cuando lleva al menos uno, para verlo de un vistazo. */
-.opt-row-qty { justify-content: space-between; cursor: default; }
-.opt-row-qty.is-on { background: rgba(255,213,31,.14); }
-.opt-row-qty .opt-row-name { flex: 1; }
-.opt-qty { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
-.opt-qty-btn { width: 32px; height: 32px; border: 0; border-radius: 10px; background: var(--blue-600); color: #fff; font-size: 1.1rem; font-weight: 900; line-height: 1; cursor: pointer; display: grid; place-items: center; }
-.opt-qty-btn:disabled { opacity: .35; cursor: default; }
-.opt-qty-btn:not(:disabled):hover { transform: translateY(-1px); }
-.opt-qty-num { min-width: 22px; text-align: center; font-family: "Lilita One"; font-size: 1.1rem; }
-
 .opt-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.2); }
 .opt-total { display: flex; flex-direction: column; line-height: 1.1; }
 .opt-total span { font-weight: 800; text-transform: uppercase; font-size: .72rem; color: #9bd1ff; }
@@ -426,6 +412,3 @@ body.order-light .success-contact b { color: #14532d; }
 
 /* El velo del panel de éxito, en claro. */
 body.order-light .order-success { background: rgba(11, 31, 82, .45); }
-
-/* Los adicionales con cantidad, en claro. */
-body.order-light .opt-row-qty.is-on { background: #fff6d6; }
