@@ -1,6 +1,6 @@
 # Desde dónde arrancar
 
-Última sesión: **23 de agosto de 2026**, desde la PC de casa.
+Última sesión: **26 de agosto de 2026**, desde la PC de casa.
 Todo lo de abajo ya está en GitHub y desplegado en byrclub.com.
 
 Antes que nada, al cambiar de máquina: **`git pull`**.
@@ -20,7 +20,19 @@ ALTER TABLE users
 
 (Está también en `api/migrations/2026-08-memory-daily.sql`.)
 
-**2. Cómo paga el cliente (viene de la sesión anterior).**
+**2. Raspadita — límite diario (obligatoria para que el juego funcione).**
+Hasta que no se corra, la raspadita avisa "vuelve en un rato" y no deja
+jugar, a propósito: sin esa columna el límite volvería al navegador, que es
+justo el agujero que se cerró.
+
+```sql
+ALTER TABLE users
+  ADD COLUMN last_scratch_play DATE DEFAULT NULL AFTER last_roulette_spin;
+```
+
+(Está también en `api/migrations/2026-08-scratch-daily.sql`.)
+
+**3. Cómo paga el cliente (viene de dos sesiones atrás).**
 Hasta que no se corra, el checkout **no le pregunta al cliente cómo va a
 pagar** — todo lo demás anda igual, no se rompe nada.
 
@@ -34,6 +46,53 @@ ALTER TABLE orders
 
 Las de la sesión del local **ya las corriste**:
 `2026-08-print-jobs.sql` y `2026-08-delivery-fee.sql`.
+
+---
+
+## Sesión del 26 de agosto de 2026 (desde casa)
+
+### Raspadita — el premio lo sortea el servidor
+
+Bug reportado: **raspabas, no reclamabas, refrescabas y volvías a jugar.**
+Era cierto, y bastante peor de lo que parecía.
+
+La marca de "ya jugué hoy" se escribía **dentro de `claimPrize()`**, o sea
+recién al reclamar. Si no reclamabas, no se escribía nada. Y como el premio
+se sorteaba **en el navegador**, cada carga de la página sorteaba de nuevo:
+refrescando hasta que saliera el Cheese Burger, la raspadita dejaba de ser
+un sorteo y pasaba a ser un menú.
+
+Aun reclamando, el límite vivía en `localStorage`: borrando los datos del
+navegador se volvía a jugar. Los **vales canjeables** ya estaban topeados a
+uno por día, así que papas/bebida/sorpresa/cheeseburger no se podían
+farmear — pero los **puntos** sí, sin límite.
+
+Ahora funciona como la ruleta y el memotest:
+
+- `users.last_scratch_play` guarda la fecha de la última raspadita.
+- `api/scratch/catalog.php` tiene la tabla de premios y sus pesos. Es la
+  única fuente de verdad; el navegador ya no tiene catálogo propio.
+- `api/scratch/status.php` (GET) dice si la raspadita de hoy sigue
+  disponible y, si ya se jugó, **cuál fue el premio** — así refrescar
+  repinta el mismo cartón (con su código) en vez de repartir otro.
+- `api/scratch/play.php` (POST) se llama **una sola vez, en el primer
+  raspón**: sortea, marca el día, acredita puntos/XP y emite el vale.
+  Corre dentro de una transacción con la fila del usuario bloqueada, así
+  que disparar dos peticiones a la vez tampoco cobra dos veces.
+- El botón **Reclamar premio** ya no otorga nada: es el festejo. Abre el
+  overlay con el premio y el código. Se puede tocar de nuevo para volver a
+  ver el código del día.
+- Se borró `api/redemptions/create.php`. Quedó sin usar, y dejarlo puesto
+  reabría el mismo agujero por otra puerta: cualquiera logueado podía
+  pedirle un vale de Cheese Burger sin jugar.
+
+**Lo que el arreglo NO cubre:** `api/state.php` sigue guardando el estado
+que le manda el navegador (está escrito así desde el principio, y lo dice
+su propio comentario). Alguien que sepa abrir la consola puede mandarse
+puntos directamente, sin pasar por ningún juego. Esta sesión cerró el
+agujero que encuentra un usuario normal — refrescar la página —, no ese.
+Cerrarlo del todo es rehacer el state-sync para que el servidor sea dueño
+del estado: es un trabajo grande y toca todos los juegos, no solo este.
 
 ---
 
@@ -131,6 +190,21 @@ pisable desde `config.php` con `'transfer_alias'`).
 
 ---
 
+## Para probar la raspadita (se puede desde casa)
+
+1. Correr la migración `2026-08-scratch-daily.sql`.
+2. Entrar a **Juegos → Raspadita** y raspar el cartón. Tiene que revelar un
+   premio y sumar los puntos en el perfil.
+3. **La prueba del bug reportado:** raspar hasta que aparezca el premio y
+   **no** tocar "Reclamar". Refrescar la página (F5). Tiene que aparecer
+   *"Ya jugaste hoy"* con **el mismo premio** ya revelado. Antes de este
+   cambio salía un cartón nuevo con otro premio.
+4. **La otra prueba:** borrar los datos del sitio en el navegador (o abrir
+   una ventana de incógnito) y volver a entrar con la misma cuenta. Mismo
+   resultado: el premio de hoy, sin sumar de nuevo.
+5. Si toca un premio canjeable, el botón queda como **"Ver mi código"** y
+   el código tiene que poder validarse desde el panel de admin.
+
 ## Para probar el Memotest (se puede desde casa)
 
 1. Correr la migración `2026-08-memory-daily.sql`.
@@ -158,6 +232,12 @@ pisable desde `config.php` con `'transfer_alias'`).
 
 ## Decisiones que quedaron abiertas
 
+- **El estado de juego lo sigue mandando el navegador** (`api/state.php`).
+  Es la decisión de fondo que queda abierta: mientras siga así, alguien con
+  la consola abierta puede acreditarse puntos sin jugar a nada, y ningún
+  arreglo por juego lo tapa. Rehacerlo es que el servidor sea dueño del
+  estado y que el cliente solo lo lea. Es el trabajo más grande de la lista,
+  pero es el que cierra la familia entera de estos bugs.
 - **El campo "¿con cuánto pagás?"** lo agregó Claude por su cuenta (vos
   pediste solo los dos medios de pago). Si ensucia el formulario, se saca en
   un minuto.

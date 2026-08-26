@@ -127,6 +127,27 @@ function byr_memory_daily_ready(PDO $pdo): bool
     return $ready;
 }
 
+/**
+ * ¿Está corrida la migración del límite diario de la Raspadita
+ * (2026-08-scratch-daily.sql)? Sin esa columna no se puede garantizar
+ * "una raspadita por día": el límite viviría solo en el navegador y
+ * refrescando la página se podría volver a jugar (y hasta elegir el
+ * premio). Mientras falte, el juego avisa en vez de repartir puntos.
+ * Cachea el resultado.
+ */
+function byr_scratch_daily_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $ready = (bool) $pdo->query("SHOW COLUMNS FROM users LIKE 'last_scratch_play'")->fetch();
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
 /** Emite una respuesta JSON y corta la ejecución. */
 function json_out($data, int $code = 200): void
 {
@@ -255,6 +276,8 @@ function public_user(array $row): array
         'rouletteSpunToday' => (($row['last_roulette_spin'] ?? null) === date('Y-m-d')),
         'lastMemoryPlay'    => $row['last_memory_play'] ?? null,
         'memoryPlayedToday' => (($row['last_memory_play'] ?? null) === date('Y-m-d')),
+        'lastScratchPlay'   => $row['last_scratch_play'] ?? null,
+        'scratchPlayedToday' => (($row['last_scratch_play'] ?? null) === date('Y-m-d')),
         'state'        => $state,
     ];
 }

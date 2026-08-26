@@ -1,8 +1,16 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "byr-scratch-last-play";
-  const RESULT_KEY = "byr-scratch-result";
+  /* El límite diario y el sorteo ya no viven acá (ver el bloque grande de
+     abajo). Estas dos claves quedaron de la versión vieja: las borramos
+     una vez para no dejar basura en el navegador de nadie. */
+  try {
+    localStorage.removeItem("byr-scratch-last-play");
+    localStorage.removeItem("byr-scratch-result");
+  } catch (error) {
+    /* modo privado sin storage: da igual */
+  }
+
   const REVEAL_THRESHOLD = 60;
   const BRUSH_RADIUS = 31;
 
@@ -46,142 +54,164 @@ const characterImage = document.querySelector(".character-image");
   const winCodeCopy = document.getElementById("scratchWinCodeCopy");
   const confetti = document.getElementById("confetti");
 
-  const scratchPrizes = [
-    {
-      id: "points-50",
-      label: "50 puntos",
-      icon: "⭐",
-      xp: 25,
-      weight: 32
-    },
-    {
-      id: "points-100",
-      label: "100 puntos",
-      icon: "💯",
-      xp: 35,
-      weight: 23
-    },
-    {
-      id: "points-250",
-      label: "250 puntos",
-      icon: "🏆",
-      xp: 50,
-      weight: 8
-    },
-    {
-      id: "fries",
-      label: "Papas gratis",
-      icon: "🍟",
-      xp: 20,
-      weight: 15
-    },
-    {
-      id: "drink",
-      label: "Bebida gratis",
-      icon: "🥤",
-      xp: 20,
-      weight: 14
-    },
-    {
-      id: "surprise",
-      label: "Premio sorpresa",
-      icon: "🎁",
-      xp: 25,
-      weight: 6
-    },
-    {
-      id: "cheese-burger",
-      label: "Cheese Burger gratis",
-      icon: "🧀",
-      xp: 35,
-      weight: 5
-    },
-    {
-      id: "badge",
-      label: "Insignia exclusiva",
-      icon: "💎",
-      xp: 40,
-      weight: 2
-    }
-  ];
+  /* ------------------------------------------------------------------
+     El premio lo decide el SERVIDOR (api/scratch/play.php).
+
+     Antes el catálogo y el sorteo vivían acá, en el navegador, y la marca
+     de "ya jugué hoy" se escribía recién al reclamar. Resultado: raspar y
+     refrescar sorteaba un cartón nuevo, así que refrescando hasta que
+     saliera el premio deseado la raspadita dejaba de ser un sorteo. Y aun
+     reclamando, el límite era localStorage: borrando los datos del
+     navegador se volvían a cobrar los puntos.
+
+     Ahora el navegador no elige nada: pide el cartón y lo dibuja.
+     ------------------------------------------------------------------ */
+  const STATUS_URL = "/api/scratch/status.php";
+  const PLAY_URL = "/api/scratch/play.php";
 
   let selectedPrize = null;
   let isDrawing = false;
   let isRevealed = false;
   let isClaimed = false;
-  let isClaiming = false;
+  let isBlocked = false;
   let lastPoint = null;
   let progressCheckTimer = null;
   let lastScratchSoundAt = 0;
 
-  function getTodayKey() {
-    const now = new Date();
+  /* Petición del cartón de hoy: se dispara UNA vez, en el primer raspón. */
+  let playRequest = null;
 
-    return [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0")
-    ].join("-");
-  }
+  /* Nivel del socio, para saber si la acreditación lo hizo subir. */
+  let currentLevel = 1;
+  let leveledUp = false;
 
-  function hasPlayedToday() {
-    return localStorage.getItem(STORAGE_KEY) === getTodayKey();
-  }
-
-  function chooseWeightedPrize() {
-    const totalWeight = scratchPrizes.reduce(
-      (total, prize) => total + prize.weight,
-      0
-    );
-
-    let randomValue = Math.random() * totalWeight;
-
-    for (const prize of scratchPrizes) {
-      randomValue -= prize.weight;
-
-      if (randomValue <= 0) {
-        return prize;
-      }
-    }
-
-    return scratchPrizes[0];
-  }
-
-  function generatePrizeCode() {
-    const randomPart = Math.random()
-      .toString(36)
-      .slice(2, 7)
-      .toUpperCase();
-
-    return `SCR-${Date.now().toString().slice(-5)}-${randomPart}`;
-  }
-
-  /* Premios que se retiran en el local (llevan vale con código). Los de puntos
-     y la insignia no necesitan código. */
-  const REDEEMABLE_SCRATCH_IDS = new Set([
-    "fries",
-    "drink",
-    "surprise",
-    "cheese-burger"
-  ]);
-
-  /* Para los premios canjeables pedimos el código AL SERVIDOR: así queda
-     registrado en la base y el admin lo puede validar (antes el código se
-     generaba solo en el navegador y no existía en la base). Si el servidor no
-     responde, se usa el código local como fallback para no trabar el juego. */
-  async function requestServerCode(prizeId) {
+  /* Le pregunta al servidor si la raspadita de hoy sigue disponible, y si
+     ya se jugó, cuál fue el premio (para repintarlo con su código).
+     Devuelve null si no se pudo averiguar (sin conexión). */
+  async function fetchDailyStatus() {
     try {
-      const res = await fetch("/api/redemptions/create.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ prizeId, source: "scratch" })
-      });
+      const res = await fetch(STATUS_URL, { credentials: "same-origin" });
       const data = await res.json();
-      return data && data.code ? data.code : null;
+
+      if (data && typeof data.playedToday === "boolean") {
+        return data;
+      }
     } catch (error) {
-      return null;
+      /* sin conexión */
     }
+
+    return null;
+  }
+
+  /* Pide el cartón: el servidor sortea, marca el día y acredita puntos/XP
+     (y emite el vale si el premio se retira en el local). */
+  async function requestCard() {
+    const res = await fetch(PLAY_URL, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const error = new Error(
+        (data && data.error) || "No pudimos preparar tu raspadita."
+      );
+      error.code = data && data.code;
+      throw error;
+    }
+
+    return data;
+  }
+
+  /* Arranca la petición del cartón una sola vez. El cartón sigue tapado
+     mientras tanto, así que la espera de red no se ve. */
+  function ensureCard() {
+    if (playRequest) {
+      return playRequest;
+    }
+
+    playRequest = requestCard()
+      .then((data) => {
+        selectedPrize = data.prize;
+        renderPrize();
+        applyServerState(data.state);
+
+        /* La raspadita ya cuenta como jugada: el servidor acreditó. No
+           esperamos al botón de festejo para registrar logros y misiones.
+           (`reused` = reintento sobre el mismo cartón, no se cuenta dos veces.) */
+        if (!data.reused) {
+          if (window.BYRMissionEngine?.track) {
+            BYRMissionEngine.track("scratch");
+            BYRMissionEngine.track("game");
+          }
+
+          if (window.BYRAchievementEngine?.track) {
+            BYRAchievementEngine.track("scratch");
+          }
+        }
+
+        return data;
+      })
+      .catch((error) => {
+        playRequest = null; /* deja reintentar en el próximo raspón */
+        throw error;
+      });
+
+    return playRequest;
+  }
+
+  function readLevel() {
+    return window.BYRUser?.getProgression
+      ? Number(BYRUser.getProgression()?.level) || 1
+      : 1;
+  }
+
+  /* El servidor ya sumó puntos y XP: acá solo nos ponemos al día con el
+     estado que devolvió (no volvemos a sumar nada del lado del cliente). */
+  function applyServerState(state) {
+    if (!state) {
+      return;
+    }
+
+    const previousLevel = readLevel();
+
+    if (window.BYRUser?.replaceState) {
+      BYRUser.replaceState(state);
+    } else if (window.BYRStorage?.save) {
+      window.BYRStorage.save(state);
+    }
+
+    window.dispatchEvent(new CustomEvent("byr:user-updated"));
+
+    if (window.BYRAppShell?.sync) {
+      BYRAppShell.sync();
+    }
+
+    currentLevel = readLevel();
+    leveledUp = currentLevel > previousLevel;
+
+    if (window.BYRHUD?.sync) {
+      BYRHUD.sync({ duration: 950 });
+    }
+  }
+
+  /* No se pudo pedir el cartón: sin red, o el socio ya jugó desde otro
+     navegador o celular. En los dos casos hay que frenar el raspado. */
+  function handleCardError(error) {
+    if (error && error.code === "already-played") {
+      blockScratching(
+        "Ya jugaste hoy. Mañana vas a tener una nueva oportunidad."
+      );
+      return;
+    }
+
+    blockScratching(
+      (error && error.message) ||
+        "No pudimos preparar tu raspadita. Actualizá la página."
+    );
   }
 
   function generateTicketNumber() {
@@ -376,9 +406,13 @@ const characterImage = document.querySelector(".character-image");
 }
 
   function startDrawing(event) {
-    if (isRevealed || hasPlayedToday()) {
+    if (isRevealed || isBlocked) {
       return;
     }
+
+    /* Primer raspón: acá el servidor sortea el premio, marca el día y
+       acredita. En los raspones siguientes ensureCard() no pide nada más. */
+    ensureCard().catch(handleCardError);
 
     event.preventDefault();
 
@@ -494,7 +528,20 @@ function stopDrawing() {
   }
 
   function revealPrize() {
-    if (isRevealed) {
+    if (isRevealed || isBlocked) {
+      return;
+    }
+
+    /* El premio lo decide el servidor. Si todavía no contestó, esperamos:
+       no podemos destapar un cartón vacío. */
+    if (!selectedPrize) {
+      progressTitle.textContent = "¡Ya falta poco!";
+      statusText.textContent = "Descubriendo tu premio…";
+
+      ensureCard()
+        .then(revealPrize)
+        .catch(handleCardError);
+
       return;
     }
 
@@ -540,159 +587,82 @@ window.setTimeout(() => {
     progressTitle.textContent = "¡Premio descubierto!";
 
     claimButton.disabled = false;
-    statusText.textContent = "¡Lo encontraste! Ahora reclamá tu premio.";
+    statusText.textContent = "¡Lo encontraste! Tocá para ver tu premio.";
   }
 
-  async function claimPrize() {
-    if (!isRevealed || isClaimed || isClaiming || hasPlayedToday()) {
+  /* El premio ya lo sorteó y acreditó el servidor en el primer raspón, así
+     que este botón no otorga nada: es el festejo. Abre el overlay con el
+     premio y, si se retira en el local, con su código.
+
+     Se puede tocar más de una vez (sirve para volver a ver el código del
+     día); el festejo con confeti y las partículas salen solo la primera. */
+  function claimPrize() {
+    if (!isRevealed || !selectedPrize) {
       return;
     }
-    isClaiming = true;
-    claimButton.disabled = true;
 
-    // Por defecto usamos un código local; para los premios canjeables lo
-    // reemplazamos por el que emite el servidor (validable por el admin).
-    let prizeCode = generatePrizeCode();
-    if (REDEEMABLE_SCRATCH_IDS.has(selectedPrize.id)) {
-      statusText.textContent = "Generando tu código…";
-      const serverCode = await requestServerCode(selectedPrize.id);
-      if (serverCode) {
-        prizeCode = serverCode;
+    const firstTime = !isClaimed;
+    isClaimed = true;
+
+    if (firstTime) {
+      if (window.BYREffects) {
+        BYREffects.prize(selectedPrize);
+
+        if (selectedPrize.points) {
+          BYREffects.points(selectedPrize.points, {
+            x: window.innerWidth / 2,
+            y: window.innerHeight * 0.68
+          });
+        }
+
+        if (selectedPrize.xp) {
+          window.setTimeout(() => {
+            BYREffects.xp(selectedPrize.xp, {
+              x: window.innerWidth / 2,
+              y: window.innerHeight * 0.72
+            });
+          }, 350);
+        }
+      }
+
+      if (leveledUp) {
+        window.setTimeout(() => {
+          if (window.BYRHUD) {
+            BYRHUD.updateLevel(currentLevel);
+          }
+
+          if (window.BYREffects) {
+            BYREffects.levelUp(currentLevel);
+          }
+        }, 900);
       }
     }
 
-const previousState = window.BYRUser?.getState
-  ? BYRUser.getState()
-  : null;
-
-const previousPoints =
-  Number(previousState?.wallet?.points) || 0;
-
-const previousXp =
-  Number(previousState?.progression?.xp) || 0;
-
-const previousLevel =
-  Number(previousState?.progression?.level) || 1;
-    const claimed = window.BYRUser?.claimPrize(
-      {
-        id: selectedPrize.id,
-        label: selectedPrize.label,
-        code: prizeCode
-      },
-      "Raspadita diaria"
-    );
-
-    if (!claimed) {
-      statusText.textContent =
-        "No se pudo registrar el premio. Revisá la consola.";
-      isClaiming = false;
-      claimButton.disabled = false;
-      return;
-    }
-
-    if (window.BYRAchievementEngine?.track) {
-  BYRAchievementEngine.track("scratch");
-}
-
-if (window.BYRMissionEngine?.track) {
-  BYRMissionEngine.track("scratch");
-  BYRMissionEngine.track("game");
-}
-
-    isClaimed = true;
-
-    const result = {
-      prize: selectedPrize,
-      code: prizeCode,
-      claimedAt: new Date().toISOString()
-    };
-
-    localStorage.setItem(STORAGE_KEY, getTodayKey());
-    localStorage.setItem(RESULT_KEY, JSON.stringify(result));
-
-    claimButton.disabled = true;
-    claimButton.textContent = "Premio reclamado";
+    claimButton.textContent = selectedPrize.code
+      ? "Ver mi código"
+      : "Ver mi premio";
 
     statusText.textContent =
       "Tu premio ya está guardado en tu perfil de BYR Club.";
-      if (window.BYREffects) {
-  BYREffects.prize(selectedPrize);
 
-  if (selectedPrize.type === "points" && selectedPrize.amount) {
-    BYREffects.points(selectedPrize.amount, {
-      x: window.innerWidth / 2,
-      y: window.innerHeight * 0.68
-    });
-  }
-
-  if (selectedPrize.xp) {
-    window.setTimeout(() => {
-      BYREffects.xp(selectedPrize.xp, {
-        x: window.innerWidth / 2,
-        y: window.innerHeight * 0.72
-      });
-    }, 350);
-  }
-}
-
-if (window.BYRHUD && window.BYRUser?.getState) {
-  const updatedState = BYRUser.getState();
-
-  const updatedPoints =
-    Number(updatedState?.wallet?.points) || 0;
-
-  const updatedXp =
-    Number(updatedState?.progression?.xp) || 0;
-
-  const updatedLevel =
-    Number(updatedState?.progression?.level) || 1;
-
-  BYRHUD.updatePoints({
-    from: previousPoints,
-    to: updatedPoints,
-    duration: 950
-  });
-
-  window.setTimeout(() => {
-    BYRHUD.updateXp({
-      from: previousXp,
-      to: updatedXp,
-      duration: 950
-    });
-
-    BYRHUD.sync({
-      duration: 950
-    });
-  }, 250);
-
-  if (updatedLevel > previousLevel) {
-    window.setTimeout(() => {
-      BYRHUD.updateLevel(updatedLevel);
-
-      if (window.BYREffects) {
-        BYREffects.levelUp(updatedLevel);
-      }
-    }, 900);
-  }
-}
-
-    showWinOverlay(prizeCode);
+    showWinOverlay(selectedPrize.code);
   }
 
   function showWinOverlay(code) {
     winPrizeIcon.textContent = selectedPrize.icon;
     winPrizeTitle.textContent = selectedPrize.label;
 
-    // Mostramos el código solo para los premios que se retiran en el local.
+    /* El código sale solo para los premios que se retiran en el local.
+       Quién es canjeable lo dice el servidor, no una lista del navegador. */
     if (winCode) {
-      const redeemable = REDEEMABLE_SCRATCH_IDS.has(selectedPrize.id) && code;
-      if (redeemable) {
+      if (selectedPrize.redeemable && code) {
         winCodeValue.textContent = code;
         winCode.hidden = false;
       } else {
         winCode.hidden = true;
       }
     }
+
     winPrizeXp.textContent = `+${selectedPrize.xp} XP sumados`;
 
     winOverlay.classList.add("is-visible");
@@ -748,64 +718,98 @@ if (window.BYRHUD && window.BYRUser?.getState) {
     }
   }
 
-  function loadCompletedState() {
-    const savedResult = localStorage.getItem(RESULT_KEY);
-
-    if (!savedResult) {
+  /* Repinta el cartón de hoy ya revelado, con el premio que dice el
+     SERVIDOR. Se usa cuando el socio vuelve a entrar después de haber
+     jugado: refrescar la página no reparte un cartón nuevo. */
+  function loadCompletedState(prize) {
+    if (!prize) {
       return;
     }
 
-    try {
-      const result = JSON.parse(savedResult);
+    selectedPrize = prize;
+    renderPrize();
 
-      if (!result.prize) {
-        return;
-      }
+    isRevealed = true;
+    isClaimed = true;
 
-      selectedPrize = result.prize;
-      renderPrize();
+    canvas.style.opacity = "0";
+    canvas.style.pointerEvents = "none";
 
-      isRevealed = true;
-      isClaimed = true;
+    scratchHint.classList.add("is-hidden");
+    scratchTicket.classList.add("is-revealed");
 
-      canvas.style.opacity = "0";
-      canvas.style.pointerEvents = "none";
+    progressBar.style.width = "100%";
+    progressText.textContent = "100% revelado";
+    progressTitle.textContent = "Premio de hoy";
 
-      scratchHint.classList.add("is-hidden");
+    claimButton.disabled = false;
+    claimButton.textContent = prize.code ? "Ver mi código" : "Ver mi premio";
 
-      progressBar.style.width = "100%";
-      progressText.textContent = "100% revelado";
-      progressTitle.textContent = "Premio de hoy";
-
-      claimButton.disabled = true;
-      claimButton.textContent = "Premio reclamado";
-
-      statusText.textContent =
-        "Ya jugaste hoy. Mañana vas a tener una nueva oportunidad.";
-    } catch (error) {
-      console.error("No se pudo recuperar la raspadita:", error);
-    }
+    statusText.textContent =
+      "Ya jugaste hoy. Mañana vas a tener una nueva oportunidad.";
   }
 
-  function resetScratch() {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(RESULT_KEY);
+  /* Frena el raspado y explica por qué. */
+  function blockScratching(message) {
+    isBlocked = true;
+    isDrawing = false;
 
+    canvas.style.pointerEvents = "none";
+    coinCursor.classList.remove("is-visible");
+    scratchHint.classList.add("is-hidden");
+
+    claimButton.disabled = true;
+    statusText.textContent = message;
+  }
+
+  /* Botón oculto de prueba: recarga la página. El límite diario lo pone
+     ahora el servidor, así que esto ya no habilita otra raspadita. */
+  function resetScratch() {
     window.location.reload();
   }
 
-  function initializeGame() {
+  async function initializeGame() {
     generateTicketNumber();
-
-    selectedPrize = chooseWeightedPrize();
-    renderPrize();
-
     resizeCanvas();
 
-    if (hasPlayedToday()) {
-      loadCompletedState();
+    /* El cartón arranca tapado y sin premio: quién gana qué lo decide el
+       servidor en el primer raspón. */
+    canvas.style.pointerEvents = "none";
+    statusText.textContent = "Preparando tu raspadita…";
+
+    const status = await fetchDailyStatus();
+
+    if (!status) {
+      blockScratching(
+        "Sin conexión: no pudimos preparar tu raspadita. Actualizá la página."
+      );
       return;
     }
+
+    if (status.ready === false) {
+      /* Falta correr la migración del límite diario: mejor avisar antes
+         que dejar raspar un cartón que no se va a poder acreditar. */
+      blockScratching(
+        "La raspadita vuelve en un rato. Mientras tanto, probá la ruleta o el memotest."
+      );
+      return;
+    }
+
+    if (status.playedToday) {
+      if (status.prize) {
+        loadCompletedState(status.prize);
+      } else {
+        blockScratching(
+          "Ya jugaste hoy. Mañana vas a tener una nueva oportunidad."
+        );
+      }
+
+      return;
+    }
+
+    currentLevel = readLevel();
+
+    canvas.style.pointerEvents = "";
 
     canvas.addEventListener("pointerdown", startDrawing);
     canvas.addEventListener("pointermove", draw);
@@ -814,6 +818,8 @@ if (window.BYRHUD && window.BYRUser?.getState) {
     canvas.addEventListener("pointerleave", hideCoinCursor);
 
     window.addEventListener("pointerup", stopDrawing);
+
+    statusText.textContent = "Raspá el cartón para descubrir tu premio del día.";
   }
 
   claimButton.addEventListener("click", claimPrize);
@@ -846,7 +852,7 @@ if (window.BYRHUD && window.BYRUser?.getState) {
   });
 
   window.addEventListener("resize", () => {
-    if (!isRevealed && !hasPlayedToday()) {
+    if (!isRevealed) {
       resizeCanvas();
     }
   });

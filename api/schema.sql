@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   referred_by   INT UNSIGNED DEFAULT NULL,       -- id del usuario que lo invitó (una sola vez)
   last_roulette_spin DATE    DEFAULT NULL,       -- ultimo giro de ruleta (limite diario server-side)
   last_memory_play   DATE    DEFAULT NULL,       -- ultima partida de memotest (limite diario server-side)
+  last_scratch_play  DATE    DEFAULT NULL,       -- ultima raspadita (limite diario server-side)
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
