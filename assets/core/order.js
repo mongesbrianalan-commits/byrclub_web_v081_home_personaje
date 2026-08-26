@@ -73,6 +73,56 @@
     if (kind) statusEl.classList.add(kind === "error" ? "is-error" : "is-ok");
   }
 
+
+  /* =========================================================
+     Horario para pedir
+
+     El servidor manda hasta qué hora se toma (api/menu.php → orderHours) y
+     además lo vuelve a comprobar al crear el pedido: esto es la comodidad,
+     la puerta está allá. Si el reloj del cliente está mal, o deja la pestaña
+     abierta hasta que cierre, el servidor lo frena igual.
+  ========================================================= */
+
+  const hoursEl = $("[data-order-hours]");
+  let orderHours = null;
+
+  function ordersOpen() {
+    return !orderHours || orderHours.isOpen !== false;
+  }
+
+  function renderHours() {
+    if (!hoursEl || !orderHours || !orderHours.limited) return;
+
+    if (!orderHours.isOpen) {
+      hoursEl.classList.remove("is-soon");
+      hoursEl.innerHTML =
+        "🕗 Ahora no estamos tomando pedidos. Se puede pedir de <b>" +
+        escapeHtml(orderHours.open) + "</b> a <b>" + escapeHtml(orderHours.close) +
+        "</b>. Podés mirar la carta igual.";
+      show(hoursEl, true);
+      return;
+    }
+
+    hoursEl.classList.add("is-soon");
+    hoursEl.innerHTML =
+      "🟢 Estamos tomando pedidos hasta las <b>" + escapeHtml(orderHours.close) + "</b>.";
+    show(hoursEl, true);
+  }
+
+  /* Con el local cerrado el botón queda a la vista pero no deja enviar: es
+     más claro que esconderlo, porque explica por qué. */
+  function applyHoursToSubmit() {
+    if (!submitBtn) return;
+
+    if (ordersOpen()) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Enviar pedido 🍔";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Cerrado — abrimos " + (orderHours.open || "más tarde");
+  }
   function hasOptions(p) {
     return p.optionSet && Array.isArray(optionSets[p.optionSet]) && optionSets[p.optionSet].length;
   }
@@ -408,6 +458,7 @@
 
     renderTotals();
     show(checkoutForm, true);
+    applyHoursToSubmit();   /* el carrito se rearma seguido: no perder el estado */
     updateFab();
   }
 
@@ -828,6 +879,14 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
+        /* Cerró mientras armaba el pedido (o el reloj del cliente andaba
+           mal). El servidor nos dice el horario: lo mostramos arriba y
+           dejamos el botón bloqueado. */
+        if (data.code === "closed") {
+          orderHours = { limited: true, isOpen: false, open: data.open, close: data.close };
+          renderHours();
+          if (hoursEl) hoursEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
         setStatus(data.error || "No pudimos enviar tu pedido. Probá de nuevo.", "error");
         return;
       }
@@ -835,8 +894,7 @@
     } catch (e) {
       setStatus("No hay conexión. Probá de nuevo en un momento.", "error");
     } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Enviar pedido 🍔";
+      applyHoursToSubmit();
     }
   }
 
@@ -1005,6 +1063,9 @@
       transferAlias = String(data.transferAlias || "");
       optionSets = data.optionSets || {};
       perk2x1 = data.perk2x1 || null;
+      orderHours = data.orderHours || null;
+      renderHours();
+      applyHoursToSubmit();
       initPayment(); // recién ahora sabemos si hay que preguntar y con qué alias
       const cats = Array.isArray(data.categories) ? data.categories : [];
       show(menuLoading, false);

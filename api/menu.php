@@ -134,6 +134,11 @@ json_out([
         'label' => BYR_2X1_LABEL,
     ]),
 
+    /* Horario para pedir. La carta se ve siempre; lo que se cierra fuera de
+       hora es enviar el pedido. Se manda el detalle para poder decir hasta
+       qué hora, en vez de sólo avisar que no. */
+    'orderHours'      => byr_orders_window(),
+
     /* Costo de envío, para mostrarlo en el carrito antes de crear el pedido.
        El precio que vale es igual el que recalcula el server al confirmar. */
     'deliveryFee'     => byr_shipping_ready(db()) ? byr_delivery_fee() : 0,

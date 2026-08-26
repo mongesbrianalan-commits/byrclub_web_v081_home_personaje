@@ -51,6 +51,21 @@ if ($cashHint !== null && ($cashHint < 0 || $cashHint > 10000000)) {
     $cashHint = null;
 }
 
+/* --- ¿Está abierto para pedir? ---
+   Va PRIMERO, antes de mirar el pedido: si el local no está tomando pedidos,
+   no tiene sentido validar nada más. La carta se puede seguir mirando; lo que
+   se cierra es enviar. El horario se calcula en hora de Argentina. */
+$ventana = byr_orders_window();
+if (!$ventana['isOpen']) {
+    json_out([
+        'error' => 'Ahora no estamos tomando pedidos. Se puede pedir de '
+                 . $ventana['open'] . ' a ' . $ventana['close'] . '.',
+        'code'  => 'closed',
+        'open'  => $ventana['open'],
+        'close' => $ventana['close'],
+    ], 422);
+}
+
 if (!$itemsIn) {
     json_out(['error' => 'Tu pedido está vacío.'], 422);
 }

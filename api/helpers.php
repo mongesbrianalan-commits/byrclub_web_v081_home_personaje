@@ -64,6 +64,84 @@ function byr_delivery_fee(): int
 }
 
 /**
+ * Horario en que se puede pedir POR LA WEB.
+ *
+ * Se configura en api/config.php, sin desplegar:
+ *
+ *   'order_hours' => ['19:40', '23:30'],
+ *
+ * Poner null (o un valor inválido) deja el pedido abierto las 24hs, que es
+ * como venía funcionando. Soporta cruzar la medianoche: ['20:00','01:30'].
+ *
+ * No afecta al mostrador: el cajero vende cuando el local está abierto,
+ * tenga el horario web abierto o no.
+ */
+function byr_order_hours(): ?array
+{
+    $h = byr_setting('order_hours', ['19:40', '23:30']);
+
+    if (!is_array($h) || count($h) < 2) {
+        return null;
+    }
+
+    $open  = trim((string) $h[0]);
+    $close = trim((string) $h[1]);
+
+    if (!preg_match('/^\d{1,2}:\d{2}$/', $open) || !preg_match('/^\d{1,2}:\d{2}$/', $close)) {
+        return null;
+    }
+
+    return ['open' => $open, 'close' => $close];
+}
+
+/** "19:40" -> 1180 (minutos desde medianoche). */
+function byr_minutes_of_day(string $hhmm): int
+{
+    $p = explode(':', $hhmm);
+    return ((int) $p[0]) * 60 + ((int) ($p[1] ?? 0));
+}
+
+/**
+ * ¿Se puede pedir AHORA por la web? La hora se calcula SIEMPRE en Argentina,
+ * no en la del servidor: el hosting está en UTC y a las 21:00 de acá serían
+ * las 00:00 de allá, que dejaría la web cerrada justo en el pico de venta.
+ *
+ * Devuelve el detalle para que la carta pueda explicar hasta qué hora, en vez
+ * de sólo decir que no.
+ */
+function byr_orders_window(): array
+{
+    $now  = new DateTime('now', new DateTimeZone('America/Argentina/Buenos_Aires'));
+    $hora = $now->format('H:i');
+    $h    = byr_order_hours();
+
+    if (!$h) {
+        return [
+            'limited' => false,
+            'isOpen'  => true,
+            'open'    => null,
+            'close'   => null,
+            'now'     => $hora,
+        ];
+    }
+
+    $o = byr_minutes_of_day($h['open']);
+    $c = byr_minutes_of_day($h['close']);
+    $n = byr_minutes_of_day($hora);
+
+    /* Si el cierre es menor que la apertura, el turno cruza la medianoche. */
+    $abierto = ($o <= $c) ? ($n >= $o && $n < $c) : ($n >= $o || $n < $c);
+
+    return [
+        'limited' => true,
+        'isOpen'  => $abierto,
+        'open'    => $h['open'],
+        'close'   => $h['close'],
+        'now'     => $hora,
+    ];
+}
+
+/**
  * ¿Está corrida la migración del costo de envío (2026-08-delivery-fee.sql)?
  * Mientras no lo esté, los pedidos se guardan como antes (sin envío) en vez de
  * fallar. Cachea el resultado.

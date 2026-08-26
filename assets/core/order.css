@@ -412,3 +412,17 @@ body.order-light .success-contact b { color: #14532d; }
 
 /* El velo del panel de éxito, en claro. */
 body.order-light .order-success { background: rgba(11, 31, 82, .45); }
+
+/* --- Aviso de horario ---------------------------------------------------
+   Cuando el local no está tomando pedidos, la carta se sigue viendo pero no
+   se puede enviar. El aviso va arriba de todo para que el cliente no arme el
+   pedido entero y recién ahí se entere. */
+.order-closed { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; text-align: center; margin: 0 0 20px; padding: 16px 20px; border-radius: 16px; font-weight: 800; font-size: .96rem; line-height: 1.35; background: rgba(255,159,64,.14); border: 1px solid rgba(255,159,64,.4); color: #ffd0a1; }
+.order-closed b { color: #fff; }
+.order-closed.is-soon { background: rgba(78,230,109,.12); border-color: rgba(78,230,109,.34); color: #b8ffcb; }
+
+/* En claro */
+body.order-light .order-closed { background: #fff3e6; border-color: #ffcf9a; color: #8a4b12; }
+body.order-light .order-closed b { color: #5c300a; }
+body.order-light .order-closed.is-soon { background: #e8f9ed; border-color: #b6e7c4; color: #1d6b39; }
+body.order-light .order-closed.is-soon b { color: #14532d; }

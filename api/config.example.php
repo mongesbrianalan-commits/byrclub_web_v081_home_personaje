@@ -47,6 +47,20 @@ return [
     'delivery_fee' => 490,
 
     /*
+     * Horario en que se puede PEDIR POR LA WEB (hora de Argentina).
+     *
+     *   ['19:40', '23:30']  -> abierto de 19:40 a 23:30
+     *   ['20:00', '01:30']  -> también vale cruzar la medianoche
+     *   null                -> sin límite, se puede pedir siempre
+     *
+     * Fuera de ese rango la carta se sigue viendo, pero no deja enviar el
+     * pedido. Cambiarlo acá tiene efecto al instante, sin desplegar nada.
+     *
+     * NO afecta al mostrador: el cajero vende cuando el local está abierto.
+     */
+    'order_hours' => ['19:40', '23:30'],
+
+    /*
      * 2x1 de socio de los MIÉRCOLES: ¿se puede sumar a un pedido web?
      *
      * false (por defecto) = como siempre: el socio reclama el código y lo
