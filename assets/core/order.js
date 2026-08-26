@@ -428,9 +428,19 @@
         const id = selection[g.id];
         if (id && byId[id]) { delta += byId[id].price; parts.push(byId[id].name); }
       } else {
+        /* Un id repetido = varias unidades. Se cobra cada una y se agrupa el
+           texto como "Coca-Cola x2", igual que hace el servidor: si acá
+           dijéramos "Coca-Cola, Coca-Cola", el carrito y el pedido
+           confirmado no coincidirían. */
         const ids = selection[g.id] || [];
+        const counts = new Map();
+        ids.forEach((id) => {
+          if (!byId[id]) return;
+          delta += byId[id].price;
+          counts.set(id, (counts.get(id) || 0) + 1);
+        });
         const names = [];
-        ids.forEach((id) => { if (byId[id]) { delta += byId[id].price; names.push(byId[id].name); } });
+        counts.forEach((n, id) => names.push(byId[id].name + (n > 1 ? " x" + n : "")));
         if (names.length) parts.push(names.join(", "));
       }
     });
@@ -554,27 +564,24 @@
     recompute();
   }
 
+  /* Cuántas unidades del mismo adicional se pueden pedir. El servidor topea en
+     60 por grupo; acá ponemos un número que se entienda en pantalla. */
+  const MAX_POR_ADICIONAL = 10;
+
   function optionRow(group, opt, selection, recompute, kind) {
+    if (kind === "check") {
+      return optionRowQty(group, opt, selection, recompute);
+    }
+
     const row = document.createElement("label");
     row.className = "opt-row";
     const input = document.createElement("input");
-    input.type = kind === "check" ? "checkbox" : "radio";
+    input.type = "radio";
     input.name = "optg-" + group.id;
     input.value = opt.id;
 
-    if (kind === "radio") {
-      input.checked = selection[group.id] === opt.id;
-      input.addEventListener("change", () => { selection[group.id] = opt.id; recompute(); });
-    } else {
-      input.checked = (selection[group.id] || []).indexOf(opt.id) !== -1;
-      input.addEventListener("change", () => {
-        const arr = selection[group.id] || [];
-        if (input.checked) { if (arr.indexOf(opt.id) === -1) arr.push(opt.id); }
-        else { const i = arr.indexOf(opt.id); if (i !== -1) arr.splice(i, 1); }
-        selection[group.id] = arr;
-        recompute();
-      });
-    }
+    input.checked = selection[group.id] === opt.id;
+    input.addEventListener("change", () => { selection[group.id] = opt.id; recompute(); });
 
     const label = document.createElement("span");
     label.className = "opt-row-name";
@@ -584,6 +591,73 @@
     price.textContent = opt.price > 0 ? "+ " + money(opt.price) : "";
 
     row.append(input, label, price);
+    return row;
+  }
+
+  /* Adicional con cantidad.
+     El payload que espera el servidor es el id REPETIDO una vez por unidad:
+     dos Cocas viajan como ["coca","coca"]. Ya sabía contarlas y mostrar "x2";
+     lo que faltaba era que el cliente pudiera pedir más de una — antes esto
+     era una tilde y solo daba sí o no. */
+  function optionRowQty(group, opt, selection, recompute) {
+    const row = document.createElement("div");
+    row.className = "opt-row opt-row-qty";
+
+    const label = document.createElement("span");
+    label.className = "opt-row-name";
+    label.textContent = opt.name;
+
+    const price = document.createElement("span");
+    price.className = "opt-row-price";
+    price.textContent = opt.price > 0 ? "+ " + money(opt.price) : "";
+
+    const stepper = document.createElement("div");
+    stepper.className = "opt-qty";
+
+    const minus = document.createElement("button");
+    minus.type = "button";
+    minus.className = "opt-qty-btn";
+    minus.textContent = "−";
+    minus.setAttribute("aria-label", "Sacar uno de " + opt.name);
+
+    const num = document.createElement("span");
+    num.className = "opt-qty-num";
+
+    const plus = document.createElement("button");
+    plus.type = "button";
+    plus.className = "opt-qty-btn";
+    plus.textContent = "+";
+    plus.setAttribute("aria-label", "Sumar uno de " + opt.name);
+
+    const contar = () => (selection[group.id] || []).filter((id) => id === opt.id).length;
+
+    function pintar() {
+      const n = contar();
+      num.textContent = String(n);
+      row.classList.toggle("is-on", n > 0);
+      minus.disabled = n === 0;
+      plus.disabled = n >= MAX_POR_ADICIONAL;
+    }
+
+    function cambiar(delta) {
+      const arr = selection[group.id] || [];
+      if (delta > 0) {
+        if (contar() < MAX_POR_ADICIONAL) arr.push(opt.id);
+      } else {
+        const i = arr.lastIndexOf(opt.id);
+        if (i !== -1) arr.splice(i, 1);
+      }
+      selection[group.id] = arr;
+      pintar();
+      recompute();
+    }
+
+    minus.addEventListener("click", () => cambiar(-1));
+    plus.addEventListener("click", () => cambiar(1));
+
+    stepper.append(minus, num, plus);
+    row.append(label, price, stepper);
+    pintar();
     return row;
   }
 
