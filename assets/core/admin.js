@@ -1840,9 +1840,12 @@
   const menuAdminList = document.querySelector("[data-menu-admin-list]");
   const menuAdminStatus = document.querySelector("[data-menu-admin-status]");
 
+  /* Las ocho categorias que acepta api/admin/product-save.php. Antes faltaban
+     promos, entradas y postres: esos productos mostraban el slug crudo. */
   const CAT_LABEL = {
-    hamburguesas: "Hamburguesas", combos: "Combos",
-    papas: "Papas", bebidas: "Bebidas", otros: "Otros"
+    promos: "Promos", entradas: "Entradas", hamburguesas: "Hamburguesas",
+    combos: "Combos", papas: "Papas", postres: "Postres",
+    bebidas: "Bebidas", otros: "Otros"
   };
 
   async function loadMenuAdmin() {
@@ -1860,13 +1863,149 @@
     }
   }
 
+  const menuNewBtn    = document.querySelector("[data-menu-new]");
+  const menuNewForm   = document.querySelector("[data-menu-new-form]");
+  const menuCount     = document.querySelector("[data-menu-count]");
+  const newName       = document.querySelector("[data-new-name]");
+  const newCategory   = document.querySelector("[data-new-category]");
+  const newPrice      = document.querySelector("[data-new-price]");
+  const newEmoji      = document.querySelector("[data-new-emoji]");
+  const newSort       = document.querySelector("[data-new-sort]");
+  const newDesc       = document.querySelector("[data-new-description]");
+  const newAvailable  = document.querySelector("[data-new-available]");
+  const newSaveBtn    = document.querySelector("[data-new-save]");
+  const newCancelBtn  = document.querySelector("[data-new-cancel]");
+  const newStatus     = document.querySelector("[data-new-status]");
+
   function renderMenuAdmin(products) {
     menuAdminList.innerHTML = "";
+    if (menuCount) {
+      const enCarta = products.filter((p) => p.available).length;
+      menuCount.textContent = products.length + " productos · " + enCarta + " en la carta";
+    }
     if (!products.length) {
       menuAdminList.innerHTML = `<p class="oa-empty">Todavía no hay productos. Corré la migración 2026-08-orders.sql.</p>`;
       return;
     }
     products.forEach((p) => menuAdminList.append(productAdminRow(p)));
+  }
+
+  /* =========================================================
+     Alta de producto
+
+     El endpoint (api/admin/product-save.php) crea cuando no le mandás un id,
+     y arma el identificador interno solo a partir del nombre. Por eso el
+     formulario no pide slug: si el que sale ya existe, el servidor avisa.
+  ========================================================= */
+
+
+  function fillCategorySelect() {
+    if (!newCategory || newCategory.options.length) return;
+    Object.keys(CAT_LABEL).forEach((slug) => {
+      const o = document.createElement("option");
+      o.value = slug;
+      o.textContent = CAT_LABEL[slug];
+      newCategory.append(o);
+    });
+    newCategory.value = "hamburguesas";
+  }
+
+  function clearNewForm() {
+    if (!menuNewForm) return;
+    newName.value = "";
+    newPrice.value = "";
+    newEmoji.value = "";
+    newSort.value = "";
+    newDesc.value = "";
+    newAvailable.checked = true;
+    newCategory.value = "hamburguesas";
+    newStatus.textContent = "";
+  }
+
+  function toggleNewForm(open) {
+    if (!menuNewForm) return;
+    fillCategorySelect();
+    menuNewForm.hidden = !open;
+    menuNewBtn.textContent = open ? "✕ Cerrar" : "➕ Nuevo producto";
+    if (open) newName.focus();
+    else clearNewForm();
+  }
+
+  if (menuNewBtn) {
+    menuNewBtn.addEventListener("click", () => toggleNewForm(menuNewForm.hidden));
+  }
+  if (newCancelBtn) {
+    newCancelBtn.addEventListener("click", () => toggleNewForm(false));
+  }
+
+  if (newSaveBtn) {
+    newSaveBtn.addEventListener("click", async () => {
+      const name = newName.value.trim();
+      const price = parseInt(newPrice.value, 10);
+
+      if (!name) {
+        newStatus.textContent = "Poné un nombre.";
+        newStatus.style.color = "#ffb0b0";
+        newName.focus();
+        return;
+      }
+      if (isNaN(price) || price < 0) {
+        newStatus.textContent = "Poné un precio válido.";
+        newStatus.style.color = "#ffb0b0";
+        newPrice.focus();
+        return;
+      }
+
+      newSaveBtn.disabled = true;
+      newSaveBtn.textContent = "Creando…";
+      newStatus.textContent = "";
+
+      try {
+        await api("admin/product-save.php", {
+          category: newCategory.value,
+          name,
+          description: newDesc.value.trim(),
+          emoji: newEmoji.value.trim(),
+          price,
+          available: newAvailable.checked,
+          sort: parseInt(newSort.value, 10) || 0
+        });
+
+        toggleNewForm(false);
+        setStatus(menuAdminStatus, "✅ " + name + " agregado al menú.", "ok");
+        loadMenuAdmin();   /* recargamos para verlo en su lugar */
+      } catch (error) {
+        newStatus.textContent = error.message;
+        newStatus.style.color = "#ffb0b0";
+      } finally {
+        newSaveBtn.disabled = false;
+        newSaveBtn.textContent = "Crear producto";
+      }
+    });
+  }
+
+  /* Campos que se editan en el panel de detalle. La fila compacta se queda
+     con lo que se toca a diario (precio y disponible); el resto vive acá
+     para no llenarla de campos que casi nunca se usan. */
+  function maField(label, el, wide) {
+    const l = document.createElement("label");
+    l.className = "ma-field" + (wide ? " ma-field-wide" : "");
+    const s = document.createElement("span");
+    s.textContent = label;
+    l.append(s, el);
+    return l;
+  }
+
+  function categorySelect(selected) {
+    const sel = document.createElement("select");
+    Object.keys(CAT_LABEL).forEach((slug) => {
+      const o = document.createElement("option");
+      o.value = slug;
+      o.textContent = CAT_LABEL[slug];
+      if (slug === selected) o.selected = true;
+      sel.append(o);
+    });
+    return sel;
   }
 
   function productAdminRow(p) {
@@ -1879,7 +2018,13 @@
 
     const info = document.createElement("div");
     info.className = "ma-info";
-    info.innerHTML = `<div class="ma-name">${escapeHtml(p.name)}</div><div class="ma-cat">${escapeHtml(CAT_LABEL[p.category] || p.category)}</div>`;
+    const nameEl = document.createElement("div");
+    nameEl.className = "ma-name";
+    nameEl.textContent = p.name;
+    const catEl = document.createElement("div");
+    catEl.className = "ma-cat";
+    catEl.textContent = CAT_LABEL[p.category] || p.category;
+    info.append(nameEl, catEl);
 
     const priceField = document.createElement("div");
     priceField.className = "ma-price-field";
@@ -1903,8 +2048,60 @@
     saveBtn.className = "ma-save";
     saveBtn.textContent = "Guardar";
 
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "ma-edit-btn";
+    editBtn.textContent = "✏️";
+    editBtn.title = "Editar nombre, descripción, categoría y orden";
+    editBtn.setAttribute("aria-label", "Editar el resto del producto");
+
     const rowSt = document.createElement("small");
     rowSt.className = "ma-row-status";
+
+    /* --- Panel de detalle --- */
+    const details = document.createElement("div");
+    details.className = "ma-details";
+    details.hidden = true;
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = p.name || "";
+
+    const catSelect = categorySelect(p.category);
+
+    const emojiInput = document.createElement("input");
+    emojiInput.type = "text";
+    emojiInput.maxLength = 4;
+    emojiInput.value = p.emoji || "";
+
+    const sortInput = document.createElement("input");
+    sortInput.type = "number";
+    sortInput.step = "10";
+    sortInput.value = String(p.sort ?? 0);
+
+    const descInput = document.createElement("textarea");
+    descInput.rows = 2;
+    descInput.value = p.description || "";
+
+    const grid = document.createElement("div");
+    grid.className = "ma-grid";
+    grid.append(
+      maField("Nombre", nameInput),
+      maField("Categoría", catSelect),
+      maField("Emoji", emojiInput),
+      maField("Orden", sortInput)
+    );
+
+    const slugHint = document.createElement("p");
+    slugHint.className = "ma-hint";
+    slugHint.textContent = "Identificador interno: " + p.slug + " (no se cambia: lo usan los pedidos viejos)";
+
+    details.append(grid, maField("Descripción", descInput, true), slugHint);
+
+    editBtn.addEventListener("click", () => {
+      details.hidden = !details.hidden;
+      editBtn.classList.toggle("is-open", !details.hidden);
+    });
 
     saveBtn.addEventListener("click", async () => {
       const price = parseInt(priceInput.value, 10);
@@ -1913,23 +2110,45 @@
         rowSt.style.color = "#ffb0b0";
         return;
       }
+      const name = nameInput.value.trim();
+      if (!name) {
+        rowSt.textContent = "El producto necesita un nombre.";
+        rowSt.style.color = "#ffb0b0";
+        details.hidden = false;
+        editBtn.classList.add("is-open");
+        return;
+      }
+
       saveBtn.disabled = true;
       saveBtn.textContent = "Guardando…";
       try {
         await api("admin/product-save.php", {
           id: p.id,
           slug: p.slug,
-          category: p.category,
-          name: p.name,
-          description: p.description,
+          category: catSelect.value,
+          name,
+          description: descInput.value.trim(),
           image: p.image,
-          emoji: p.emoji,
+          emoji: emojiInput.value.trim(),
           price,
           available: availCheck.checked,
-          sort: p.sort
+          sort: parseInt(sortInput.value, 10) || 0
         });
+
+        /* Nos quedamos con lo guardado, para que la fila refleje la verdad
+           sin tener que recargar toda la lista. */
         p.price = price;
         p.available = availCheck.checked;
+        p.name = name;
+        p.category = catSelect.value;
+        p.emoji = emojiInput.value.trim();
+        p.description = descInput.value.trim();
+        p.sort = parseInt(sortInput.value, 10) || 0;
+
+        nameEl.textContent = p.name;
+        catEl.textContent = CAT_LABEL[p.category] || p.category;
+        emoji.textContent = p.emoji || "🍔";
+
         rowSt.textContent = "✅ Guardado.";
         rowSt.style.color = "#7bffa0";
       } catch (error) {
@@ -1941,7 +2160,7 @@
       }
     });
 
-    row.append(emoji, info, priceField, availLabel, saveBtn, rowSt);
+    row.append(emoji, info, priceField, availLabel, saveBtn, editBtn, rowSt, details);
     return row;
   }
 

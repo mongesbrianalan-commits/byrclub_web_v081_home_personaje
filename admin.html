@@ -206,6 +206,40 @@
     .ma-save { border: 0; border-radius: 12px; padding: 9px 16px; background: var(--blue-600); color: #fff; font-weight: 900; box-shadow: 0 4px 0 #0438a0; cursor: pointer; }
     .ma-save:hover { transform: translateY(-1px); }
     .ma-row-status { width: 100%; font-weight: 800; font-size: .85rem; margin: 2px 0 0; }
+
+    /* --- Editor de menú: alta y edición completa -----------------------
+       La fila compacta se queda con lo que se toca a diario (precio y "en la
+       carta"). Lo demás —nombre, descripción, emoji, categoría, orden— vive
+       en un panel que se abre con ✏️, para no llenar la fila de campos que
+       casi nunca se usan. */
+    .ma-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; }
+    .ma-new-btn { border: 0; border-radius: 12px; padding: 11px 18px; background: var(--yellow); color: #071342; font-weight: 900; box-shadow: 0 4px 0 #b98700; cursor: pointer; }
+    .ma-new-btn:hover { transform: translateY(-1px); }
+    .ma-count { color: #9bd1ff; font-weight: 700; font-size: .86rem; }
+
+    .ma-edit-btn { border: 1px solid rgba(255,255,255,.24); border-radius: 12px; padding: 9px 12px; background: rgba(255,255,255,.08); color: #fff; font-weight: 800; cursor: pointer; }
+    .ma-edit-btn:hover { background: rgba(255,255,255,.16); }
+    .ma-edit-btn.is-open { background: var(--yellow); color: #071342; border-color: var(--yellow); }
+
+    /* Panel de detalle (dentro de la fila, ocupa todo el ancho) */
+    .ma-details { width: 100%; display: grid; gap: 10px; margin-top: 10px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,.18); }
+    .ma-details[hidden] { display: none; }
+    .ma-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .ma-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .ma-field > span { font-weight: 800; color: #cfe4ff; font-size: .8rem; }
+    .ma-field input, .ma-field select, .ma-field textarea { width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.1); color: #fff; font: inherit; }
+    .ma-field textarea { resize: vertical; min-height: 62px; }
+    .ma-field select option { background: #061b70; color: #fff; }
+    .ma-field-wide { grid-column: 1 / -1; }
+    .ma-hint { color: #9bd1ff; font-weight: 700; font-size: .76rem; }
+
+    /* Formulario de alta: mismo panel, pero suelto arriba de la lista */
+    .ma-new { background: rgba(255,213,31,.08); border: 1px solid rgba(255,213,31,.34); border-radius: 16px; padding: 16px 18px; margin: 0 0 18px; }
+    .ma-new[hidden] { display: none; }
+    .ma-new h3 { margin: 0 0 12px; font-family: "Lilita One"; font-size: 1.15rem; }
+    .ma-new .ma-details { margin-top: 0; padding-top: 0; border-top: 0; }
+    .ma-new-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .ma-cancel { border: 1px solid rgba(255,255,255,.24); border-radius: 12px; padding: 9px 16px; background: transparent; color: #fff; font-weight: 800; cursor: pointer; }
   </style>
 </head>
 <body class="home-v08" data-root="./">
@@ -388,8 +422,54 @@
 
       <div class="admin-tab" data-tab="menu" hidden>
       <div class="admin-block">
-        <h2>🍔 Menú — precios y disponibilidad</h2>
-        <p class="admin-hint-line">💡 Cambiá el precio o sacá de la carta cada producto. Se ve al instante cuando el cliente entra a pedir.</p>
+        <h2>🍔 Menú — productos, precios y disponibilidad</h2>
+        <p class="admin-hint-line">💡 Cambiá el precio o sacá de la carta con un clic. Con ✏️ editás el resto (nombre, descripción, categoría, orden). Se ve al instante cuando el cliente entra a pedir.</p>
+
+        <div class="ma-toolbar">
+          <button type="button" class="ma-new-btn" data-menu-new>➕ Nuevo producto</button>
+          <span class="ma-count" data-menu-count></span>
+        </div>
+
+        <!-- Alta de producto. Mismo panel que el de edición, pero vacío. -->
+        <div class="ma-new" data-menu-new-form hidden>
+          <h3>Nuevo producto</h3>
+          <div class="ma-details">
+            <div class="ma-grid">
+              <label class="ma-field">
+                <span>Nombre</span>
+                <input type="text" data-new-name placeholder="Ej: Cheddar Bacon">
+              </label>
+              <label class="ma-field">
+                <span>Categoría</span>
+                <select data-new-category></select>
+              </label>
+              <label class="ma-field">
+                <span>Precio</span>
+                <input type="number" data-new-price min="0" step="100" placeholder="16000">
+              </label>
+              <label class="ma-field">
+                <span>Emoji</span>
+                <input type="text" data-new-emoji maxlength="4" placeholder="🍔">
+              </label>
+              <label class="ma-field">
+                <span>Orden</span>
+                <input type="number" data-new-sort step="10" placeholder="Más chico = más arriba">
+              </label>
+            </div>
+            <label class="ma-field ma-field-wide">
+              <span>Descripción</span>
+              <textarea data-new-description rows="2" placeholder="Pan de papa, doble carne, cheddar…"></textarea>
+            </label>
+            <label class="ma-avail"><input type="checkbox" data-new-available checked> En la carta desde ya</label>
+            <p class="ma-hint">El identificador interno se arma solo con el nombre. Si ya existe uno igual, te avisa.</p>
+            <div class="ma-new-actions">
+              <button type="button" class="ma-save" data-new-save>Crear producto</button>
+              <button type="button" class="ma-cancel" data-new-cancel>Cancelar</button>
+            </div>
+            <p class="ma-row-status" data-new-status></p>
+          </div>
+        </div>
+
         <p class="auth-form-status" data-menu-admin-status></p>
         <div class="menu-admin-list" data-menu-admin-list></div>
       </div>
