@@ -87,7 +87,7 @@ if (!$keys) {
 
 $placeholders = implode(',', array_fill(0, count($keys), '?'));
 $stmt = $pdo->prepare(
-    "SELECT id, slug, name, price, category
+    "SELECT id, slug, name, price, category, " . byr_option_set_select($pdo) . "
        FROM products
       WHERE available = 1 AND (slug IN ($placeholders) OR id IN ($placeholders))"
 );
@@ -118,7 +118,7 @@ foreach ($itemsIn as $it) {
         continue;
     }
 
-    $setKey   = byr_option_set_for_category($p['category']);
+    $setKey   = byr_option_set_for_product($p);
     $selected = is_array($it['options'] ?? null) ? $it['options'] : [];
     $opt      = byr_resolve_options($setKey, $selected);
     if (!$opt['ok']) {

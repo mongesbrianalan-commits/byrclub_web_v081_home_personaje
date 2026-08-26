@@ -15,6 +15,7 @@
  *   sort?       int
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../menu-options.php';
 require_method('POST');
 
 $pdo = db();
@@ -34,6 +35,14 @@ $price       = (int) ($in['price'] ?? 0);
 $available   = !empty($in['available']) ? 1 : 0;
 $sort        = (int) ($in['sort'] ?? 0);
 
+/* Qué opciones abre este producto. '' = lo que diga la categoría (default de
+   siempre). Se valida contra la lista real: nadie guarda un juego inventado. */
+$optionSet   = trim((string) ($in['optionSet'] ?? ''));
+if (!array_key_exists($optionSet, byr_option_set_choices())) {
+    $optionSet = '';
+}
+$hasOptCol   = byr_product_option_set_ready($pdo);
+
 if (!in_array($category, BYR_PRODUCT_CATEGORIES, true)) {
     $category = 'otros';
 }
@@ -46,16 +55,21 @@ if ($price < 0) {
 
 if ($id > 0) {
     /* --- Editar --- */
+    /* La columna de opciones solo se toca si está corrida su migración: así el
+       panel sigue guardando precios y disponibilidad aunque falte. */
+    $setCol  = $hasOptCol ? ', option_set = ?' : '';
+    $setArgs = $hasOptCol ? [$optionSet !== '' ? $optionSet : null] : [];
+
     $stmt = $pdo->prepare(
         'UPDATE products
             SET category = ?, name = ?, description = ?, image = ?, emoji = ?,
-                price = ?, available = ?, sort = ?
+                price = ?, available = ?, sort = ?' . $setCol . '
           WHERE id = ?'
     );
-    $stmt->execute([
+    $stmt->execute(array_merge([
         $category, $name, $description ?: null, $image ?: null, $emoji ?: null,
-        $price, $available, $sort, $id,
-    ]);
+        $price, $available, $sort,
+    ], $setArgs, [$id]));
     if ($stmt->rowCount() === 0) {
         /* Puede que no haya cambios; confirmamos que exista igual. */
         $chk = $pdo->prepare('SELECT 1 FROM products WHERE id = ?');
@@ -80,13 +94,17 @@ if ($chk->fetch()) {
     json_out(['error' => 'Ya existe un producto con ese identificador (slug).', 'code' => 'dup-slug'], 409);
 }
 
+$insCol  = $hasOptCol ? ', option_set' : '';
+$insVal  = $hasOptCol ? ', ?' : '';
+$insArgs = $hasOptCol ? [$optionSet !== '' ? $optionSet : null] : [];
+
 $ins = $pdo->prepare(
-    'INSERT INTO products (slug, category, name, description, image, emoji, price, available, sort)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO products (slug, category, name, description, image, emoji, price, available, sort' . $insCol . ')
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?' . $insVal . ')'
 );
-$ins->execute([
+$ins->execute(array_merge([
     $slug, $category, $name, $description ?: null, $image ?: null, $emoji ?: null,
     $price, $available, $sort,
-]);
+], $insArgs));
 
 json_out(['ok' => true, 'id' => (int) $pdo->lastInsertId(), 'slug' => $slug]);

@@ -1848,6 +1848,10 @@
     bebidas: "Bebidas", otros: "Otros"
   };
 
+  /* Juegos de opciones disponibles, tal como los manda el servidor. */
+  let OPTION_SETS = {};
+  let OPTION_SET_READY = false;
+
   async function loadMenuAdmin() {
     if (!menuAdminList) return;
     setStatus(menuAdminStatus, "Cargando menú…", "");
@@ -1856,6 +1860,11 @@
       const res = await fetch(`${API}admin/products-list.php`, { credentials: "same-origin" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudo cargar el menú.");
+      /* Los juegos de opciones los define el servidor (menu-options.php): el
+         panel solo los dibuja. Si falta la migración vienen apagados y el
+         desplegable ni se muestra. */
+      OPTION_SETS = data.optionSets || {};
+      OPTION_SET_READY = Boolean(data.optionSetReady);
       renderMenuAdmin(data.products || []);
       setStatus(menuAdminStatus, "", "");
     } catch (error) {
@@ -1876,6 +1885,8 @@
   const newSaveBtn    = document.querySelector("[data-new-save]");
   const newCancelBtn  = document.querySelector("[data-new-cancel]");
   const newStatus     = document.querySelector("[data-new-status]");
+  const newOptSetFld  = document.querySelector("[data-new-optionset-field]");
+  const newOptSet     = document.querySelector("[data-new-optionset]");
 
   function renderMenuAdmin(products) {
     menuAdminList.innerHTML = "";
@@ -1900,6 +1911,18 @@
 
 
   function fillCategorySelect() {
+    /* El desplegable de opciones solo aparece si está corrida su migración:
+       no ofrecemos algo que no se va a poder guardar. */
+    if (newOptSetFld) newOptSetFld.hidden = !OPTION_SET_READY;
+    if (newOptSet && !newOptSet.options.length) {
+      Object.keys(OPTION_SETS).forEach((key) => {
+        const o = document.createElement("option");
+        o.value = key;
+        o.textContent = OPTION_SETS[key];
+        newOptSet.append(o);
+      });
+    }
+
     if (!newCategory || newCategory.options.length) return;
     Object.keys(CAT_LABEL).forEach((slug) => {
       const o = document.createElement("option");
@@ -1968,7 +1991,8 @@
           emoji: newEmoji.value.trim(),
           price,
           available: newAvailable.checked,
-          sort: parseInt(newSort.value, 10) || 0
+          sort: parseInt(newSort.value, 10) || 0,
+          optionSet: newOptSet ? newOptSet.value : ""
         });
 
         toggleNewForm(false);
@@ -1994,6 +2018,21 @@
     s.textContent = label;
     l.append(s, el);
     return l;
+  }
+
+  /* Desplegable de "¿qué opciones abre este producto?". Las opciones las manda
+     el servidor, así que agregar un juego nuevo en menu-options.php lo hace
+     aparecer acá sin tocar el panel. */
+  function optionSetSelect(selected) {
+    const sel = document.createElement("select");
+    Object.keys(OPTION_SETS).forEach((key) => {
+      const o = document.createElement("option");
+      o.value = key;
+      o.textContent = OPTION_SETS[key];
+      if (key === (selected || "")) o.selected = true;
+      sel.append(o);
+    });
+    return sel;
   }
 
   function categorySelect(selected) {
@@ -2096,6 +2135,13 @@
     slugHint.className = "ma-hint";
     slugHint.textContent = "Identificador interno: " + p.slug + " (no se cambia: lo usan los pedidos viejos)";
 
+
+    /* Solo si está corrida la migración: si no, no ofrecemos algo que no se
+       va a poder guardar. */
+    const optSetSelect = optionSetSelect(p.optionSet);
+    if (OPTION_SET_READY) {
+      grid.append(maField("¿Qué opciones abre?", optSetSelect));
+    }
     details.append(grid, maField("Descripción", descInput, true), slugHint);
 
     editBtn.addEventListener("click", () => {
@@ -2132,7 +2178,8 @@
           emoji: emojiInput.value.trim(),
           price,
           available: availCheck.checked,
-          sort: parseInt(sortInput.value, 10) || 0
+          sort: parseInt(sortInput.value, 10) || 0,
+          optionSet: optSetSelect.value
         });
 
         /* Nos quedamos con lo guardado, para que la fila refleje la verdad
@@ -2144,6 +2191,7 @@
         p.emoji = emojiInput.value.trim();
         p.description = descInput.value.trim();
         p.sort = parseInt(sortInput.value, 10) || 0;
+        p.optionSet = optSetSelect.value;
 
         nameEl.textContent = p.name;
         catEl.textContent = CAT_LABEL[p.category] || p.category;

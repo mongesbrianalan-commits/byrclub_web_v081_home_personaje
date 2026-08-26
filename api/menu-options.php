@@ -80,6 +80,18 @@ function byr_option_sets(): array
         ],
     ];
 
+    /* Solo el grupo de bebida, para asignárselo desde el panel a lo que no es
+       hamburguesa (un postre, una entrada). Es el MISMO grupo, no una copia:
+       si mañana cambia un precio de bebida, cambia en los dos lados.
+
+       Ojo: no hay un juego de "papas" suelto todavía. En la hamburguesa las
+       papas VIENEN INCLUIDAS y por eso "Simples" sale $0; copiar ese grupo a
+       un postre regalaría una porción. Para tener uno hace falta decidir qué
+       precio tienen las papas cuando se suman a algo que no es burger. */
+    $sets['bebida'] = [
+        $sets['burger'][1],
+    ];
+
     $sets['staff'] = array_map(static function (array $g): array {
         $g['required'] = false;
         return $g;
@@ -88,11 +100,75 @@ function byr_option_sets(): array
     return $sets;
 }
 
-/** Qué set de opciones usa cada categoría (null = sin opciones, va directo al carrito). */
+/**
+ * Los juegos que se pueden elegir desde el panel, con su nombre para mostrar.
+ * 'staff' no está: es interno del panel para editar pedidos, no se le asigna
+ * a un producto.
+ */
+function byr_option_set_choices(): array
+{
+    return [
+        ''       => 'Lo que diga la categoría',
+        'none'   => 'Sin opciones (va directo al carrito)',
+        'burger' => 'Como las hamburguesas (papas, bebida y adicionales)',
+        'bebida' => 'Solo bebida',
+    ];
+}
+
+/**
+ * ¿Está corrida la migración de opciones por producto
+ * (2026-08-product-option-set.sql)? Sin esa columna, pedirla en un SELECT
+ * rompe el menú entero, así que las consultas la piden solo si existe y si no
+ * mandan NULL — que significa "lo que diga la categoría", o sea lo de siempre.
+ * Cachea el resultado.
+ */
+function byr_product_option_set_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $ready = (bool) $pdo->query("SHOW COLUMNS FROM products LIKE 'option_set'")->fetch();
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
+/** Trozo de SELECT para traer la columna sin romper si falta la migración. */
+function byr_option_set_select(PDO $pdo): string
+{
+    return byr_product_option_set_ready($pdo) ? 'option_set' : 'NULL AS option_set';
+}
+
+/** Qué set usa cada categoría, cuando el producto no tiene uno propio. */
 function byr_option_set_for_category(string $category): ?string
 {
-    // Hoy solo las burgers individuales tienen popup. Las promos ya vienen armadas.
+    // Las burgers individuales abren el popup. Las promos ya vienen armadas.
     return $category === 'hamburguesas' ? 'burger' : null;
+}
+
+/**
+ * Qué set de opciones usa UN PRODUCTO (null = sin opciones, va directo al
+ * carrito).
+ *
+ * Manda lo que el admin haya elegido en la pestaña Menú; si no eligió nada
+ * (columna en NULL), se usa el default de la categoría, que es como venía
+ * funcionando. Resiliente si falta correr la migración: sin la columna, se
+ * comporta igual que antes.
+ */
+function byr_option_set_for_product(array $product): ?string
+{
+    $own = $product['option_set'] ?? null;
+
+    if ($own === 'none') {
+        return null;                 // el admin lo dejó sin opciones a propósito
+    }
+    if (is_string($own) && $own !== '' && isset(byr_option_sets()[$own])) {
+        return $own;
+    }
+
+    return byr_option_set_for_category((string) ($product['category'] ?? 'otros'));
 }
 
 /**

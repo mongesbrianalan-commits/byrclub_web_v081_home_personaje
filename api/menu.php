@@ -43,8 +43,12 @@ try {
     $hasStaffCol = false;
 }
 
-$sql = 'SELECT id, slug, category, name, description, image, emoji, price
-          FROM products WHERE available = 1';
+/* Qué opciones abre cada producto lo elige el admin por producto. Si falta
+   correr la migración, viene NULL y manda la categoría, como siempre. */
+$optSel = byr_option_set_select($pdo);
+
+$sql = "SELECT id, slug, category, name, description, image, emoji, price, $optSel
+          FROM products WHERE available = 1";
 if ($hasStaffCol && !$isStaff) {
     $sql .= ' AND staff_only = 0';
 }
@@ -61,7 +65,7 @@ $rows = $pdo->query($sql)->fetchAll();
 $twoForOne = byr_2x1_web_offer($pdo, current_user_id());
 
 if ($twoForOne['canOrder']) {
-    $p2x1 = $pdo->prepare('SELECT id, slug, category, name, description, image, emoji, price FROM products WHERE slug = ?');
+    $p2x1 = $pdo->prepare("SELECT id, slug, category, name, description, image, emoji, price, $optSel FROM products WHERE slug = ?");
     $p2x1->execute([BYR_2X1_PRODUCT_SLUG]);
 
     if ($row2x1 = $p2x1->fetch()) {
@@ -89,7 +93,7 @@ foreach ($rows as $r) {
         'image'       => $r['image'],
         'emoji'       => $r['emoji'],
         'price'       => (int) $r['price'],
-        'optionSet'   => byr_option_set_for_category($cat), // 'burger' | null
+        'optionSet'   => byr_option_set_for_product($r), // 'burger' | 'bebida' | null
     ];
 }
 

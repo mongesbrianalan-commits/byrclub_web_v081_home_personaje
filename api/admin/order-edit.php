@@ -66,7 +66,7 @@ try {
             $pdo->rollBack();
             json_out(['error' => 'Elegí un producto y una cantidad.'], 422);
         }
-        $p = $pdo->prepare('SELECT id, name, price, category FROM products WHERE slug = ? AND available = 1');
+        $p = $pdo->prepare('SELECT id, name, price, category, ' . byr_option_set_select($pdo) . ' FROM products WHERE slug = ? AND available = 1');
         $p->execute([$slug]);
         $prod = $p->fetch();
         if (!$prod) {
@@ -81,7 +81,7 @@ try {
            otra cosa usa 'staff': los mismos adicionales pero nada obligatorio,
            para poder sumarle una feta de cheddar a unas papas sin que el
            sistema exija elegir "¿cómo querés las papas?" para una gaseosa. */
-        $setKey   = byr_option_set_for_category($prod['category']) ?? 'staff';
+        $setKey   = byr_option_set_for_product($prod) ?? 'staff';
         $selected = is_array($in['options'] ?? null) ? $in['options'] : [];
         $opt      = byr_resolve_options($setKey, $selected);
         if (!$opt['ok']) {
@@ -112,7 +112,7 @@ try {
             json_out(['error' => 'Ese ítem ya no está en el menú: quitalo y agregalo de nuevo.'], 422);
         }
 
-        $p = $pdo->prepare('SELECT id, name, price, category FROM products WHERE id = ?');
+        $p = $pdo->prepare('SELECT id, name, price, category, ' . byr_option_set_select($pdo) . ' FROM products WHERE id = ?');
         $p->execute([(int) $item['product_id']]);
         $prod = $p->fetch();
         if (!$prod) {
@@ -120,7 +120,7 @@ try {
             json_out(['error' => 'Ese producto ya no existe: quitalo y agregá otro.'], 422);
         }
 
-        $setKey   = byr_option_set_for_category($prod['category']) ?? 'staff';
+        $setKey   = byr_option_set_for_product($prod) ?? 'staff';
         $selected = is_array($in['options'] ?? null) ? $in['options'] : [];
         $opt      = byr_resolve_options($setKey, $selected);
         if (!$opt['ok']) {

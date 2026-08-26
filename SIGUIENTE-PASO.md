@@ -7,6 +7,25 @@ Antes que nada, al cambiar de máquina: **`git pull`**.
 
 ---
 
+## ⚠️ Migración pendiente: opciones por producto
+
+Hasta que no se corra, la pestaña Menú **no muestra** el desplegable de
+opciones (no ofrece algo que no se va a poder guardar). Todo lo demás
+funciona igual.
+
+```sql
+ALTER TABLE products
+  ADD COLUMN option_set VARCHAR(30) DEFAULT NULL AFTER available;
+```
+
+(Está también en `api/migrations/2026-08-product-option-set.sql`.)
+
+Correrla **no cambia nada por sí sola**: `NULL` significa "lo que diga la
+categoría", que es el comportamiento de siempre. Los productos empiezan a
+comportarse distinto sólo cuando vos les elegís algo en el panel.
+
+---
+
 ## ⚠️ Para prender el 2x1 por la web (dos pasos, los hacés vos)
 
 Está desplegado y **apagado**. Queda así hasta que hagas estas dos cosas —
