@@ -15,6 +15,7 @@
  * se procesa si está 'pending'. Todo va en una transacción.
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../progress/engine.php';
 require_once __DIR__ . '/../caja.php';
 require_once __DIR__ . '/../printing.php';
 require_method('POST');
@@ -68,8 +69,29 @@ try {
         ], 409);
     }
 
-    $pointsToGrant = $points !== null ? $points : (int) $order['points_suggested'];
-    $userId        = (int) $order['user_id'];
+    $basePoints = $points !== null ? $points : (int) $order['points_suggested'];
+    $userId     = (int) $order['user_id'];
+
+    /* --- Canjear el cupón adjunto (si hay) ---
+       Va ANTES de acreditar a propósito: si el vale es un multiplicador
+       ("2x puntos"), tiene que cambiar cuántos puntos se acreditan. Antes
+       esto estaba después, así que el cupón se consumía y el socio cobraba
+       lo mismo de siempre: el premio no hacía nada. */
+    $couponApplied = null;  // null = no había cupón; true/false = se pudo o no
+    $multiplier    = 1;
+
+    if (!empty($order['coupon_code'])) {
+        $coupon        = byr_redeem_coupon($pdo, $order['coupon_code'], $userId, $admin);
+        $couponApplied = $coupon !== null;
+
+        if ($coupon) {
+            $multiplier = (int) $coupon['multiplier'];
+        }
+    }
+
+    /* El multiplicador se aplica sobre lo que se iba a acreditar, sea lo
+       sugerido o lo que el cajero haya escrito a mano. */
+    $pointsToGrant = $basePoints * $multiplier;
 
     /* --- Acreditar puntos en el estado del socio --- */
     $u = $pdo->prepare('SELECT name, avatar, state FROM users WHERE id = ? FOR UPDATE');
@@ -83,24 +105,22 @@ try {
     $state = !empty($urow['state'])
         ? json_decode($urow['state'], true)
         : default_state($urow['name'], $urow['avatar']);
-
-    if ($pointsToGrant > 0) {
-        byr_grant($state, $pointsToGrant, 0, 'Pedido #' . $orderId, 'order');
-        $save = $pdo->prepare('UPDATE users SET state = ? WHERE id = ?');
-        $save->execute([json_encode($state, JSON_UNESCAPED_UNICODE), $userId]);
+    if (!is_array($state)) {
+        $state = default_state($urow['name'], $urow['avatar']);
     }
 
-    /* --- Canjear el cupón adjunto (si hay) de forma atómica --- */
-    $couponApplied = null; // null = no había cupón; true/false = se pudo o no
-    if (!empty($order['coupon_code'])) {
-        $redeem = $pdo->prepare(
-            'UPDATE redemptions
-                SET status = "redeemed", redeemed_at = NOW(), redeemed_by = ?
-              WHERE code = ? AND user_id = ? AND status = "pending"
-                AND (expires_at IS NULL OR expires_at > NOW())'
-        );
-        $redeem->execute([$admin, $order['coupon_code'], $userId]);
-        $couponApplied = $redeem->rowCount() === 1;
+    if ($pointsToGrant > 0) {
+        /* Cuenta vieja: reconocer lo ya logrado antes de acreditar, para no
+           pagarle dos veces logros que el motor del navegador ya le pagó. */
+        byr_progress_seed($pdo, $userId, $state);
+
+        byr_grant($state, $pointsToGrant, 0, 'Pedido #' . $orderId, 'order');
+
+        /* Una compra puede destrabar un logro de puntos o de nivel. */
+        byr_progress_evaluate($pdo, $userId, $state);
+
+        $save = $pdo->prepare('UPDATE users SET state = ? WHERE id = ?');
+        $save->execute([json_encode($state, JSON_UNESCAPED_UNICODE), $userId]);
     }
 
     /* --- Marcar el pedido confirmado --- */
@@ -160,6 +180,11 @@ json_out([
     'pointsAwarded' => $pointsToGrant,
     'newBalance'    => (int) ($state['wallet']['points'] ?? 0),
     'couponApplied' => $couponApplied,
+
+    /* Para que el panel pueda avisar "se duplicaron por el cupón" en vez
+       de que el cajero vea un número que no cierra con lo sugerido. */
+    'pointsBase'    => $basePoints,
+    'multiplier'    => $multiplier,
     'paymentRecorded' => $paymentRecorded,
     'paymentMethod' => $payMethod !== '' ? $payMethod : null,
 ]);

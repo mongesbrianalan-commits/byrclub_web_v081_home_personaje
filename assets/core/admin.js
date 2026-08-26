@@ -1015,9 +1015,15 @@
     const fulfillHtml = o.fulfillment === "delivery"
       ? `🛵 Delivery · <span class="oa-addr">${escapeHtml(o.address || "sin dirección")}</span>`
       : "🏪 Retiro en el local";
+    /* Si el cupón multiplica los puntos ("2x puntos"), lo decimos ACÁ, antes
+       de confirmar: si no, el cajero ve un número acreditado que no cierra
+       con el sugerido y parece un error. */
+    const couponBonus = Number(o.couponMultiplier) > 1
+      ? ` <strong>Multiplica los puntos x${Number(o.couponMultiplier)}</strong> al confirmar.`
+      : "";
 
     const couponHtml = o.couponLabel
-      ? `<div class="oa-coupon">🎟️ Cupón adjunto: ${escapeHtml(o.couponLabel)} (${escapeHtml(o.couponCode || "")}) — se marca canjeado al confirmar.</div>`
+      ? `<div class="oa-coupon">🎟️ Cupón adjunto: ${escapeHtml(o.couponLabel)} (${escapeHtml(o.couponCode || "")}) — se marca canjeado al confirmar.${couponBonus}</div>`
       : "";
 
     const notesHtml = o.notes
@@ -1115,8 +1121,16 @@
           });
           let msg = `✅ Pedido confirmado · +${fmt(r.pointsAwarded)} pts (nuevo saldo: ${fmt(r.newBalance)}).`;
           if (r.paymentRecorded) msg += ` Cobrado en ${METHOD_LABELS[r.paymentMethod] || r.paymentMethod}.`;
-          if (r.couponApplied === true) msg += " Cupón canjeado.";
-          else if (r.couponApplied === false) msg += " (El cupón ya no estaba disponible.)";
+          if (r.couponApplied === true) {
+            msg += " Cupón canjeado.";
+            /* El "2x puntos" multiplica lo acreditado. Conviene decirlo, o el
+               número no cierra con lo sugerido y parece un error de carga. */
+            if (Number(r.multiplier) > 1) {
+              msg += ` Se acreditaron x${Number(r.multiplier)}: ${fmt(r.pointsBase)} → ${fmt(r.pointsAwarded)}.`;
+            }
+          } else if (r.couponApplied === false) {
+            msg += " (El cupón ya no estaba disponible, así que no se aplicó.)";
+          }
           setStatus(ordersAdminStatus, msg, "ok");
           loadOrders();
         } catch (error) {

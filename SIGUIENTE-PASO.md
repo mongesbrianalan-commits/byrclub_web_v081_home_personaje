@@ -69,6 +69,57 @@ agujero que encuentra un usuario normal — refrescar la página —, no ese.
 Cerrarlo del todo es rehacer el state-sync para que el servidor sea dueño
 del estado: es un trabajo grande y toca todos los juegos, no solo este.
 
+### El "2x puntos" ahora hace algo (antes no hacía nada)
+
+Reportado por un socio: canjeaba el 2x puntos de la ruleta y no pasaba
+nada. Era cierto, y el multiplicador **no estaba implementado en ningún
+lado**. Los tres caminos posibles:
+
+| Camino | Qué hacía |
+|---|---|
+| Pedido online con el cupón adjunto | Lo marcaba usado y acreditaba los puntos normales |
+| Mostrador (POS) | Ni siquiera aceptaba cupones — no había dónde ponerlo |
+| Validar el código suelto en el panel | Lo marcaba canjeado y mostraba la etiqueta |
+
+La ruleta venía repartiendo una promesa que nadie cumplía.
+
+**Qué se hizo:**
+
+- `BYR_POINT_MULTIPLIERS` en `api/helpers.php` es la tabla de cupones que
+  *modifican la acreditación* en vez de entregar algo. Hoy tiene uno solo.
+- `byr_redeem_coupon()` canjea un vale de forma atómica y devuelve qué
+  era, con su multiplicador. Los vales normales (papas, bebida) devuelven
+  1, así que quien llama multiplica siempre sin preguntar.
+- En `orders-confirm.php` el canje se movió **antes** de acreditar. Ése
+  era literalmente el bug: estaba después, así que el cupón se consumía y
+  el socio cobraba lo mismo de siempre.
+- El **mostrador ahora acepta cupones**. Aparece un campo cuando se
+  identifica al socio (un vale es de alguien; con consumidor final no
+  tiene sentido). Sirve para cualquier vale, no sólo el 2x: el cajero
+  puede canjear las papas gratis mientras cobra.
+
+**En pantalla:** el panel avisa **antes** de confirmar que el cupón
+multiplica, y **después** explica la cuenta (`180 → 360`). Si no, el
+cajero ve un número acreditado que no cierra con el sugerido y parece un
+error de carga.
+
+> **El 2x puntos sigue siendo el premio más flojo de la ruleta.** Con la
+> tasa actual (1 punto cada $100 de comida), duplicar un pedido de
+> $10.000 son **+100 puntos** — y una Coca-Cola cuesta 500. Al lado de
+> "papas gratis", que es comida en la mano, decepciona. Ahora funciona,
+> pero si el comentario se repite, el problema es cuánto da, no que esté
+> roto. Se sube cambiando el 2 por otro número en la tabla.
+
+### De paso, dos cosas que estaban mal ahí cerca
+
+- `orders-confirm.php` y `pos-sale.php` no chequeaban que el estado del
+  socio fuera un array antes de acreditar. Con un JSON corrupto en la
+  base, el endpoint reventaba en vez de recuperarse.
+- Ninguno de los dos sembraba las cuentas viejas ni recalculaba logros.
+  Una compra que te cruzaba los 1.000 puntos no destrababa el logro hasta
+  la próxima vez que abrías la app. Ahora los dos hacen lo mismo que los
+  juegos: sembrar antes de acreditar, evaluar después.
+
 ### El estado pasó a ser del servidor (la causa de fondo)
 
 Hasta ahora `api/state.php` guardaba **el estado que le mandara el
@@ -279,6 +330,29 @@ Alias de transferencia: **BYRDOCKSUD.MP** (por defecto en `api/menu.php`,
 pisable desde `config.php` con `'transfer_alias'`).
 
 ---
+
+## Para probar el 2x puntos (necesitás uno en la ruleta)
+
+**En el mostrador** (es el camino nuevo entero):
+
+1. Abrí la caja y armá una venta.
+2. Buscá al socio por email o WhatsApp → aparece el campo **Cupón**.
+3. Pegá el código del 2x puntos y cobrá.
+4. El resumen tiene que mostrar `🎟️ Cupón: 2x puntos` y los puntos con
+   `(x2 por el cupón)` — el doble de lo normal.
+5. Probá también un cupón que no sea de ese socio: tiene que rechazarlo
+   sin cobrar la venta.
+
+**En un pedido online:**
+
+1. Al pedir, adjuntá el 2x puntos.
+2. En el panel, la tarjeta del pedido tiene que decir **"Multiplica los
+   puntos x2"** antes de que confirmes.
+3. Al confirmar, el aviso tiene que mostrar la cuenta: `180 → 360`.
+
+**Y el caso que no tiene que cambiar nada:** cobrá con un cupón de papas
+gratis. Se marca canjeado y aparece en el resumen, pero los puntos quedan
+en el número normal.
 
 ## Para probar que el agujero se cerró (5 minutos, desde casa)
 

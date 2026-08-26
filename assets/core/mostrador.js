@@ -23,6 +23,11 @@
   const customerInput= $("[data-customer-input]");
   const customerFind = $("[data-customer-find]");
   const customerStatus = $("[data-customer-status]");
+
+  /* Cupón del socio: solo tiene sentido con un socio identificado. */
+  const couponBlock  = $("[data-coupon-block]");
+  const couponInput  = $("[data-coupon-input]");
+  const couponStatus = $("[data-coupon-status]");
   const payMethodSel = $("[data-pay-method]");
   const tenderedField= $("[data-tendered-field]");
   const tenderedInput= $("[data-tendered]");
@@ -480,9 +485,25 @@
     if (kind) customerStatus.classList.add(kind === "error" ? "is-error" : "is-ok");
   }
 
+  function setCouponStatus(msg, kind) {
+    if (!couponStatus) return;
+    couponStatus.textContent = msg || "";
+    couponStatus.classList.remove("is-error", "is-ok");
+    if (kind) couponStatus.classList.add(kind === "error" ? "is-error" : "is-ok");
+  }
+
+  /* El campo de cupón aparece recién cuando hay un socio identificado:
+     un vale es de alguien, no se puede aplicar a un consumidor final. */
+  function showCouponBlock(on) {
+    if (!couponBlock) return;
+    couponBlock.hidden = !on;
+    if (!on && couponInput) couponInput.value = "";
+    if (!on) setCouponStatus("", "");
+  }
+
   async function findCustomer() {
     const q = customerInput.value.trim();
-    if (q === "") { customerEmail = ""; setCustomerStatus("Consumidor final (sin puntos).", ""); return; }
+    if (q === "") { customerEmail = ""; setCustomerStatus("Consumidor final (sin puntos).", ""); showCouponBlock(false); return; }
     customerFind.disabled = true;
     setCustomerStatus("Buscando…", "");
     try {
@@ -492,7 +513,7 @@
         body: JSON.stringify({ query: q }),
       });
       const data = await res.json();
-      if (!res.ok) { customerEmail = ""; setCustomerStatus(data.error || "No se encontró el socio.", "error"); return; }
+      if (!res.ok) { customerEmail = ""; setCustomerStatus(data.error || "No se encontró el socio.", "error"); showCouponBlock(false); return; }
       if (data.matches) {
         customerEmail = "";
         setCustomerStatus("Hay varias cuentas con ese número. Escribí el email exacto.", "error");
@@ -501,6 +522,7 @@
       const u = data.user;
       customerEmail = u.email || "";
       setCustomerStatus("✅ " + u.name + " · " + Number(u.points || 0).toLocaleString("es-AR") + " pts", "ok");
+      showCouponBlock(true);
     } catch (e) {
       customerEmail = "";
       setCustomerStatus("No hay conexión. Probá de nuevo.", "error");
@@ -539,6 +561,7 @@
       paymentMethod: payMethod,
       tendered: isNaN(tendered) ? null : tendered,
       customerEmail,
+      couponCode: couponInput ? couponInput.value.trim().toUpperCase() : "",
     };
 
     chargeBtn.disabled = true;
@@ -550,7 +573,15 @@
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) { setStatus(data.error || "No se pudo cobrar. Probá de nuevo.", "error"); return; }
+      if (!res.ok || !data.ok) {
+        /* Si el problema es el cupón, el aviso va en su propio campo: es más
+           fácil de ver que un cartel general arriba de todo. */
+        if (data.code === "coupon-invalid" || data.code === "coupon-needs-customer") {
+          setCouponStatus(data.error, "error");
+        }
+        setStatus(data.error || "No se pudo cobrar. Probá de nuevo.", "error");
+        return;
+      }
       showSuccess(data.sale, data.printed);
     } catch (e) {
       setStatus("No hay conexión. Probá de nuevo.", "error");
@@ -593,11 +624,23 @@
         cRow.innerHTML = "<span>Vuelto</span><span>" + money(sale.change) + "</span>";
         summary.append(cRow);
       }
+      /* Cupón usado: se muestra siempre que haya, aunque no multiplique
+         (papas, bebida), para que el cajero vea que quedó consumido. */
+      if (sale.couponLabel) {
+        const kRow = document.createElement("div");
+        kRow.className = "ss-line";
+        kRow.innerHTML = "<span>🎟️ Cupón</span><span>" +
+          escapeHtml(sale.couponLabel) + "</span>";
+        summary.append(kRow);
+      }
       if (sale.pointsAwarded > 0) {
         const pRow = document.createElement("div");
         pRow.className = "ss-line";
-        pRow.innerHTML = "<span>🪙 Puntos a " + escapeHtml(sale.customerName) + "</span><span>+" +
-          Number(sale.pointsAwarded).toLocaleString("es-AR") + "</span>";
+        const x = Number(sale.multiplier) > 1
+          ? " (x" + Number(sale.multiplier) + " por el cupón)"
+          : "";
+        pRow.innerHTML = "<span>🪙 Puntos a " + escapeHtml(sale.customerName) + x +
+          "</span><span>+" + Number(sale.pointsAwarded).toLocaleString("es-AR") + "</span>";
         summary.append(pRow);
       }
     }
@@ -664,6 +707,9 @@
     customerEmail = "";
     customerInput.value = "";
     setCustomerStatus("", "");
+    if (couponInput) couponInput.value = "";
+    setCouponStatus("", "");
+    showCouponBlock(false);
     tenderedInput.value = "";
     payMethodSel.value = "efectivo";
     show(successEl, false);

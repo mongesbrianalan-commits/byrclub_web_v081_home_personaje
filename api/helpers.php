@@ -408,6 +408,65 @@ function byr_find_or_create_phone_account(PDO $pdo, string $name, string $phone)
 }
 
 /**
+ * Cupones que, en vez de entregar algo, cambian CUÁNTOS PUNTOS se acreditan.
+ * Hoy hay uno solo: el "2x puntos" de la ruleta.
+ *
+ * Hasta esta versión no existía: el vale se marcaba canjeado y los puntos se
+ * acreditaban igual que siempre. O sea que el premio prometía "tu próxima
+ * compra suma el doble" y no lo cumplía en ningún camino — ni en el pedido
+ * online, ni en el mostrador (que ni siquiera aceptaba cupones).
+ */
+const BYR_POINT_MULTIPLIERS = [
+    'double-points' => 2,
+];
+
+/**
+ * Canjea un vale del socio y devuelve qué era. Devuelve null si no se pudo:
+ * no es suyo, ya se usó, o venció.
+ *
+ * Es atómico (SELECT ... FOR UPDATE + UPDATE condicional), así que dos cargas
+ * simultáneas no lo pueden canjear dos veces. Tiene que llamarse DENTRO de una
+ * transacción, y ANTES de acreditar los puntos: si el vale es un multiplicador,
+ * el resultado cambia cuánto se acredita.
+ *
+ * `multiplier` viene en 1 para los vales normales (papas, bebida), así que
+ * quien llama puede multiplicar siempre sin preguntar.
+ */
+function byr_redeem_coupon(PDO $pdo, string $code, int $userId, int $adminId): ?array
+{
+    $sel = $pdo->prepare(
+        'SELECT id, prize_id, prize_label
+           FROM redemptions
+          WHERE code = ? AND user_id = ? AND status = "pending"
+            AND (expires_at IS NULL OR expires_at > NOW())
+          FOR UPDATE'
+    );
+    $sel->execute([$code, $userId]);
+    $row = $sel->fetch();
+
+    if (!$row) {
+        return null;
+    }
+
+    $upd = $pdo->prepare(
+        'UPDATE redemptions
+            SET status = "redeemed", redeemed_at = NOW(), redeemed_by = ?
+          WHERE id = ? AND status = "pending"'
+    );
+    $upd->execute([$adminId, (int) $row['id']]);
+
+    if ($upd->rowCount() !== 1) {
+        return null;
+    }
+
+    return [
+        'prizeId'    => $row['prize_id'],
+        'label'      => $row['prize_label'],
+        'multiplier' => BYR_POINT_MULTIPLIERS[$row['prize_id']] ?? 1,
+    ];
+}
+
+/**
  * Genera un código de vale de premio único (formato BYR-XXXXXX con un
  * alfabeto sin caracteres ambiguos). Reintenta si choca.
  */

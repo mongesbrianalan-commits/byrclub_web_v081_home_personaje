@@ -24,9 +24,12 @@ $paySel  = byr_payment_pref_ready($pdo)
 $sql = "SELECT o.id, o.user_id, o.status, o.fulfillment, o.customer_name, o.customer_phone,
                o.address, o.notes, o.items_total, $shipSel, $paySel, o.points_suggested, o.points_awarded,
                o.coupon_code, o.coupon_label, o.created_at, o.confirmed_at,
-               u.email AS customer_email
+               u.email AS customer_email,
+               r.prize_id AS coupon_prize_id
           FROM orders o
-          JOIN users u ON u.id = o.user_id";
+          JOIN users u ON u.id = o.user_id
+          LEFT JOIN redemptions r
+                 ON r.code = o.coupon_code AND r.user_id = o.user_id";
 $params = [];
 if ($status === 'active') {
     // "En curso": aceptados que todavía se están preparando/entregando.
@@ -93,6 +96,10 @@ foreach ($orders as $o) {
         'pointsAwarded'  => $o['points_awarded'] === null ? null : (int) $o['points_awarded'],
         'couponCode'     => $o['coupon_code'],
         'couponLabel'    => $o['coupon_label'],
+
+        /* Cuánto multiplica los puntos este cupón (1 = ninguno). Lo resuelve
+           el servidor, así el panel no tiene que conocer la regla. */
+        'couponMultiplier' => BYR_POINT_MULTIPLIERS[$o['coupon_prize_id'] ?? ''] ?? 1,
         'createdAt'      => $o['created_at'],
         'confirmedAt'    => $o['confirmed_at'],
         'items'          => $itemsByOrder[$oid] ?? [],

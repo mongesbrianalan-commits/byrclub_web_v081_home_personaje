@@ -12,8 +12,10 @@
  *   paymentMethod: "efectivo"|"debito"|"credito"|"qr"|"transfer"
  *   tendered:      int    (opcional; efectivo recibido, para el vuelto)
  *   customerEmail: string (opcional; socio a sumar puntos. Vacío = consumidor final)
+ *   couponCode:    string (opcional; vale del socio. El "2x puntos" duplica lo acreditado)
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../progress/engine.php';
 require_once __DIR__ . '/../menu-options.php';
 require_once __DIR__ . '/../caja.php';
 require_once __DIR__ . '/../printing.php';
@@ -38,12 +40,19 @@ $payMethod  = trim((string) ($in['paymentMethod'] ?? ''));
 $tendered   = array_key_exists('tendered', $in) && $in['tendered'] !== '' && $in['tendered'] !== null
     ? (int) $in['tendered'] : null;
 $custEmail  = strtolower(trim((string) ($in['customerEmail'] ?? '')));
+$couponCode = strtoupper(trim((string) ($in['couponCode'] ?? '')));
 
 if (!$itemsIn) {
     json_out(['error' => 'La venta está vacía.'], 422);
 }
 if (!in_array($payMethod, byr_payment_methods(), true)) {
     json_out(['error' => 'Elegí un medio de pago.'], 422);
+}
+if ($couponCode !== '' && $custEmail === '') {
+    json_out([
+        'error' => 'Para usar un cupón hay que identificar al socio primero.',
+        'code'  => 'coupon-needs-customer',
+    ], 422);
 }
 
 /* --- Socio (opcional): se resuelve por email server-side, nunca por id del cliente --- */
@@ -157,12 +166,39 @@ $customerName    = $customer ? $customer['name'] : 'Consumidor final';
 /* --- Insert transaccional: orden + ítems + cobro + puntos --- */
 $pdo->beginTransaction();
 try {
+    /* --- Cupón del socio (opcional) ---
+       Va acá, dentro de la transacción y ANTES de acreditar: si el vale es
+       un multiplicador ("2x puntos"), cambia cuántos puntos se acreditan.
+       Los vales normales (papas, bebida) vienen con multiplicador 1: se
+       marcan canjeados y los puntos quedan igual.
+
+       Hasta esta versión el mostrador no aceptaba cupones, así que el socio
+       que mostraba un "2x puntos" en el local no tenía forma de usarlo. */
+    $couponLabel = null;
+    $multiplier  = 1;
+
+    if ($couponCode !== '') {
+        $coupon = byr_redeem_coupon($pdo, $couponCode, (int) $customer['id'], $admin);
+
+        if (!$coupon) {
+            $pdo->rollBack();
+            json_out([
+                'error' => 'Ese cupón no está disponible (no es de este socio, ya se usó o venció).',
+                'code'  => 'coupon-invalid',
+            ], 422);
+        }
+
+        $couponLabel   = $coupon['label'];
+        $multiplier    = (int) $coupon['multiplier'];
+        $pointsAwarded = $pointsAwarded * $multiplier;
+    }
+
     $ins = $pdo->prepare(
         'INSERT INTO orders
            (user_id, status, fulfillment, channel, customer_name,
-            items_total, points_suggested, points_awarded,
+            items_total, points_suggested, points_awarded, coupon_code, coupon_label,
             confirmed_at, confirmed_by, served_by, paid_at, session_id)
-         VALUES (?, "confirmed", "pickup", "mostrador", ?, ?, ?, ?, NOW(), ?, ?, NOW(), ?)'
+         VALUES (?, "confirmed", "pickup", "mostrador", ?, ?, ?, ?, ?, ?, NOW(), ?, ?, NOW(), ?)'
     );
     $ins->execute([
         $customer ? (int) $customer['id'] : null,
@@ -170,6 +206,8 @@ try {
         $itemsTotal,
         $pointsSuggested,
         $pointsAwarded,
+        $couponCode !== '' ? $couponCode : null,
+        $couponLabel,
         $admin,
         $admin,
         (int) $session['id'],
@@ -199,7 +237,19 @@ try {
         $state = !empty($customer['state'])
             ? json_decode($customer['state'], true)
             : default_state($customer['name'], $customer['avatar']);
+        if (!is_array($state)) {
+            $state = default_state($customer['name'], $customer['avatar']);
+        }
+
+        /* Cuenta vieja: reconocer lo ya logrado antes de acreditar, para no
+           pagarle dos veces logros que el motor del navegador ya le pagó. */
+        byr_progress_seed($pdo, (int) $customer['id'], $state);
+
         byr_grant($state, $pointsAwarded, 0, 'Pedido #' . $orderId, 'order');
+
+        /* Una compra puede destrabar un logro de puntos o de nivel. */
+        byr_progress_evaluate($pdo, (int) $customer['id'], $state);
+
         $save = $pdo->prepare('UPDATE users SET state = ? WHERE id = ?');
         $save->execute([json_encode($state, JSON_UNESCAPED_UNICODE), (int) $customer['id']]);
         $newBalance = (int) ($state['wallet']['points'] ?? 0);
@@ -241,5 +291,11 @@ json_out([
         'customerName'  => $customerName,
         'pointsAwarded' => $pointsAwarded,
         'newBalance'    => $newBalance,
+
+        /* Para que el ticket y el cartel de la venta puedan decir qué
+           cupón se usó y si duplicó los puntos. */
+        'couponCode'    => $couponCode !== '' ? $couponCode : null,
+        'couponLabel'   => $couponLabel,
+        'multiplier'    => $multiplier,
     ],
 ]);
