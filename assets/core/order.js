@@ -846,6 +846,21 @@
     const idEl = $("[data-success-id]");
     if (idEl) idEl.textContent = "#" + order.id;
 
+    /* El número al que le vamos a escribir. Si por lo que sea no quedó uno
+       (un socio que no tenía WhatsApp cargado), decimos igual que le vamos a
+       escribir, pero sin inventar un número. */
+    const phoneWrap = $("[data-success-phone-wrap]");
+    const phoneEl = $("[data-success-phone]");
+    if (phoneWrap && phoneEl) {
+      const phone = String(lastOrderPhone || "").trim();
+      if (phone) {
+        phoneEl.textContent = phone;
+        phoneWrap.hidden = false;
+      } else {
+        phoneWrap.hidden = true;
+      }
+    }
+
     const summary = $("[data-success-summary]");
     if (summary) {
       summary.textContent = "";

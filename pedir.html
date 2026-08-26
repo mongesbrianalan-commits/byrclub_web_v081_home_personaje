@@ -172,7 +172,14 @@
       <div class="success-card">
         <div class="success-emoji">✅</div>
         <h2>¡Pedido enviado!</h2>
-        <p>Tu pedido <strong data-success-id>#0</strong> quedó registrado. Seguí su estado acá o en <b>Mis pedidos</b>.</p>
+        <p>Tu pedido <strong data-success-id>#0</strong> se registró correctamente.</p>
+        <!-- Lo que el cliente necesita saber apenas manda el pedido: que
+             alguien le va a escribir, y a qué número. -->
+        <p class="success-contact" data-success-contact>
+          <span class="success-contact-icon">📱</span>
+          Te escribimos por <b>WhatsApp</b><span data-success-phone-wrap> al <b data-success-phone></b></span>
+          para confirmarte el pedido y cuánto va a tardar.
+        </p>
         <div class="success-state" data-success-state>🟡 Recibido</div>
         <div class="success-summary" data-success-summary></div>
         <div class="success-actions">
