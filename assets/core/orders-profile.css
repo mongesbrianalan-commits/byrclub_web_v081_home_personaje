@@ -4,7 +4,9 @@
    Tarjetas con estado del pedido, ítems y puntos acreditados.
 ========================================================= */
 
-.orders-section { margin-top: 8px; }
+/* El encabezado del sitio es pegajoso y mide ~77px: sin este margen, al
+   llegar por #mis-pedidos el titulo de la seccion queda tapado debajo. */
+.orders-section { margin-top: 8px; scroll-margin-top: 90px; }
 .orders-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 .orders-empty, .orders-error { color: #9bd1ff; font-weight: 700; padding: 10px 2px; }
 .orders-error { color: #ffb0b0; }

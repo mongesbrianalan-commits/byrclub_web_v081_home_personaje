@@ -134,6 +134,27 @@
       return;
     }
     render(Array.isArray(data.orders) ? data.orders : []);
+    settleHash();
+  }
+
+  /* Si se llegó con #mis-pedidos (desde el panel de "pedido enviado"), hay que
+     volver a acomodar el scroll DESPUÉS de dibujar.
+
+     El navegador salta al ancla apenas carga el HTML, pero arriba de esta
+     sección están los cupones, que también se traen por fetch. Cuando esa
+     lista aparece, empuja todo para abajo y el socio queda parado en cupones
+     en vez de en sus pedidos. Por eso se reposiciona acá, cuando el contenido
+     ya está puesto, y una vez más un toque después por si los cupones
+     terminaron de cargar recién. */
+  let hashSettled = false;
+
+  function settleHash() {
+    if (hashSettled || window.location.hash !== "#" + section.id) return;
+    hashSettled = true;
+
+    const ir = () => section.scrollIntoView({ behavior: "smooth", block: "start" });
+    ir();
+    window.setTimeout(ir, 400);
   }
 
   if (document.readyState === "loading") {
