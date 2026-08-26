@@ -117,6 +117,28 @@ lo cancelen te dejaba sin beneficio hasta el miércoles siguiente.
 **Un invitado no lo puede pedir.** Es un beneficio de socio, y hace falta
 saber quién es para que el límite semanal signifique algo.
 
+
+**Reclamar el código no gasta el beneficio.** Al principio sí: el límite
+contaba *que existiera* el vale, así que tocar "activar el 2x1" en
+Beneficios —aunque fuera para mirar, sin ir nunca al local— te sacaba el
+2x1 de la carta hasta el miércoles siguiente. Se pasaba de estricto:
+castigaba un clic de curiosidad como si fuera un canje.
+
+Ahora se distingue **reclamado** de **usado**:
+
+| Estado | ¿Puede pedirlo por la web? |
+|---|---|
+| No reclamó nada | Sí |
+| Reclamó el código, **sin canjear** | **Sí** — al pedirlo, ese código se anula |
+| Ya lo canjeó en el local | No |
+| Ya lo pidió por la web | No |
+
+Cuando el socio tenía un código reclamado y termina pidiendo online, el
+pedido **reusa esa misma fila** en vez de crear otra. Así el código que
+tiene en la mano sigue existiendo, y si lo muestra en el local el
+mostrador le dice *"ya lo usaste por la web"* — en vez de *"ese código no
+existe"*, que confundiría a los dos.
+
 > **El código del 2x1 no se adjunta a un pedido web.** Aparecía en el
 > selector de cupones del checkout junto con los demás vales, pero
 > adjuntarlo no cambiaba nada del pedido: se consumía el beneficio y el

@@ -100,6 +100,7 @@ function byr_2x1_status(PDO $pdo, int $userId): array
         return [
             'isWednesday' => byr_2x1_is_wednesday(),
             'used'        => false,
+            'claimed'     => false,
             'via'         => null,
             'status'      => null,
             'code'        => null,
@@ -110,9 +111,16 @@ function byr_2x1_status(PDO $pdo, int $userId): array
 
     $isWeb = (($row['prize_id'] ?? '') === BYR_2X1_PRIZE_ID_WEB);
 
+    /* Reclamado ≠ usado: el que tiene el código en la mano todavía no gastó
+       nada, y de hecho podría terminar pidiéndolo por la web. Al cajero le
+       importa la diferencia: al primero hay que dárselo, al segundo no. */
+    $used    = ($row['status'] === 'redeemed');
+    $claimed = ($row['status'] === 'pending');
+
     return [
         'isWednesday' => byr_2x1_is_wednesday(),
-        'used'        => true,
+        'used'        => $used,
+        'claimed'     => $claimed,
         'via'         => $isWeb ? 'web' : 'codigo',
         'status'      => $row['status'],
         /* El de la web no es un vale para mostrar: ya se consumió. */
@@ -149,12 +157,25 @@ function byr_2x1_web_offer(PDO $pdo, ?int $userId): array
 {
     $enabled     = byr_2x1_web_enabled();
     $isWednesday = byr_2x1_is_wednesday();
-    $used        = ($userId !== null) ? (byr_2x1_today($pdo, $userId) !== null) : false;
+
+    $row = ($userId !== null) ? byr_2x1_today($pdo, $userId) : null;
+
+    /* RECLAMAR el código no gasta el beneficio. Gastarlo es canjearlo en el
+       local o pedirlo por la web.
+       Antes bastaba con que existiera el vale, así que tocar "activar" en
+       Beneficios —aunque fuera para mirar— te sacaba el 2x1 de la carta hasta
+       el miércoles siguiente. Se pasaba de estricto: castigaba un clic de
+       curiosidad como si fuera un canje. */
+    $used    = ($row !== null && ($row['status'] ?? null) === 'redeemed');
+    $claimed = ($row !== null && ($row['status'] ?? null) === 'pending');
 
     return [
         'enabled'     => $enabled,
         'isWednesday' => $isWednesday,
         'used'        => $used,
+        /* Tiene un código reclamado y sin usar. Puede pedir igual por la web:
+           al hacerlo, ese código se anula (es el mismo beneficio, no dos). */
+        'claimed'     => $claimed,
         /* Sin sesión no hay 2x1: es un beneficio de socio, y hace falta saber
            quién es para que el límite semanal signifique algo. */
         'canOrder'    => $enabled && $isWednesday && !$used && $userId !== null,
@@ -171,7 +192,36 @@ function byr_2x1_web_offer(PDO $pdo, ?int $userId): array
  */
 function byr_2x1_consume_for_order(PDO $pdo, int $userId, int $orderId): int
 {
-    $now  = byr_2x1_now()->format('Y-m-d H:i:s');
+    $now   = byr_2x1_now()->format('Y-m-d H:i:s');
+    $label = BYR_2X1_LABEL . ' — usado en el pedido web #' . $orderId;
+
+    /* Si el socio ya había reclamado el código y no lo usó, REUSAMOS esa fila
+       en vez de crear otra. Dos motivos:
+         - el límite sigue siendo uno por miércoles, sin fila de más;
+         - el código que tiene en la mano sigue existiendo, así que si lo
+           muestra en el local el mostrador puede decirle "ya lo usaste por la
+           web" en vez de "ese código no existe", que confunde a los dos. */
+    $existing = byr_2x1_today($pdo, $userId);
+
+    if ($existing) {
+        if (($existing['status'] ?? null) !== 'pending') {
+            /* Ya estaba usado. No debería llegar acá (create.php lo valida
+               antes), pero ante la duda no regalamos un segundo beneficio. */
+            return 0;
+        }
+
+        $upd = $pdo->prepare(
+            'UPDATE redemptions
+                SET prize_id = ?, prize_label = ?, status = "redeemed", redeemed_at = ?
+              WHERE id = ? AND status = "pending"'
+        );
+        $upd->execute([BYR_2X1_PRIZE_ID_WEB, $label, $now, (int) $existing['id']]);
+
+        /* Si no actualizó nada, se lo canjearon en el local justo en el medio:
+           el beneficio ya está gastado y no corresponde crear otro. */
+        return $upd->rowCount() === 1 ? (int) $existing['id'] : 0;
+    }
+
     $code = byr_generate_redemption_code($pdo);
 
     $ins = $pdo->prepare(
@@ -183,7 +233,7 @@ function byr_2x1_consume_for_order(PDO $pdo, int $userId, int $orderId): int
         $userId,
         $code,
         BYR_2X1_PRIZE_ID_WEB,
-        BYR_2X1_LABEL . ' — usado en el pedido web #' . $orderId,
+        $label,
         BYR_2X1_SOURCE,
         $now,
         $now,

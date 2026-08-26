@@ -504,18 +504,31 @@
 
     if (!perk || !perk.isWednesday) return; // no es miércoles: no hay nada que decir
 
-    if (!perk.used) {
-      setCouponStatus("🎉 Tiene el 2x1 de socio disponible.", "ok");
+    /* Ya lo gastó: ni por la web ni con el código, no corresponde. */
+    if (perk.used) {
+      setCouponStatus(
+        perk.via === "web"
+          ? "⛔ Ya usó su 2x1 de hoy: lo pidió por la web. No corresponde dárselo."
+          : "⛔ Ya canjeó su 2x1 de hoy acá en el local.",
+        "error"
+      );
       return;
     }
 
-    setCouponStatus(
-      perk.via === "web"
-        ? "⛔ Ya usó su 2x1 de hoy: lo pidió por la web. No corresponde dárselo."
-        : "⛔ Ya usó su 2x1 de hoy" + (perk.status === "pending" ? " (reclamó el código, todavía sin canjear)." : "."),
-      perk.via === "web" || perk.status !== "pending" ? "error" : ""
-    );
+    /* Reclamó el código pero todavía no lo usó: SÍ le corresponde. Se lo
+       decimos con el código, para que el cajero lo cobre por ese camino. */
+    if (perk.claimed) {
+      setCouponStatus(
+        "🎉 Tiene el 2x1 disponible — ya reclamó el código" +
+          (perk.code ? " " + perk.code : "") + ", validalo en Canjes.",
+        "ok"
+      );
+      return;
+    }
+
+    setCouponStatus("🎉 Tiene el 2x1 de socio disponible.", "ok");
   }
+
   function showCouponBlock(on) {
     if (!couponBlock) return;
     couponBlock.hidden = !on;
