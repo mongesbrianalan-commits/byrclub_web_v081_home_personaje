@@ -117,6 +117,14 @@ lo cancelen te dejaba sin beneficio hasta el miércoles siguiente.
 **Un invitado no lo puede pedir.** Es un beneficio de socio, y hace falta
 saber quién es para que el límite semanal signifique algo.
 
+> **El código del 2x1 no se adjunta a un pedido web.** Aparecía en el
+> selector de cupones del checkout junto con los demás vales, pero
+> adjuntarlo no cambiaba nada del pedido: se consumía el beneficio y el
+> total salía igual. Ahora el checkout no lo ofrece, y si igual se manda,
+> el servidor lo rechaza. Son dos caminos distintos a propósito: **el
+> código es para el local, el producto es para la web.**
+
+
 ### Raspadita — el premio lo sortea el servidor
 
 Bug reportado: **raspabas, no reclamabas, refrescabas y volvías a jugar.**

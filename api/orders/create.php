@@ -226,7 +226,7 @@ if (!$lines) {
 $couponLabel = null;
 if ($couponCode !== '') {
     $c = $pdo->prepare(
-        'SELECT prize_label
+        'SELECT prize_id, prize_label
            FROM redemptions
           WHERE code = ? AND user_id = ? AND status = "pending"
             AND (expires_at IS NULL OR expires_at > NOW())'
@@ -239,6 +239,20 @@ if ($couponCode !== '') {
             'code'  => 'coupon-invalid',
         ], 422);
     }
+
+    /* El 2x1 de socio NO se adjunta a un pedido web.
+       El código es un vale para mostrar en el local; por la web el 2x1 entra
+       como PRODUCTO, que es lo único que cobra el precio correcto. Si se
+       pudiera adjuntar, el cupón se consumiría y el pedido saldría igual que
+       siempre — la misma trampa que tenía el "2x puntos" antes de arreglarlo,
+       con el agravante de que acá el socio pierde su beneficio de la semana. */
+    if (in_array($coupon['prize_id'], [BYR_2X1_PRIZE_ID, BYR_2X1_PRIZE_ID_WEB], true)) {
+        json_out([
+            'error' => 'El 2x1 de socio no se adjunta al pedido: mostrá el código en el local, o pedilo desde la carta cuando esté disponible.',
+            'code'  => 'coupon-not-for-web',
+        ], 422);
+    }
+
     $couponLabel = $coupon['prize_label'];
 }
 

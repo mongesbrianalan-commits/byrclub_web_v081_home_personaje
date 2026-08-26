@@ -660,6 +660,10 @@
      Cupones / cuenta / entrega
   ========================================================= */
 
+  /* Cupones que no tiene sentido adjuntar a un pedido web: el vale es para
+     el local y el pedido no lo sabria aplicar. */
+  const NO_WEB_COUPONS = new Set(["2x1-wed", "2x1-wed-web"]);
+
   async function loadCoupons() {
     try {
       const res = await fetch("/api/redemptions.php", { credentials: "same-origin" });
@@ -667,7 +671,14 @@
       const data = await res.json();
       const avail = (data.coupons || []).filter(
         (c) => c.status === "pending" && !c.expired &&
-               !(typeof c.secondsLeft === "number" && c.secondsLeft <= 0)
+               !(typeof c.secondsLeft === "number" && c.secondsLeft <= 0) &&
+               /* El 2x1 de socio NO se adjunta a un pedido web. El código es
+                  un vale para mostrar en el local; por la web el 2x1 entra
+                  como producto, que es lo único que cobra el precio correcto.
+                  Si se pudiera adjuntar, el cupón se consumiría y el pedido
+                  saldría igual que siempre — la misma trampa que tenía el
+                  "2x puntos" antes de arreglarlo. */
+               !NO_WEB_COUPONS.has(c.prizeId)
       );
       if (!avail.length) return;
       avail.forEach((c) => {
