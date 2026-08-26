@@ -28,6 +28,7 @@
     <nav class="nav" aria-label="Navegación principal">
       <a href="index.html">Inicio</a>
       <a href="beneficios.html">Beneficios</a>
+      <a href="pedir.html">Pedir</a>
       <a href="prodes.html">Prodes</a>
       <a href="juegos.html">Juegos</a>
       <a href="puntos.html">Puntos</a>
@@ -106,12 +107,11 @@
         <p class="coupons-error" data-coupons-error hidden>No pudimos cargar tus cupones en este momento. Probá recargar la página.</p>
       </section>
 
-      <!-- ============================================================
-           MIS PEDIDOS — listo pero OCULTO hasta aprobar los pedidos online.
-           Para PUBLICAR: descomentar este bloque y su script al pie
-           (assets/core/orders-profile.js), y volver a agregar el link
-           "Pedir" en la navegación. Ver memoria [[pedidos-online]].
-      <section class="orders-section" data-orders-section>
+      <!-- MIS PEDIDOS — publicado el 26/08/2026, junto con el botón "Hacer un
+           pedido" del inicio y el link "Pedir" de la navegación. Los tres
+           estaban apagados desde el piloto de pedidos online. El id sirve para
+           que el panel de "pedido enviado" traiga al socio directo acá. -->
+      <section class="orders-section" id="mis-pedidos" data-orders-section>
         <div class="section-heading section-heading-left">
           <div><span>TUS PEDIDOS</span><h2>Mis pedidos</h2></div>
           <p>Seguí el estado de tus pedidos. Cuando confirmamos uno, ves los puntos sumados acá.</p>
@@ -120,7 +120,6 @@
         <p class="orders-empty" data-orders-empty hidden>Todavía no hiciste ningún pedido. <a href="pedir.html">Hacé tu primer pedido</a> y sumá puntos.</p>
         <p class="orders-error" data-orders-error hidden>No pudimos cargar tus pedidos. Probá recargar la página.</p>
       </section>
-      ============================================================ -->
 
       <div class="section-heading section-heading-left">
         <span>PRÓXIMO OBJETIVO</span>
@@ -266,9 +265,7 @@
   <script src="assets/core/session-ui.js"></script>
   <script src="assets/core/state-sync.js"></script>
   <script src="assets/core/coupons.js"></script>
-  <!-- Pedidos online (oculto hasta aprobar): descomentar junto con la sección "Mis pedidos".
   <script src="assets/core/orders-profile.js"></script>
-  -->
   <script src="assets/core/perk-2x1.js"></script>
   <script src="assets/core/perk-2x1-popup.js"></script>
   <script src="assets/core/prode-winner-popup.js"></script>
