@@ -230,18 +230,16 @@
       stopTickSound();
       highlightWinningSegment(prizeIndex);
 
-      /* El estado (puntos, XP, inventario) ya lo calculó y guardó el servidor. */
-      if (data.state && window.BYRStorage?.save) {
+      /* El estado, los logros y las misiones ya los calculó y guardó el
+         servidor. Acá solo nos ponemos al día con lo que devolvió; los
+         cartelitos de "desbloqueaste X" los dispara BYRProgress con la
+         lista de novedades que vino en la misma respuesta. */
+      if (window.BYRProgress?.apply) {
+        window.BYRProgress.apply(data);
+      } else if (data.state && window.BYRStorage?.save) {
         window.BYRStorage.save(data.state);
-      }
-      if (window.BYRAppShell?.sync) window.BYRAppShell.sync();
-      window.dispatchEvent(new CustomEvent("byr:user-updated"));
-
-      if (window.BYRAchievementEngine?.track) window.BYRAchievementEngine.track("roulette");
-      if (window.BYRMissionEngine?.track) {
-        window.BYRMissionEngine.track("roulette");
-        window.BYRMissionEngine.track("game");
-        window.BYRMissionEngine.track("prize");
+        if (window.BYRAppShell?.sync) window.BYRAppShell.sync();
+        window.dispatchEvent(new CustomEvent("byr:user-updated"));
       }
 
       playedToday = true;

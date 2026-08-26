@@ -525,5 +525,8 @@
   window.addEventListener("storage", render);
   window.addEventListener("byr:user-updated", render);
 
+  /* Logros y misiones llegan del servidor por su propio evento. */
+  window.addEventListener("byr:progress", render);
+
   render();
 })();

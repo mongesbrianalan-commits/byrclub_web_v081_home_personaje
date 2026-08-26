@@ -11,6 +11,7 @@
  * El Memotest no reparte vales canjeables: solo puntos y XP.
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../progress/engine.php';
 require_method('POST');
 
 $id  = require_auth();
@@ -75,10 +76,21 @@ if (!is_array($state)) {
     $state = default_state($row['name'], $row['avatar']);
 }
 
+/* Antes de acreditar: si es una cuenta vieja, reconocemos lo que ya
+   habia logrado con el motor del navegador, para no pagarselo dos
+   veces. Va ACA y no despues, o esta misma jugada quedaria contada
+   como "vieja" y el logro no se pagaria. */
+byr_progress_seed($pdo, $id, $state);
+
 byr_grant($state, $points, $xp, 'Memotest BYR: ' . $moves . ' intentos', 'memory');
 
 /* Estado + marca del día en un solo UPDATE (así el límite diario no se
    puede colar entre dos peticiones simultáneas). */
+/* Jugar puede desbloquear un logro ("A raspar", "Fan de la ruleta") o
+   completar una mision del dia. Lo evalua el servidor, aca mismo, para
+   que los puntos caigan junto con los del juego. */
+$news = byr_progress_evaluate($pdo, $id, $state);
+
 $upd = $pdo->prepare('UPDATE users SET state = ?, last_memory_play = ? WHERE id = ?');
 $upd->execute([json_encode($state, JSON_UNESCAPED_UNICODE), $today, $id]);
 
@@ -92,4 +104,8 @@ json_out([
         'seconds' => $seconds,
     ],
     'state' => $state,
+
+    /* Logros y misiones que se desbloquearon con esta jugada. */
+    'unlocked'  => $news['unlocked'],
+    'completed' => $news['completed'],
 ]);

@@ -320,25 +320,59 @@
 
   /* =========================================
      CONSULTAS
+
+     La racha la lleva el SERVIDOR desde que es dueño del estado
+     (progression.streak / progression.lastVisit, que marca
+     api/progress/sync.php al abrir cualquier página del club).
+     Antes la subía este módulo en localStorage, y de ahí salían
+     los logros de 3 y 7 días seguidos: se podía inflar a mano.
+
+     El calendario de días visitados (`registeredDates`) sigue
+     siendo local. Es decoración del perfil, no vale puntos.
   ========================================= */
 
+  /* La racha del servidor. Si todavía no llegó, caemos a la copia
+     local para no mostrar un 0 que parpadea. */
+  function serverProgression() {
+    const state = window.BYRUser?.getState ? window.BYRUser.getState() : null;
+    return state?.progression || null;
+  }
+
   function getState() {
-    return clone(streakState);
+    const progression = serverProgression();
+    const local = clone(streakState);
+
+    if (!progression) {
+      return local;
+    }
+
+    return {
+      ...local,
+      current: Number(progression.streak) || 0,
+      best: Math.max(Number(progression.streak) || 0, local.best || 0),
+      lastVisitDate: progression.lastVisit || local.lastVisitDate
+    };
   }
 
   function getCurrent() {
-    return streakState.current;
+    const progression = serverProgression();
+
+    return progression
+      ? Number(progression.streak) || 0
+      : streakState.current;
   }
 
   function getBest() {
-    return streakState.best;
+    return Math.max(getCurrent(), streakState.best || 0);
   }
 
   function hasVisitedToday() {
-    return (
-      streakState.lastVisitDate ===
-      getTodayKey()
-    );
+    const progression = serverProgression();
+    const today = getTodayKey();
+
+    return progression
+      ? progression.lastVisit === today
+      : streakState.lastVisitDate === today;
   }
 
   function getDaysUntilBreak() {

@@ -137,21 +137,7 @@ const characterImage = document.querySelector(".character-image");
       .then((data) => {
         selectedPrize = data.prize;
         renderPrize();
-        applyServerState(data.state);
-
-        /* La raspadita ya cuenta como jugada: el servidor acreditó. No
-           esperamos al botón de festejo para registrar logros y misiones.
-           (`reused` = reintento sobre el mismo cartón, no se cuenta dos veces.) */
-        if (!data.reused) {
-          if (window.BYRMissionEngine?.track) {
-            BYRMissionEngine.track("scratch");
-            BYRMissionEngine.track("game");
-          }
-
-          if (window.BYRAchievementEngine?.track) {
-            BYRAchievementEngine.track("scratch");
-          }
-        }
+        applyServerResponse(data);
 
         return data;
       })
@@ -169,25 +155,27 @@ const characterImage = document.querySelector(".character-image");
       : 1;
   }
 
-  /* El servidor ya sumó puntos y XP: acá solo nos ponemos al día con el
-     estado que devolvió (no volvemos a sumar nada del lado del cliente). */
-  function applyServerState(state) {
-    if (!state) {
+  /* El servidor ya sumó puntos y XP, y ya evaluó si esta jugada
+     desbloqueó algún logro o completó una misión del día. Acá solo nos
+     ponemos al día con lo que devolvió: no sumamos nada del lado del
+     cliente, y los cartelitos los dispara BYRProgress con la lista de
+     novedades que vino en la misma respuesta. */
+  function applyServerResponse(data) {
+    if (!data) {
       return;
     }
 
     const previousLevel = readLevel();
 
-    if (window.BYRUser?.replaceState) {
-      BYRUser.replaceState(state);
-    } else if (window.BYRStorage?.save) {
-      window.BYRStorage.save(state);
-    }
+    if (window.BYRProgress?.apply) {
+      window.BYRProgress.apply(data);
+    } else if (data.state && window.BYRUser?.replaceState) {
+      BYRUser.replaceState(data.state);
+      window.dispatchEvent(new CustomEvent("byr:user-updated"));
 
-    window.dispatchEvent(new CustomEvent("byr:user-updated"));
-
-    if (window.BYRAppShell?.sync) {
-      BYRAppShell.sync();
+      if (window.BYRAppShell?.sync) {
+        BYRAppShell.sync();
+      }
     }
 
     currentLevel = readLevel();
@@ -197,7 +185,6 @@ const characterImage = document.querySelector(".character-image");
       BYRHUD.sync({ duration: 950 });
     }
   }
-
   /* No se pudo pedir el cartón: sin red, o el socio ya jugó desde otro
      navegador o celular. En los dos casos hay que frenar el raspado. */
   function handleCardError(error) {

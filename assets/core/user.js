@@ -1,6 +1,31 @@
 (() => {
   "use strict";
 
+  /* =========================================================
+     BYR Club — estado del socio en el navegador
+
+     OJO: este módulo ya NO otorga nada.
+
+     Hasta esta versión tenía addPoints(), addXp(), spendPoints(),
+     claimPrize() y registerDailyVisit(): el navegador se sumaba los
+     puntos y api/state.php guardaba lo que le mandaran. Ésa era la
+     causa de fondo de que se pudieran acreditar puntos sin jugar a
+     nada — bastaba un POST desde la consola — y de que el ranking,
+     que se arma leyendo ese mismo estado, fuera forjable.
+
+     Ahora el estado es del servidor. Acá quedó una copia de lectura
+     para dibujar la interfaz, y `replaceState()` para ponerse al día
+     con lo que el servidor devuelve.
+
+     Quién acredita, ahora:
+       api/scratch/play.php      la raspadita
+       api/roulette/spin.php     la ruleta
+       api/memory/finish.php     el memotest
+       api/progress/sync.php     logros, misiones y la racha
+       api/perks/redeem.php      el canje de recompensas
+       api/admin/award.php       la carga manual del mostrador
+     ========================================================= */
+
   if (!window.BYRStorage) {
     console.error(
       "BYRStorage no está disponible. Cargá storage.js antes de user.js."
@@ -61,64 +86,36 @@
     );
   }
 
-  function persist(reason) {
-    window.BYRStorage.save(state);
-    emitChange(reason);
-  }
-
   function getState() {
     return JSON.parse(JSON.stringify(state));
   }
 
   /*
    * Reemplaza el estado completo por el que mandó el servidor.
-   * Lo usan los juegos que se resuelven del lado del servidor
-   * (el servidor ya sumó los puntos: acá solo nos ponemos al día,
-   * sin volver a sumar nada).
+   * Es la ÚNICA forma de que cambien los puntos, el XP, el inventario
+   * o los logros: alguien le preguntó al servidor y esto es lo que
+   * contestó. Detecta la subida de nivel para que el HUD la festeje.
    */
   function replaceState(next) {
     if (!next || typeof next !== "object") {
       return false;
     }
 
+    const previousLevel = getProgression().level;
+
     /* Guardamos y releemos: load() normaliza la forma del estado,
        igual que cuando arranca la página. */
     window.BYRStorage.save(next);
     state = window.BYRStorage.load();
+
     emitChange("server");
 
-    return true;
-  }
-
-  function addXp(amount, reason = "XP ganado") {
-    const safeAmount = Number(amount);
-
-    if (!Number.isFinite(safeAmount) || safeAmount <= 0) {
-      return false;
-    }
-
-    const previousLevel = getProgression().level;
-
-    state.progression.xp += Math.round(safeAmount);
-
-    state.history.unshift({
-      type: "xp",
-      amount: Math.round(safeAmount),
-      reason,
-      date: new Date().toISOString()
-    });
-
     const newLevel = getProgression().level;
-
-    persist("xp-added");
 
     if (newLevel > previousLevel) {
       window.dispatchEvent(
         new CustomEvent("byr:level-up", {
-          detail: {
-            previousLevel,
-            newLevel
-          }
+          detail: { previousLevel, newLevel }
         })
       );
     }
@@ -126,50 +123,10 @@
     return true;
   }
 
-  function addPoints(amount, reason = "Puntos ganados") {
-    const safeAmount = Number(amount);
-
-    if (!Number.isFinite(safeAmount) || safeAmount <= 0) {
-      return false;
-    }
-
-    state.wallet.points += Math.round(safeAmount);
-
-    state.history.unshift({
-      type: "points",
-      amount: Math.round(safeAmount),
-      reason,
-      date: new Date().toISOString()
-    });
-
-    persist("points-added");
-    return true;
-  }
-
-  function spendPoints(amount, reason = "Canje") {
-    const safeAmount = Number(amount);
-
-    if (
-      !Number.isFinite(safeAmount) ||
-      safeAmount <= 0 ||
-      state.wallet.points < safeAmount
-    ) {
-      return false;
-    }
-
-    state.wallet.points -= Math.round(safeAmount);
-
-    state.history.unshift({
-      type: "points",
-      amount: -Math.round(safeAmount),
-      reason,
-      date: new Date().toISOString()
-    });
-
-    persist("points-spent");
-    return true;
-  }
-
+  /*
+   * El nombre y el avatar sí son del socio: no valen puntos, y
+   * api/state.php los acepta (es lo único que acepta del navegador).
+   */
   function setName(name) {
     const cleanName = String(name || "").trim();
 
@@ -178,119 +135,37 @@
     }
 
     state.profile.name = cleanName;
-    persist("profile-updated");
+    window.BYRStorage.save(state);
+    emitChange("profile-updated");
+
     return true;
   }
 
-  function registerDailyVisit() {
-    const today = new Date().toISOString().slice(0, 10);
-    const lastVisit = state.progression.lastVisit;
+  function setAvatar(avatar) {
+    const cleanAvatar = String(avatar || "").trim();
 
-    if (lastVisit === today) {
+    if (!cleanAvatar) {
       return false;
     }
 
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().slice(0, 10);
+    state.profile.avatar = cleanAvatar;
+    window.BYRStorage.save(state);
+    emitChange("profile-updated");
 
-    if (lastVisit === yesterday) {
-      state.progression.streak += 1;
-    } else {
-      state.progression.streak = 1;
-    }
-
-    state.progression.lastVisit = today;
-
-    state.history.unshift({
-      type: "visit",
-      amount: 1,
-      reason: "Visita diaria",
-      date: new Date().toISOString()
-    });
-
-    persist("daily-visit");
     return true;
   }
-
-  function claimPrize(prize, source = "Premio") {
-  if (!prize || !prize.id) {
-    console.error("Premio inválido:", prize);
-    return false;
-  }
-
-const reward = window.BYRPrizeRegistry?.getPrize(prize.id);
-
-  if (!reward) {
-    console.error("Premio no registrado:", prize.id);
-    return false;
-  }
-
-  const now = new Date().toISOString();
-
-  if (reward.points) {
-    state.wallet.points += reward.points;
-  }
-
-  if (reward.xp) {
-    state.progression.xp += reward.xp;
-  }
-
-  if (reward.inventory) {
-    state.inventory.unshift({
-      ...reward.inventory,
-      code: prize.code || null,
-      source,
-      status: "available",
-      obtainedAt: now
-    });
-  }
-
-  if (reward.achievement) {
-    const alreadyUnlocked = state.achievements.some(
-      (achievement) => achievement.id === reward.achievement.id
-    );
-
-    if (!alreadyUnlocked) {
-      state.achievements.unshift({
-        ...reward.achievement,
-        source,
-        unlockedAt: now
-      });
-    }
-  }
-
-  state.history.unshift({
-    type: "prize",
-    prizeId: prize.id,
-    label: prize.label || reward.inventory?.label || reward.achievement?.label,
-    points: reward.points || 0,
-    xp: reward.xp || 0,
-    source,
-    date: now
-  });
-
-  persist("prize-claimed");
-  return true;
-}
 
   function reset() {
     state = window.BYRStorage.reset();
     emitChange("reset");
   }
 
-  registerDailyVisit();
-
   window.BYRUser = {
-  getState,
-  replaceState,
-  getProgression,
-  addXp,
-  addPoints,
-  spendPoints,
-  setName,
-  registerDailyVisit,
-  claimPrize,
-  reset
-};
+    getState,
+    getProgression,
+    replaceState,
+    setName,
+    setAvatar,
+    reset
+  };
 })();

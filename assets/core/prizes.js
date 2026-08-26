@@ -1,6 +1,21 @@
 (function () {
   "use strict";
 
+  /* =========================================================
+     ⚠️ Este catálogo YA NO SE USA para otorgar nada.
+
+     Era la tabla que consultaba BYRUser.claimPrize() para saber
+     cuántos puntos valía cada premio y sumárselos al socio desde
+     el navegador. Ese método se eliminó: desde que el servidor es
+     dueño del estado, quién gana qué y cuánto vale lo deciden
+     api/scratch/catalog.php, api/roulette/spin.php y
+     api/progress/catalog.php.
+
+     Quedó cargado porque varias páginas lo incluyen. Si vas a
+     usarlo para algo, que sea para mostrar — no para acreditar:
+     volver a atarlo a los puntos reabre el agujero que cerramos.
+     ========================================================= */
+
   const prizeRegistry = {
     "points-50": {
       points: 50,

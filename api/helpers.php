@@ -305,6 +305,38 @@ function byr_grant(array &$state, int $points, int $xp, string $reason, string $
 }
 
 /**
+ * Descuenta puntos del estado y deja el movimiento en el historial.
+ * Es el contrapeso de byr_grant(): la unica forma de gastar puntos del lado
+ * del servidor (hoy, el canje de recompensas de la pagina Beneficios).
+ *
+ * Devuelve false si no le alcanzan, sin tocar nada. El XP NO se descuenta:
+ * el nivel es progreso, no moneda, y canjear no te hace retroceder.
+ */
+function byr_spend(array &$state, int $points, string $reason, string $type = 'redeem'): bool
+{
+    $balance = (int) ($state['wallet']['points'] ?? 0);
+
+    if ($points <= 0 || $balance < $points) {
+        return false;
+    }
+
+    $state['wallet']['points'] = $balance - $points;
+
+    if (!isset($state['history']) || !is_array($state['history'])) {
+        $state['history'] = [];
+    }
+    array_unshift($state['history'], [
+        'type'   => $type,
+        'points' => -$points,
+        'xp'     => 0,
+        'reason' => $reason,
+        'date'   => date('c'),
+    ]);
+
+    return true;
+}
+
+/**
  * Genera un código de invitación único (BYR + 5 caracteres de un alfabeto
  * sin caracteres ambiguos). Reintenta si choca con uno existente.
  */

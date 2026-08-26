@@ -3,22 +3,31 @@
 
   const STORAGE_KEY = "byrclub_user_state_v1";
 
+  /* Estado vacío. Es solo la forma que tiene que tener el objeto
+     mientras no llegue el del servidor: el estado de verdad lo manda
+     /api/me.php al cargar la página.
+
+     Antes esto arrancaba con 350 puntos y 840 XP de regalo (quedaron
+     de la maqueta). Con el servidor como dueño del estado, esos
+     valores no llegaban a ningún lado, pero se veían un instante en
+     el HUD antes de que llegara la respuesta. */
   const defaultState = {
     profile: {
-      name: "Brian",
+      name: "Socio",
       avatar: "🍔"
     },
     wallet: {
-      points: 350
+      points: 0
     },
     progression: {
-      xp: 840,
-      streak: 1,
+      xp: 0,
+      streak: 0,
       lastVisit: null
     },
     inventory: [],
     achievements: [],
-    history: []
+    history: [],
+    missions: { date: null, completed: [] }
   };
 
   function clone(value) {

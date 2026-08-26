@@ -326,26 +326,19 @@
 
     const reward = data.reward || {};
 
-    /* El servidor ya sumó puntos y XP: acá solo nos ponemos al día
-       con el estado que devolvió (no volvemos a sumar nada). */
-    if (data.state && window.BYRUser?.replaceState) {
+    /* El servidor ya sumó puntos y XP, y ya evaluó si esta partida
+       desbloqueó un logro o completó una misión. Acá solo nos ponemos al
+       día con lo que devolvió (no volvemos a sumar nada); los cartelitos
+       los dispara BYRProgress con las novedades de la misma respuesta. */
+    if (window.BYRProgress?.apply) {
+      window.BYRProgress.apply(data);
+    } else if (data.state && window.BYRUser?.replaceState) {
       BYRUser.replaceState(data.state);
-    } else if (data.state && window.BYRStorage?.save) {
-      window.BYRStorage.save(data.state);
-    }
+      window.dispatchEvent(new CustomEvent("byr:user-updated"));
 
-    window.dispatchEvent(new CustomEvent("byr:user-updated"));
-    if (window.BYRAppShell?.sync) {
-      BYRAppShell.sync();
-    }
-
-    if (window.BYRMissionEngine?.track) {
-      BYRMissionEngine.track("memory");
-      BYRMissionEngine.track("game");
-    }
-
-    if (window.BYRAchievementEngine?.track) {
-      BYRAchievementEngine.track("memory");
+      if (window.BYRAppShell?.sync) {
+        BYRAppShell.sync();
+      }
     }
 
     const result = {

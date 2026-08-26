@@ -623,6 +623,13 @@
 
     eventsBound = true;
 
+    /* El progreso lo manda el servidor (api/progress/sync.php). Cuando
+       llega uno nuevo, se redibuja el panel entero. */
+    window.addEventListener(
+      "byr:progress",
+      render
+    );
+
     window.addEventListener(
       "byr:mission-progress",
       handleMissionProgress

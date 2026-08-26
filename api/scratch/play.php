@@ -23,6 +23,7 @@
  * segunda espera y encuentra el día ya marcado.
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../progress/engine.php';
 require_once __DIR__ . '/catalog.php';
 require_method('POST');
 
@@ -83,6 +84,12 @@ if (($row['last_scratch_play'] ?? null) === $today) {
 $prize = byr_scratch_draw();
 
 /* Puntos / XP */
+/* Antes de acreditar: si es una cuenta vieja, reconocemos lo que ya
+   habia logrado con el motor del navegador, para no pagarselo dos
+   veces. Va ACA y no despues, o esta misma jugada quedaria contada
+   como "vieja" y el logro no se pagaria. */
+byr_progress_seed($pdo, $id, $state);
+
 byr_grant($state, (int) $prize['points'], (int) $prize['xp'], 'Raspadita diaria: ' . $prize['label'], 'scratch');
 
 /* Insignia (logro digital, sin código) */
@@ -146,6 +153,11 @@ $state['games']['scratch'] = [
 ];
 
 /* Estado + marca del día en un solo UPDATE. */
+/* Jugar puede desbloquear un logro ("A raspar", "Fan de la ruleta") o
+   completar una mision del dia. Lo evalua el servidor, aca mismo, para
+   que los puntos caigan junto con los del juego. */
+$news = byr_progress_evaluate($pdo, $id, $state);
+
 $upd = $pdo->prepare('UPDATE users SET state = ?, last_scratch_play = ? WHERE id = ?');
 $upd->execute([json_encode($state, JSON_UNESCAPED_UNICODE), $today, $id]);
 
@@ -155,4 +167,8 @@ json_out([
     'prize'  => byr_scratch_public($prize, $code),
     'state'  => $state,
     'reused' => false,
+
+    /* Logros y misiones que se desbloquearon con esta jugada. */
+    'unlocked'  => $news['unlocked'],
+    'completed' => $news['completed'],
 ]);

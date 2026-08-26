@@ -7,45 +7,20 @@ Antes que nada, al cambiar de máquina: **`git pull`**.
 
 ---
 
-## ⚠️ Migraciones pendientes (phpMyAdmin → base `u932188446_byrclub` → pestaña **SQL**)
+## ✅ Migraciones: no hay ninguna pendiente
 
-**1. Memotest — límite diario (obligatoria para que el juego funcione).**
-Hasta que no se corra, el Memotest avisa "vuelve en un rato" y no deja jugar,
-a propósito: sin esta columna no se puede garantizar 1 partida por día.
+Las tres que estaban esperando se corrieron el **26 de agosto de 2026**:
 
-```sql
-ALTER TABLE users
-  ADD COLUMN last_memory_play DATE DEFAULT NULL AFTER last_roulette_spin;
-```
+- `2026-08-memory-daily.sql` — límite diario del Memotest
+- `2026-08-scratch-daily.sql` — límite diario de la Raspadita
+- `2026-08-payment-pref.sql` — cómo paga el cliente
 
-(Está también en `api/migrations/2026-08-memory-daily.sql`.)
+Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
+`2026-08-delivery-fee.sql`.
 
-**2. Raspadita — límite diario (obligatoria para que el juego funcione).**
-Hasta que no se corra, la raspadita avisa "vuelve en un rato" y no deja
-jugar, a propósito: sin esa columna el límite volvería al navegador, que es
-justo el agujero que se cerró.
-
-```sql
-ALTER TABLE users
-  ADD COLUMN last_scratch_play DATE DEFAULT NULL AFTER last_roulette_spin;
-```
-
-(Está también en `api/migrations/2026-08-scratch-daily.sql`.)
-
-**3. Cómo paga el cliente (viene de dos sesiones atrás).**
-Hasta que no se corra, el checkout **no le pregunta al cliente cómo va a
-pagar** — todo lo demás anda igual, no se rompe nada.
-
-```sql
-ALTER TABLE orders
-  ADD COLUMN payment_pref ENUM('efectivo','transferencia') DEFAULT NULL AFTER shipping_cost,
-  ADD COLUMN cash_hint    INT UNSIGNED DEFAULT NULL AFTER payment_pref;
-```
-
-(Está también en `api/migrations/2026-08-payment-pref.sql`.)
-
-Las de la sesión del local **ya las corriste**:
-`2026-08-print-jobs.sql` y `2026-08-delivery-fee.sql`.
+> **El trabajo del estado en el servidor no necesita migración.** Lo que
+> agregó (`missions`, `progress`) vive dentro del JSON de `users.state`,
+> que ahora es del servidor. No hay columnas nuevas.
 
 ---
 
@@ -93,6 +68,121 @@ puntos directamente, sin pasar por ningún juego. Esta sesión cerró el
 agujero que encuentra un usuario normal — refrescar la página —, no ese.
 Cerrarlo del todo es rehacer el state-sync para que el servidor sea dueño
 del estado: es un trabajo grande y toca todos los juegos, no solo este.
+
+### El estado pasó a ser del servidor (la causa de fondo)
+
+Hasta ahora `api/state.php` guardaba **el estado que le mandara el
+navegador**. Ésa era la razón de fondo por la que se podían acreditar
+puntos sin jugar a nada: un `POST` desde la consola con los puntos que
+uno quisiera y listo. Y como `api/ranking.php` arma la tabla leyendo ese
+mismo estado, **el ranking era forjable con un `curl`**.
+
+Arreglar la raspadita, la ruleta y el memotest por separado no tapaba
+esto: era una puerta aparte, y estaba abierta.
+
+Ahora hay una línea clara:
+
+- **Del servidor** (el navegador no los puede tocar por ninguna vía):
+  puntos, XP, inventario, logros, historial, misiones y la racha.
+- **Del cliente**: el nombre y el avatar. Nada más.
+
+Lo que llegue por `POST` fuera de esa lista se ignora en silencio.
+
+**`BYRUser` perdió sus métodos de acreditar.** Ya no existen
+`addPoints()`, `addXp()`, `spendPoints()`, `claimPrize()` ni
+`registerDailyVisit()`. Quedó una copia de lectura para dibujar la
+interfaz y `replaceState()` para ponerse al día con el servidor.
+
+### Logros y misiones: los calcula el servidor
+
+Eran el otro lugar donde el navegador se pagaba solo: los dos motores
+llevaban sus contadores en `localStorage` y llamaban a `addPoints()`.
+Entre los 17 logros y las 8 misiones había **4.950 puntos de una vez y
+570 por día** al alcance de quien supiera editar una clave.
+
+No hicimos la solución obvia (un endpoint `track(evento)` que el cliente
+llama), porque se puede spamear 25 veces para desbloquear "Raspador
+profesional". En vez de eso, **el servidor recalcula**: las 17 métricas
+salen de datos que ya son suyos — su propio historial de acreditaciones,
+las fechas de última jugada y la tabla `redemptions`. El cliente no
+reporta nada, así que no puede mentir.
+
+- `api/progress/catalog.php` — los 17 logros y las 8 misiones, generados
+  desde los `.js` para que no haya errores de transcripción.
+- `api/progress/engine.php` — métricas, racha, selección de las 3
+  misiones del día (con la fecha como semilla: las mismas para todos) y
+  el evaluador.
+- `api/progress/sync.php` — corre al abrir cualquier página del club.
+  Es idempotente: sólo acredita lo que todavía no estaba acreditado.
+
+Los juegos también lo llaman al terminar, así que el logro cae junto con
+los puntos de la partida en vez de esperar a la próxima carga.
+
+`achievement-engine.js` y `mission-engine.js` quedaron como **vista**:
+leen lo que devuelve el servidor y dibujan. Los nombres, iconos y
+descripciones siguen saliendo de los catálogos del navegador.
+
+> **Ojo con las recompensas:** ahora están en dos lados. Si cambiás
+> cuántos puntos da un logro, hay que tocar `assets/core/achievements.js`
+> (lo que se muestra) **y** `api/progress/catalog.php` (lo que se paga).
+
+### Las cuentas que ya existían no cobran dos veces
+
+El motor viejo guardaba los logros desbloqueados en **su propio**
+`localStorage`, no en el estado — pero los puntos sí los acreditaba, y
+ésos llegaban al servidor. O sea que las cuentas que ya existen cobraron
+logros de los que no quedó rastro. Si el evaluador nuevo los viera como
+pendientes, **los pagaría por segunda vez**: miles de puntos regalados.
+
+Así que la primera vez que corre para una cuenta **con historial**, da
+por desbloqueado todo lo que ya cumple, en silencio y sin pagar. No se le
+saca nada a nadie: los puntos que tiene se los queda, y de ahí en
+adelante sólo cobra lo que gane de verdad. Las cuentas nuevas no tienen
+historial, así que arrancan cobrando normalmente.
+
+### El canje de beneficios ahora existe de verdad
+
+Esto salió a la luz de paso, y no lo sabíamos: **el canje no generaba
+ningún vale.** `beneficios.js` restaba los puntos en el navegador, ponía
+"✓ ¡Canjeado!" y ahí terminaba. No quedaba nada en la base, el admin no
+tenía qué validar y el socio no tenía qué mostrar en el local. Un Cheese
+Burger de 1.800 puntos se canjeaba contra la nada — y al recargar la
+página los puntos volvían.
+
+Ahora funciona como los premios de la ruleta: `api/perks/redeem.php`
+cobra los puntos y emite un vale con código único en `redemptions`, que
+se valida desde el panel igual que los demás. El precio y el nivel los
+pone el servidor (`api/perks/catalog.php`), no el HTML: cambiar el
+`data-points` desde la consola no abarata nada. Los vales de canje duran
+**7 días** en vez de 24 horas, porque no es lo mismo un premio regalado
+que algo que costó 8.000 puntos.
+
+> Los precios están en dos lados: `beneficios.html` los muestra,
+> `api/perks/catalog.php` los cobra.
+
+### Detalles menores que salieron en el camino
+
+- `storage.js` arrancaba con **350 puntos y 840 XP de regalo** (quedaron
+  de la maqueta). No llegaban a ningún lado, pero se veían un instante en
+  el HUD antes de que llegara la respuesta del servidor. Ahora arranca en
+  cero.
+- La racha la lleva el servidor. `streak.js` quedó mostrando ese número;
+  el calendario de días visitados sigue siendo local, porque es
+  decoración y no vale puntos.
+- `assets/core/prizes.js` quedó sin uso (era la tabla que consultaba
+  `claimPrize`). Le dejamos una advertencia arriba para que nadie lo
+  vuelva a atar a los puntos.
+
+### Qué queda abierto
+
+- **El historial del estado crece sin tope.** El evaluador cuenta las
+  partidas recorriéndolo, así que con los años se va a poner pesado.
+  Todavía falta mucho para que moleste, pero conviene tenerlo anotado:
+  el día que se recorte, hay que guardar los contadores aparte primero.
+- **Las cuentas que ya venían forjadas siguen forjadas.** Si alguien se
+  puso puntos con la consola antes de este cambio, esos puntos quedaron.
+  Cerramos la puerta; no revisamos quién entró. Se puede corregir a mano
+  desde el panel de admin.
 
 ---
 
@@ -190,6 +280,50 @@ pisable desde `config.php` con `'transfer_alias'`).
 
 ---
 
+## Para probar que el agujero se cerró (5 minutos, desde casa)
+
+**1. El curl que antes te hacía millonario.** Entrá al club logueado,
+abrí la consola del navegador (F12) y pegá esto:
+
+```js
+await fetch("/api/state.php", {
+  method: "POST",
+  credentials: "same-origin",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ state: { wallet: { points: 999999 }, progression: { xp: 999999 } } })
+}).then(r => r.json());
+```
+
+Antes te dejaba con 999.999 puntos y primero en el ranking. Ahora tiene
+que devolver tu estado **real**, sin tocar. Recargá y confirmá que los
+puntos siguen donde estaban.
+
+**2. Los logros no se pueden desbloquear a mano.** En la consola:
+
+```js
+localStorage.setItem("byr_achievement_engine_v1", JSON.stringify({ metrics: { scratch: 999 } }));
+```
+
+Recargá el perfil. Los logros de raspadita tienen que seguir como
+estaban: esa clave ya no la lee nadie (de hecho se borra sola al cargar).
+
+**3. Los logros de verdad sí caen.** Jugá la raspadita. Al terminar
+tienen que aparecer los puntos del premio **y** el cartelito de "A
+raspar" si es tu primera, con sus 75 puntos aparte.
+
+**4. El canje ahora da un vale.** Andá a Beneficios y canjeá algo que
+puedas pagar (la Coca-Cola son 500 puntos). Tiene que:
+
+- descontarte los puntos **y que sigan descontados al recargar**
+- mostrarte un **código**
+- aparecer en **Mis cupones** dentro del perfil
+- poder validarse desde el panel de admin
+
+Antes de este cambio no pasaba nada de eso.
+
+**5. Las misiones del día.** Tienen que ser 3, las mismas en el celular y
+en la computadora, y no reiniciarse al borrar los datos del navegador.
+
 ## Para probar la raspadita (se puede desde casa)
 
 1. Correr la migración `2026-08-scratch-daily.sql`.
@@ -232,12 +366,6 @@ pisable desde `config.php` con `'transfer_alias'`).
 
 ## Decisiones que quedaron abiertas
 
-- **El estado de juego lo sigue mandando el navegador** (`api/state.php`).
-  Es la decisión de fondo que queda abierta: mientras siga así, alguien con
-  la consola abierta puede acreditarse puntos sin jugar a nada, y ningún
-  arreglo por juego lo tapa. Rehacerlo es que el servidor sea dueño del
-  estado y que el cliente solo lo lea. Es el trabajo más grande de la lista,
-  pero es el que cierra la familia entera de estos bugs.
 - **El campo "¿con cuánto pagás?"** lo agregó Claude por su cuenta (vos
   pediste solo los dos medios de pago). Si ensucia el formulario, se saca en
   un minuto.

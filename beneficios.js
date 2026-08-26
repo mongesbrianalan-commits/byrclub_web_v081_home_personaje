@@ -280,7 +280,17 @@ function renderBeneficios() {
   renderMotivation({ guest: false, points, next });
 }
 
-function handleRedeem(event) {
+/* Canje contra el SERVIDOR.
+
+   Antes esto restaba los puntos en el navegador y mostraba
+   "✓ ¡Canjeado!". No quedaba nada en la base: el admin no tenía qué
+   validar, el socio no tenía qué mostrar en el local, y al recargar
+   la página los puntos volvían.
+
+   Ahora el servidor cobra los puntos y emite un vale con código, igual
+   que los premios de la ruleta. El precio y el nivel los pone el
+   servidor: cambiar el data-points desde la consola no abarata nada. */
+async function handleRedeem(event) {
   const button = event.currentTarget;
 
   if (isGuest()) {
@@ -290,30 +300,76 @@ function handleRedeem(event) {
 
   const card = button.closest("[data-reward]");
 
-  if (!card || button.disabled || !window.BYRUser?.spendPoints) {
+  if (!card || button.disabled) {
     return;
   }
 
-  const cost = Number(card.dataset.points) || 0;
-  const name = getRewardName(card);
-  const spent = BYRUser.spendPoints(cost, `Canje: ${name}`);
+  const rewardId = card.dataset.reward;
+  const original = button.textContent;
 
-  if (!spent) {
-    renderBeneficios();
+  button.disabled = true;
+  button.textContent = "Canjeando…";
+
+  let data = null;
+
+  try {
+    const res = await fetch("/api/perks/redeem.php", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rewardId })
+    });
+
+    data = await res.json();
+
+    if (!res.ok) {
+      button.textContent = original;
+      button.disabled = false;
+      showRedeemMessage(card, (data && data.error) || "No se pudo canjear.");
+      renderBeneficios();
+      return;
+    }
+  } catch (error) {
+    button.textContent = original;
+    button.disabled = false;
+    showRedeemMessage(card, "Sin conexión. Probá de nuevo en un momento.");
     return;
   }
 
-  window.dispatchEvent(new CustomEvent("byr:user-updated"));
+  /* El servidor ya cobró los puntos y emitió el vale: nos ponemos al
+     día con el estado que devolvió. */
+  if (window.BYRProgress?.apply) {
+    window.BYRProgress.apply(data);
+  } else if (data.state && window.BYRUser?.replaceState) {
+    window.BYRUser.replaceState(data.state);
+    window.dispatchEvent(new CustomEvent("byr:user-updated"));
+  }
+
   renderBeneficios();
 
   button.textContent = "✓ ¡Canjeado!";
   button.classList.add("redeemed");
-  button.disabled = true;
+
+  showRedeemMessage(
+    card,
+    `Tu código: ${data.code} — mostralo en el local. Lo tenés también en Mis cupones.`
+  );
 
   window.setTimeout(() => {
     button.classList.remove("redeemed");
     renderBeneficios();
-  }, 1600);
+  }, 2600);
+}
+
+/* Deja el aviso debajo de la tarjeta, en el mismo lugar donde ya va la
+   bajada. Se limpia solo al volver a dibujar. */
+function showRedeemMessage(card, message) {
+  const caption = card.querySelector("[data-reward-caption]");
+
+  if (caption) {
+    caption.textContent = message;
+    caption.classList.add("redeem-message");
+  }
 }
 
 document.querySelectorAll("[data-reward-action]").forEach(button => {
