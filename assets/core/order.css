@@ -202,3 +202,176 @@
 .product-card.is-perk { border-color: rgba(255,213,31,.75); background: linear-gradient(160deg, rgba(255,213,31,.16), rgba(255,255,255,.07) 60%); box-shadow: 0 0 0 1px rgba(255,213,31,.25), 0 10px 30px rgba(0,0,0,.28); }
 .product-card.is-perk:hover { border-color: rgba(255,213,31,1); }
 .product-perk-tag { display: inline-block; align-self: flex-start; margin-bottom: 8px; padding: 4px 10px; border-radius: 999px; background: #ffd51f; color: #07164d; font-size: .72rem; font-weight: 900; letter-spacing: .02em; text-transform: uppercase; }
+
+/* =========================================================
+   TEMA CLARO — solo la página de pedidos
+   ---------------------------------------------------------
+   Todo lo de arriba está escrito para el fondo azul oscuro del resto del
+   sitio. Acá abajo se da vuelta, y SOLO dentro de `body.order-light`: pedir
+   comida se lee mejor sobre blanco, y el resto del club sigue igual.
+
+   OJO con el gancho: `order-page` NO sirve, porque mostrador.html usa esa
+   misma clase — aclarar por ahí le cambiaría la pantalla al cajero. Por eso
+   pedir.html lleva `order-light` aparte.
+
+   Para volver atrás: borrar este bloque. No hay nada más que tocar.
+
+   Dos cosas que no son blanco puro, a propósito:
+     - la página es un blanco apenas grisado, para que las tarjetas
+       (esas sí blancas) tengan dónde apoyarse y no se fundan;
+     - el amarillo de la marca NO se usa para texto sobre claro (no se
+       lee). Queda para fondos de píldoras y botones, donde brilla.
+========================================================= */
+
+body.order-light {
+  --ord-bg:      #f4f6fb;   /* la página */
+  --ord-surface: #ffffff;   /* tarjetas, carrito, modales */
+  --ord-line:    #e2e7f2;   /* bordes */
+  --ord-ink:     #0b1f52;   /* texto principal */
+  --ord-muted:   #5f6f96;   /* texto secundario */
+  --ord-accent:  #0a42d8;   /* el azul de la marca, ahora para texto */
+  --ord-shadow:  0 6px 20px rgba(11, 31, 82, .07);
+
+  background: var(--ord-bg);
+  color: var(--ord-ink);
+}
+
+/* El punteado blanco del fondo es para el tema oscuro: sobre claro ensucia. */
+body.order-light .page-noise { display: none; }
+
+/* --- Hero --- */
+body.order-light .order-hero h1 { color: var(--ord-ink); }
+body.order-light .order-hero h1 strong { color: var(--ord-accent); text-shadow: none; }
+body.order-light .order-hero p { color: var(--ord-muted); }
+body.order-light .order-hero p b { color: var(--ord-ink); }
+body.order-light .order-kicker { box-shadow: 0 4px 0 #d9ab00; }
+
+body.order-light .order-loading { color: var(--ord-muted); }
+body.order-light .order-error { color: #c0392b; }
+
+/* --- Navegación de categorías --- */
+body.order-light .menu-nav {
+  background: rgba(255, 255, 255, .94);
+  border-color: var(--ord-line);
+  box-shadow: var(--ord-shadow);
+  backdrop-filter: blur(8px);
+}
+body.order-light .menu-nav-pill { color: var(--ord-muted); }
+body.order-light .menu-nav-pill:hover { background: #eef2fa; color: var(--ord-ink); }
+body.order-light .menu-nav-pill.is-active { background: var(--ord-accent); color: #fff; }
+
+/* --- Productos --- */
+body.order-light .menu-category h2 { color: var(--ord-ink); }
+body.order-light .product-card {
+  background: var(--ord-surface);
+  border-color: var(--ord-line);
+  box-shadow: var(--ord-shadow);
+}
+body.order-light .product-card:hover {
+  border-color: var(--ord-accent);
+  box-shadow: 0 10px 26px rgba(11, 31, 82, .12);
+}
+body.order-light .product-name { color: var(--ord-ink); }
+body.order-light .product-desc { color: var(--ord-muted); }
+body.order-light .product-price { color: var(--ord-ink); }
+
+/* --- Carrito --- */
+body.order-light .cart-inner {
+  background: var(--ord-surface);
+  border-color: var(--ord-line);
+  box-shadow: 0 10px 30px rgba(11, 31, 82, .10);
+}
+body.order-light .cart-title { color: var(--ord-ink); }
+body.order-light .cart-empty { color: var(--ord-muted); }
+body.order-light .cart-line { background: #f4f6fb; }
+body.order-light .cart-line .cl-name { color: var(--ord-ink); }
+body.order-light .cart-line .cl-options { color: #8a6a00; }
+body.order-light .cart-line .cl-note { color: var(--ord-muted); }
+body.order-light .cart-line .cl-price { color: var(--ord-muted); }
+body.order-light .cart-line .cl-edit { background: #fff5cc; color: #7a5c00; }
+body.order-light .cart-line .cl-edit:hover { background: #ffeaa0; }
+
+body.order-light .cart-total-row { border-top-color: var(--ord-line); }
+body.order-light .cart-total-row span { color: var(--ord-muted); }
+body.order-light .cart-total-row strong { color: var(--ord-ink); }
+body.order-light .cart-sub-row strong { color: var(--ord-muted); }
+body.order-light .cart-points-hint {
+  background: #e8f9ed; border-color: #b6e7c4; color: #1d6b39;
+}
+
+/* --- Checkout --- */
+body.order-light .checkout-label { color: var(--ord-ink); }
+body.order-light .checkout-pay-hint {
+  background: #eef4ff; border-color: #c9dcff; color: #2b4a8a;
+}
+body.order-light .checkout-pay-hint b { color: var(--ord-ink); }
+body.order-light .fulfill-opt {
+  background: #f4f6fb; border-color: var(--ord-line); color: var(--ord-ink);
+}
+body.order-light .fulfill-opt.is-active {
+  background: var(--yellow); color: #071342; border-color: var(--yellow);
+  box-shadow: 0 4px 0 #d9ab00;
+}
+body.order-light .checkout-guest-hint {
+  background: #e8f9ed; border-color: #b6e7c4; color: #1d6b39;
+}
+body.order-light .checkout-guest-hint a { color: #14532d; }
+body.order-light .cart-checkout .auth-form-status.is-error { color: #c0392b; }
+body.order-light .cart-checkout .auth-form-status.is-ok { color: #1d6b39; }
+
+body.order-light .order-secondary-btn {
+  background: #fff; border-color: var(--ord-line); color: var(--ord-ink);
+}
+body.order-light .order-secondary-btn:hover { background: #eef2fa; }
+
+/* --- Bottom sheet (mobile) --- */
+body.order-light .cart-sheet-handle { background: #d7dded; }
+body.order-light .cart-sheet-close { background: #eef2fa; color: var(--ord-ink); }
+
+/* --- Éxito --- */
+body.order-light .success-card {
+  background: var(--ord-surface);
+  border-color: var(--ord-line);
+  box-shadow: 0 14px 36px rgba(11, 31, 82, .12);
+}
+body.order-light .success-card h2 { color: var(--ord-ink); }
+body.order-light .success-card p { color: var(--ord-muted); }
+body.order-light .success-card p strong { color: var(--ord-accent); }
+body.order-light .success-state {
+  background: #fff5cc; border-color: #ffd51f; color: #7a5c00;
+}
+body.order-light .success-summary { background: #f4f6fb; color: var(--ord-ink); }
+body.order-light .success-summary .ss-total { border-top-color: var(--ord-line); }
+body.order-light .success-summary .ss-total b { color: var(--ord-ink); }
+
+/* --- Popup de opciones --- */
+body.order-light .opt-overlay { background: rgba(11, 31, 82, .42); }
+body.order-light .opt-modal {
+  background: var(--ord-surface);
+  border-color: var(--ord-line);
+  color: var(--ord-ink);
+  box-shadow: 0 24px 60px rgba(11, 31, 82, .25);
+}
+body.order-light .opt-head { border-bottom-color: var(--ord-line); }
+body.order-light .opt-close { background: #eef2fa; color: var(--ord-ink); }
+body.order-light .opt-close:hover { background: #dfe6f5; }
+body.order-light .opt-group { border-bottom-color: var(--ord-line); }
+body.order-light .opt-opt { color: var(--ord-muted); }
+body.order-light .opt-note-input { background: #f4f6fb; }
+body.order-light .opt-row:hover { background: #f4f6fb; }
+body.order-light .opt-row-price { color: var(--ord-muted); }
+body.order-light .opt-foot { border-top-color: var(--ord-line); background: #f9fafd; }
+body.order-light .opt-total span { color: var(--ord-muted); }
+body.order-light .opt-total-value { color: var(--ord-ink); }
+
+/* --- 2x1 de socio: sobre claro, la cinta dorada resalta sola --- */
+body.order-light .product-card.is-perk {
+  background: linear-gradient(160deg, #fffae0, #fff 62%);
+  border-color: #ffd51f;
+  box-shadow: 0 0 0 1px rgba(255, 213, 31, .5), 0 10px 26px rgba(180, 140, 0, .16);
+}
+body.order-light .product-card.is-perk:hover { border-color: #e8b800; }
+
+/* El amarillo como color de control (tildes, radios) se pierde sobre blanco:
+   sirve para fondos, no para trazos finos. */
+body.order-light .opt-row input { accent-color: var(--ord-accent); }
