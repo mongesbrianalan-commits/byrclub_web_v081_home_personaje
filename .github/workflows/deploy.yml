@@ -15,6 +15,29 @@ jobs:
       - name: Descargar el codigo del repo
         uses: actions/checkout@v4
 
+      # El hosting manda "Cache-Control: max-age=604800" en el CSS y el JS, o
+      # sea que el navegador del cliente los guarda UNA SEMANA. Sin esto, un
+      # arreglo publicado hoy no le llega hasta dentro de siete dias: el HTML
+      # se actualiza, pero sigue apuntando al mismo archivo que ya tiene.
+      #
+      # En el repo las referencias van con "?v=DEV" (asi funcionan al abrir
+      # los archivos a mano). Aca se reemplaza por el sha del commit, asi cada
+      # publicacion estrena direccion y el navegador la baja de cero.
+      #
+      # Los HTML se van a resubir en cada deploy porque el sha cambia: son
+      # chicos, no es problema.
+      - name: Versionar CSS y JS (para que el cache no tape los cambios)
+        run: |
+          VER="${GITHUB_SHA:0:7}"
+          echo "Versionando assets con ?v=$VER"
+          find . -name '*.html' \
+            -not -path './.git/*' \
+            -not -path './node_modules/*' \
+            -not -path './tools/*' \
+            -exec sed -i "s/?v=DEV/?v=$VER/g" {} +
+          echo "Referencias versionadas:"
+          grep -rho '?v=[a-f0-9]\{7\}' --include='*.html' . | sort | uniq -c
+
       - name: Subir por FTP al hosting
         id: ftp1
         continue-on-error: true
