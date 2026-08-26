@@ -195,3 +195,10 @@
 .opt-total-value { font-family: "Lilita One"; font-size: 1.5rem; color: var(--yellow); }
 .opt-add-btn { flex: 1; max-width: 260px; border: 0; border-radius: 16px; padding: 14px 20px; background: var(--yellow); color: #071342; font-weight: 900; box-shadow: 0 6px 0 #b98700; cursor: pointer; }
 .opt-add-btn:hover { transform: translateY(-2px); }
+
+/* --- 2x1 de socio (miércoles) ---------------------------------------------
+   La tarjeta del beneficio se distingue del resto de la carta: es de socio,
+   está sólo hoy, y es lo que muchos vienen a buscar. */
+.product-card.is-perk { border-color: rgba(255,213,31,.75); background: linear-gradient(160deg, rgba(255,213,31,.16), rgba(255,255,255,.07) 60%); box-shadow: 0 0 0 1px rgba(255,213,31,.25), 0 10px 30px rgba(0,0,0,.28); }
+.product-card.is-perk:hover { border-color: rgba(255,213,31,1); }
+.product-perk-tag { display: inline-block; align-self: flex-start; margin-bottom: 8px; padding: 4px 10px; border-radius: 999px; background: #ffd51f; color: #07164d; font-size: .72rem; font-weight: 900; letter-spacing: .02em; text-transform: uppercase; }

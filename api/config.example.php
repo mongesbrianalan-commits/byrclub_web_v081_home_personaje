@@ -47,6 +47,23 @@ return [
     'delivery_fee' => 490,
 
     /*
+     * 2x1 de socio de los MIÉRCOLES: ¿se puede sumar a un pedido web?
+     *
+     * false (por defecto) = como siempre: el socio reclama el código y lo
+     *                       muestra en el local.
+     * true                = además aparece en la carta, los miércoles, como
+     *                       "2x1 Doble Cheese con papas", y se puede sumar
+     *                       al pedido (o pedir solo eso).
+     *
+     * Es una PRUEBA PILOTO: se prende y se apaga acá, sin desplegar nada.
+     * Los dos caminos comparten el mismo límite de uno por socio por
+     * miércoles, así que nadie puede usarlo dos veces.
+     *
+     * Necesita la migración 2026-08-perk-2x1-web.sql corrida.
+     */
+    'perk_2x1_web' => false,
+
+    /*
      * Alias (o CBU) para las transferencias. Si el cliente elige "Transferencia"
      * al hacer el pedido, se le muestra esto para que sepa a dónde mandar la
      * plata.

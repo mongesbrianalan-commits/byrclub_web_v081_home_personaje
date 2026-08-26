@@ -83,12 +83,32 @@
      Render del menú
   ========================================================= */
 
+  /* Slug del 2x1 de socio. El servidor lo manda en menu.php sólo cuando el
+     socio lo puede pedir: es miércoles, la prueba piloto está encendida y
+     todavía no lo usó. Acá sólo lo destacamos. */
+  let perk2x1 = null;
+
+  function is2x1(p) {
+    return Boolean(perk2x1 && perk2x1.slug && p.slug === perk2x1.slug);
+  }
+
   function productCard(p) {
     const card = document.createElement("article");
     card.className = "product-card";
 
     const body = document.createElement("div");
     body.className = "product-body";
+
+    /* El 2x1 va con su cintita: es un beneficio de socio, no un producto
+       más de la carta, y sólo está hoy. */
+    if (is2x1(p)) {
+      card.classList.add("is-perk");
+      const tag = document.createElement("span");
+      tag.className = "product-perk-tag";
+      tag.textContent = "🎉 Beneficio de socio · solo hoy";
+      body.append(tag);
+    }
+
     const name = document.createElement("div");
     name.className = "product-name";
     name.textContent = p.name;
@@ -958,6 +978,7 @@
       paymentPrefs = Array.isArray(data.paymentPrefs) ? data.paymentPrefs : [];
       transferAlias = String(data.transferAlias || "");
       optionSets = data.optionSets || {};
+      perk2x1 = data.perk2x1 || null;
       initPayment(); // recién ahora sabemos si hay que preguntar y con qué alias
       const cats = Array.isArray(data.categories) ? data.categories : [];
       show(menuLoading, false);

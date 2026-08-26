@@ -16,10 +16,16 @@
  */
 require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/../menu-options.php';
+require_once __DIR__ . '/../perks/2x1.php';
 require_method('POST');
 
 $pdo = db();
 $id  = current_user_id(); // null = invitado (pide sin loguearse)
+
+/* Guardamos quién es el SOCIO antes de que $id se reasigne a la cuenta
+   exprés del invitado más abajo. El 2x1 es un beneficio de socio: un
+   invitado no lo puede pedir aunque le creemos una cuenta por teléfono. */
+$memberId = $id;
 
 $in          = body_json();
 $itemsIn     = is_array($in['items'] ?? null) ? $in['items'] : [];
@@ -100,13 +106,48 @@ if (!$keys) {
     json_out(['error' => 'Tu pedido está vacío.'], 422);
 }
 
+/* --- 2x1 de socio: ¿lo está pidiendo, y puede? --------------------------
+   El producto vive con available = 0, así que la consulta de abajo lo trae
+   sólo por el OR explícito. Que aparezca en la carta no alcanza: acá se
+   vuelve a comprobar TODO (bandera, miércoles, socio, que no lo haya usado),
+   porque la carta es una comodidad y esto es la puerta. */
+$wants2x1  = in_array(BYR_2X1_PRODUCT_SLUG, $keys, true);
+$offer2x1  = byr_2x1_web_offer($pdo, $memberId);
+
+if ($wants2x1) {
+    if ($memberId === null) {
+        json_out([
+            'error' => 'El 2x1 de socio es para socios: entrá con tu cuenta para pedirlo.',
+            'code'  => 'perk-2x1-needs-member',
+        ], 422);
+    }
+    if (!$offer2x1['enabled']) {
+        json_out([
+            'error' => 'El 2x1 por la web todavía no está disponible.',
+            'code'  => 'perk-2x1-off',
+        ], 422);
+    }
+    if (!$offer2x1['isWednesday']) {
+        json_out([
+            'error' => 'El 2x1 de socio es solo los miércoles.',
+            'code'  => 'not-wednesday',
+        ], 422);
+    }
+    if ($offer2x1['used']) {
+        json_out([
+            'error' => 'Ya usaste tu 2x1 de este miércoles.',
+            'code'  => 'perk-2x1-used',
+        ], 409);
+    }
+}
+
 $placeholders = implode(',', array_fill(0, count($keys), '?'));
 $stmt = $pdo->prepare(
     "SELECT id, slug, name, price, category
        FROM products
-      WHERE available = 1 AND (slug IN ($placeholders) OR id IN ($placeholders))"
+      WHERE (available = 1 OR slug = ?) AND (slug IN ($placeholders) OR id IN ($placeholders))"
 );
-$stmt->execute([...$keys, ...$keys]);
+$stmt->execute([BYR_2X1_PRODUCT_SLUG, ...$keys, ...$keys]);
 $products = $stmt->fetchAll();
 
 $bySlug = [];
@@ -131,6 +172,11 @@ foreach ($itemsIn as $it) {
     $p = $bySlug[$key] ?? $byId[$key] ?? null;
     if (!$p) {
         continue; // inexistente o no disponible: se descarta
+    }
+
+    /* El 2x1 es uno por socio por miércoles: pedir tres no da tres. */
+    if ($p['slug'] === BYR_2X1_PRODUCT_SLUG) {
+        $qty = 1;
     }
 
     /* Opciones (papas/bebida/adicionales): validadas y tarifadas por el servidor. */
@@ -160,6 +206,7 @@ foreach ($itemsIn as $it) {
     $itemsTotal += $subtotal;
     $lines[] = [
         'product_id' => (int) $p['id'],
+        'slug'       => $p['slug'],   /* interno: para reconocer el 2x1 */
         'name'       => $p['name'],
         'options'    => $optionsText !== '' ? $optionsText : null,
         'unit_price' => $unit,
@@ -262,6 +309,21 @@ try {
             $ln['qty'],
             $ln['subtotal'],
         ]);
+    }
+
+    /* --- 2x1 de socio: queda consumido por este pedido ---
+       Se marca acá y no al confirmar, para que no se puedan dejar tres
+       pedidos pendientes cada uno con su 2x1. Si el local cancela el
+       pedido, orders-cancel.php se lo devuelve. */
+    $used2x1 = false;
+    foreach ($lines as $ln) {
+        if (($ln['slug'] ?? null) === BYR_2X1_PRODUCT_SLUG) {
+            $used2x1 = true;
+            break;
+        }
+    }
+    if ($used2x1 && $memberId !== null) {
+        byr_2x1_consume_for_order($pdo, $memberId, $orderId);
     }
 
     $pdo->commit();

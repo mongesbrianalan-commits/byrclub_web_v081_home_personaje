@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/menu-options.php';
+require_once __DIR__ . '/perks/2x1.php';
 
 /* Público: cualquiera puede ver la carta (para pedir como invitado). */
 $pdo = db();
@@ -49,6 +50,29 @@ if ($hasStaffCol && !$isStaff) {
 }
 $sql .= ' ORDER BY sort ASC, id ASC';
 $rows = $pdo->query($sql)->fetchAll();
+
+/* --- 2x1 de socio de los miércoles ---------------------------------------
+   Vive en `products` con available = 0, así que la consulta de arriba nunca
+   lo trae. Lo agregamos a mano y sólo si corresponde: bandera encendida,
+   miércoles en Argentina, socio logueado y que no lo haya usado hoy.
+
+   Que aparezca acá es una comodidad de la carta, no un permiso:
+   api/orders/create.php vuelve a comprobar todo antes de aceptarlo. */
+$twoForOne = byr_2x1_web_offer($pdo, current_user_id());
+
+if ($twoForOne['canOrder']) {
+    $p2x1 = $pdo->prepare('SELECT id, slug, category, name, description, image, emoji, price FROM products WHERE slug = ?');
+    $p2x1->execute([BYR_2X1_PRODUCT_SLUG]);
+
+    if ($row2x1 = $p2x1->fetch()) {
+        /* Primero de todo: es el motivo por el que muchos van a entrar hoy. */
+        array_unshift($rows, $row2x1);
+    } else {
+        /* Falta correr 2026-08-perk-2x1-web.sql: no ofrecemos lo que no
+           existe, pero tampoco rompemos la carta. */
+        $twoForOne['canOrder'] = false;
+    }
+}
 
 /* Agrupamos respetando el orden de BYR_MENU_CATEGORIES (categorías vacías se omiten). */
 $byCat = [];
@@ -98,6 +122,14 @@ if ($rate < 1) {
 json_out([
     'categories'      => $categories,
     'pointsPerAmount' => $rate,
+
+    /* Estado del 2x1 de socio, para que la carta pueda destacarlo y —cuando
+       no está disponible— explicar por qué en vez de callarse. */
+    'perk2x1'         => array_merge($twoForOne, [
+        'slug'  => BYR_2X1_PRODUCT_SLUG,
+        'label' => BYR_2X1_LABEL,
+    ]),
+
     /* Costo de envío, para mostrarlo en el carrito antes de crear el pedido.
        El precio que vale es igual el que recalcula el server al confirmar. */
     'deliveryFee'     => byr_shipping_ready(db()) ? byr_delivery_fee() : 0,

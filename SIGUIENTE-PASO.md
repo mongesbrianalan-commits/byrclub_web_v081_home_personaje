@@ -7,7 +7,45 @@ Antes que nada, al cambiar de máquina: **`git pull`**.
 
 ---
 
-## ✅ Migraciones: no hay ninguna pendiente
+## ⚠️ Para prender el 2x1 por la web (dos pasos, los hacés vos)
+
+Está desplegado y **apagado**. Queda así hasta que hagas estas dos cosas —
+podés hacerlas hoy o el miércoles que viene, sin depender de un deploy.
+
+**1. La migración** (phpMyAdmin → base `u932188446_byrclub` → pestaña SQL).
+Crea el producto del 2x1, desactivado:
+
+```sql
+INSERT INTO products (slug, category, name, description, emoji, price, sort, available)
+VALUES ('promo-2x1-doble-cheese', 'promos', '2x1 Doble Cheese con papas',
+        'Dos Doble con Cheddar y dos porciones de papas, al precio de una. Beneficio de socio, solo los miércoles.',
+        '🍔', 16000, 5, 0);
+```
+
+(Está también en `api/migrations/2026-08-perk-2x1-web.sql`, con el
+`ON DUPLICATE KEY` por si hay que correrla dos veces.)
+
+**2. La bandera**, en `api/config.php` **del servidor**:
+
+```php
+'perk_2x1_web' => true,
+```
+
+> **`api/config.php` no está en el repo ni se sube con el deploy** (está
+> excluido a propósito, porque tiene las claves de la base). Hay que
+> editarlo desde el Administrador de archivos de Hostinger o por FTP.
+> Justamente por eso sirve como interruptor: lo prendés y lo apagás sin
+> tocar el código ni esperar a GitHub.
+
+Con las dos hechas, el 2x1 aparece **primero en la carta**, con su cintita
+dorada, sólo los miércoles y sólo a socios que no lo usaron.
+
+**Para apagarlo:** poné la bandera en `false`. Los pedidos ya hechos no se
+tocan.
+
+---
+
+## ✅ Otras migraciones: no hay ninguna pendiente
 
 Las tres que estaban esperando se corrieron el **26 de agosto de 2026**:
 
@@ -18,13 +56,49 @@ Las tres que estaban esperando se corrieron el **26 de agosto de 2026**:
 Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 `2026-08-delivery-fee.sql`.
 
-> **El trabajo del estado en el servidor no necesita migración.** Lo que
-> agregó (`missions`, `progress`) vive dentro del JSON de `users.state`,
-> que ahora es del servidor. No hay columnas nuevas.
+> El trabajo del estado en el servidor no necesitó migración: lo que agregó
+> (`missions`, `progress`) vive dentro del JSON de `users.state`.
 
 ---
 
 ## Sesión del 26 de agosto de 2026 (desde casa)
+
+### El 2x1 de los miércoles, ahora también por la web (prueba piloto)
+
+Antes el 2x1 era un solo camino: el socio reclamaba un código y lo mostraba
+en el local. Ahora puede además **pedirlo desde la web** — sumarlo a un
+pedido o pedir sólo eso.
+
+**Cómo se hizo, y por qué así.** No hubo que inventar un motor de
+descuentos que modifique totales (eso habría tocado caja, comandas, puntos
+y devoluciones). En tu carta **las promos ya son productos**:
+
+```
+promo-3x2-doble-cheese   "3x2 Doble Cheese"    $32.000
+promo-3x2-crispy-onion   "3x2 Crispy Onion"    $35.000
+```
+
+Así que el 2x1 es un producto más: `promo-2x1-doble-cheese`, **$16.000**,
+que entrega dos Doble con Cheddar y dos porciones de papas. Es la misma
+lógica que tu 3x2 (cobrás dos burgers, entregás tres con sus papas). La
+comanda sale con el nombre completo y la cocina entiende igual que siempre.
+
+**Los dos caminos comparten el mismo límite.** Uno por socio por miércoles,
+sea por la web o por el código. Quien lo pidió online no puede además
+reclamar el código, y al revés — el control vive en `redemptions`, que ya
+era donde vivía.
+
+**Dónde se decide.** El producto está en la base con `available = 0`, así
+que el menú normal **nunca** lo trae. `api/menu.php` lo agrega a mano sólo
+si: bandera encendida + miércoles en Argentina + socio logueado + no lo usó
+hoy. Y `api/orders/create.php` **vuelve a comprobar las cuatro** antes de
+aceptar el pedido: la carta es una comodidad, la puerta es el servidor.
+
+**Si el local cancela el pedido, el 2x1 vuelve.** Sin eso, pedirlo y que te
+lo cancelen te dejaba sin beneficio hasta el miércoles siguiente.
+
+**Un invitado no lo puede pedir.** Es un beneficio de socio, y hace falta
+saber quién es para que el límite semanal signifique algo.
 
 ### Raspadita — el premio lo sortea el servidor
 
@@ -330,6 +404,27 @@ Alias de transferencia: **BYRDOCKSUD.MP** (por defecto en `api/menu.php`,
 pisable desde `config.php` con `'transfer_alias'`).
 
 ---
+
+## Para probar el 2x1 por la web
+
+Con la migración corrida y la bandera en `true`, **siendo miércoles**:
+
+1. Entrá a **Pedir** con tu cuenta. El 2x1 tiene que aparecer **primero**,
+   con la cintita dorada y $16.000.
+2. Sumalo y hacé el pedido (solo, o con otras cosas).
+3. Volvé a **Pedir**: ya no tiene que estar. Lo usaste.
+4. Andá a **Beneficios** e intentá reclamar el código del 2x1: tiene que
+   decir que ya lo usaste en un pedido web. **Ése es el chequeo que
+   importa** — que los dos caminos compartan el límite.
+5. Cancelá ese pedido desde el panel y volvé a **Pedir**: el 2x1 tiene que
+   volver a aparecer.
+
+**Y los casos que NO tienen que dejar:**
+
+- Un jueves: no aparece (y si alguien fuerza el pedido, el servidor lo
+  rechaza con "el 2x1 de socio es solo los miércoles").
+- Sin loguearse (pedido de invitado): no aparece ni se puede pedir.
+- Con la bandera en `false`: no aparece, aunque sea miércoles.
 
 ## Para probar el 2x puntos (necesitás uno en la ruleta)
 
