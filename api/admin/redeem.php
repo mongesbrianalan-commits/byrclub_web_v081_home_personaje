@@ -1,6 +1,7 @@
 <?php
 /** Marca un vale de premio como canjeado. Solo admin. No se puede reusar. */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../perks/2x1.php';
 require_method('POST');
 
 $pdo = db();
@@ -40,8 +41,9 @@ if ($upd->rowCount() === 1) {
 
 /* No se actualizó: o no existe, o ya estaba canjeado, o venció. Averiguamos cuál. */
 $stmt = $pdo->prepare(
-    'SELECT status, redeemed_at, expires_at,
-            (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired
+    'SELECT prize_id, prize_label, status, redeemed_at, expires_at,
+            (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired,
+            DATE(redeemed_at) = CURDATE() AS redeemed_today
        FROM redemptions WHERE code = ?'
 );
 $stmt->execute([$code]);
@@ -56,8 +58,27 @@ if ($row['status'] === 'pending' && (int) $row['is_expired'] === 1) {
         'expiresAt' => $row['expires_at'],
     ], 409);
 }
+
+/* El 2x1 pedido por la web no es un vale para mostrar: ya se consumió en el
+   pedido. Si el socio igual lo trae al local, el cajero tiene que entender
+   de una qué pasó — y no quedar dudando si el cliente vino más temprano. */
+if (($row['prize_id'] ?? '') === BYR_2X1_PRIZE_ID_WEB) {
+    json_out([
+        'error'      => 'Este socio YA USÓ su 2x1 de hoy: lo pidió por la web. No corresponde dárselo de nuevo.',
+        'code'       => 'perk-2x1-used-web',
+        'prize'      => $row['prize_label'],
+        'redeemedAt' => $row['redeemed_at'],
+    ], 409);
+}
+
+$hoy = ((int) ($row['redeemed_today'] ?? 0) === 1);
+
 json_out([
-    'error'      => 'Este premio YA fue canjeado.',
+    'error'      => $hoy
+        ? 'Este premio YA fue canjeado HOY.'
+        : 'Este premio YA fue canjeado.',
     'code'       => 'already-redeemed',
+    'prize'      => $row['prize_label'],
+    'redeemedToday' => $hoy,
     'redeemedAt' => $row['redeemed_at'],
 ], 409);

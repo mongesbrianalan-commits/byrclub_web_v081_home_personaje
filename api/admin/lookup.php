@@ -5,15 +5,17 @@
  * pedidos de delivery (donde se conoce el número, no el email).
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../perks/2x1.php';
 require_method('POST');
 
 $pdo = db();
 require_role($pdo, ['cajero']);
 
 /** Arma la tarjeta que muestra el admin (sin datos sensibles). */
-function admin_user_card(array $row): array
+function admin_user_card(PDO $pdo, array $row): array
 {
     $state = !empty($row['state']) ? json_decode($row['state'], true) : [];
+
     return [
         'email'    => $row['email'],
         'name'     => $row['name'],
@@ -22,6 +24,11 @@ function admin_user_card(array $row): array
         'points'   => $state['wallet']['points'] ?? 0,
         'xp'       => $state['progression']['xp'] ?? 0,
         'role'     => !empty($row['is_admin']) ? 'admin' : ($row['role'] ?? 'socio'),
+
+        /* El 2x1 de hoy: si ya lo usó y cómo. Es lo que hay que mirar cuando
+           alguien llega al local y lo pide sin mostrar nada — sin esto el
+           cajero no tiene forma de saber que ya lo pidió por la web. */
+        'perk2x1'  => byr_2x1_status($pdo, (int) $row['id']),
     ];
 }
 
@@ -43,7 +50,7 @@ if (strpos($q, '@') !== false) {
     if (!$row) {
         json_out(['error' => 'No hay ningún usuario con ese email.', 'code' => 'not-found'], 404);
     }
-    json_out(['user' => admin_user_card($row)]);
+    json_out(['user' => admin_user_card($pdo, $row)]);
 }
 
 /* ---- Búsqueda por WHATSAPP (número) ---- */
@@ -97,8 +104,10 @@ if (!$rows) {
     json_out(['error' => 'No hay ninguna cuenta registrada con ese WhatsApp. Probá con el email.', 'code' => 'not-found'], 404);
 }
 if (count($rows) === 1) {
-    json_out(['user' => admin_user_card($rows[0])]);
+    json_out(['user' => admin_user_card($pdo, $rows[0])]);
 }
 
 /* Varias cuentas con ese número: que el admin elija. */
-json_out(['matches' => array_map('admin_user_card', $rows)]);
+json_out(['matches' => array_map(function (array $r) use ($pdo) {
+    return admin_user_card($pdo, $r);
+}, $rows)]);

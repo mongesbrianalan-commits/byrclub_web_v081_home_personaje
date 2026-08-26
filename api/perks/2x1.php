@@ -17,9 +17,14 @@
  */
 require_once __DIR__ . '/../helpers.php';
 
-const BYR_2X1_PRIZE_ID = '2x1-wed';
-const BYR_2X1_LABEL    = '2x1 Doble Cheese con papas';
-const BYR_2X1_SOURCE   = 'Miércoles de socio';
+const BYR_2X1_LABEL  = '2x1 Doble Cheese con papas';
+const BYR_2X1_SOURCE = 'Miércoles de socio';
+
+/* Dos prize_id distintos según cómo lo haya usado, para que el cajero pueda
+   distinguirlo de un vistazo. El `source` es el mismo en los dos, que es lo
+   que hace que compartan el límite de uno por miércoles. */
+const BYR_2X1_PRIZE_ID     = '2x1-wed';      // reclamó el código, lo muestra en el local
+const BYR_2X1_PRIZE_ID_WEB = '2x1-wed-web';  // lo pidió por la web, ya se consumió
 
 /* El producto que representa el 2x1 en la carta. Vive en `products` con
    available = 0, así que NUNCA sale en el menú normal: lo agrega a mano
@@ -63,7 +68,8 @@ function byr_2x1_today(PDO $pdo, int $userId): ?array
     [$dayStart, $dayEnd] = byr_2x1_day_bounds();
 
     $stmt = $pdo->prepare(
-        'SELECT id, code, status FROM redemptions
+        'SELECT id, code, status, prize_id, prize_label, created_at, redeemed_at
+           FROM redemptions
           WHERE user_id = ? AND source = ? AND created_at >= ? AND created_at < ?
           ORDER BY id DESC LIMIT 1'
     );
@@ -71,6 +77,49 @@ function byr_2x1_today(PDO $pdo, int $userId): ?array
     $row = $stmt->fetch();
 
     return $row ?: null;
+}
+
+/**
+ * El 2x1 de este socio HOY, contado para el cajero.
+ *
+ * Es lo que hay que mirar cuando alguien llega al local y lo pide: dice si
+ * ya lo usó, cómo y cuándo. Sin esto, el cajero no tiene forma de saber que
+ * el cliente ya lo pidió por la web hace media hora.
+ *
+ *   isWednesday  hoy es miércoles en Argentina
+ *   used         ya lo usó hoy, por cualquiera de los dos caminos
+ *   via          'web' | 'codigo' | null
+ *   status       'pending' (reclamado, sin usar en el local) | 'redeemed'
+ *   at           cuándo lo usó (o cuándo reclamó el código)
+ */
+function byr_2x1_status(PDO $pdo, int $userId): array
+{
+    $row = byr_2x1_today($pdo, $userId);
+
+    if (!$row) {
+        return [
+            'isWednesday' => byr_2x1_is_wednesday(),
+            'used'        => false,
+            'via'         => null,
+            'status'      => null,
+            'code'        => null,
+            'label'       => null,
+            'at'          => null,
+        ];
+    }
+
+    $isWeb = (($row['prize_id'] ?? '') === BYR_2X1_PRIZE_ID_WEB);
+
+    return [
+        'isWednesday' => byr_2x1_is_wednesday(),
+        'used'        => true,
+        'via'         => $isWeb ? 'web' : 'codigo',
+        'status'      => $row['status'],
+        /* El de la web no es un vale para mostrar: ya se consumió. */
+        'code'        => $isWeb ? null : $row['code'],
+        'label'       => $row['prize_label'],
+        'at'          => $row['redeemed_at'] ?: $row['created_at'],
+    ];
 }
 
 /**
@@ -133,8 +182,8 @@ function byr_2x1_consume_for_order(PDO $pdo, int $userId, int $orderId): int
     $ins->execute([
         $userId,
         $code,
-        BYR_2X1_PRIZE_ID,
-        BYR_2X1_LABEL . ' (pedido #' . $orderId . ')',
+        BYR_2X1_PRIZE_ID_WEB,
+        BYR_2X1_LABEL . ' — usado en el pedido web #' . $orderId,
         BYR_2X1_SOURCE,
         $now,
         $now,
@@ -152,10 +201,10 @@ function byr_2x1_release_for_order(PDO $pdo, int $userId, int $orderId): bool
 {
     $del = $pdo->prepare(
         'DELETE FROM redemptions
-          WHERE user_id = ? AND source = ? AND prize_label LIKE ?
+          WHERE user_id = ? AND prize_id = ? AND prize_label LIKE ?
           LIMIT 1'
     );
-    $del->execute([$userId, BYR_2X1_SOURCE, '%(pedido #' . $orderId . ')']);
+    $del->execute([$userId, BYR_2X1_PRIZE_ID_WEB, '%pedido web #' . $orderId]);
 
     return $del->rowCount() === 1;
 }

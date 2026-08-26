@@ -94,6 +94,23 @@ si: bandera encendida + miércoles en Argentina + socio logueado + no lo usó
 hoy. Y `api/orders/create.php` **vuelve a comprobar las cuatro** antes de
 aceptar el pedido: la carta es una comodidad, la puerta es el servidor.
 
+
+**Nadie lo usa dos veces, y el mostrador se entera.** Es el punto que
+importa del piloto: el socio que ya lo pidió por la web no puede después
+venir al local a pedirlo.
+
+- El vale del pedido web se guarda con **su propio `prize_id`**
+  (`2x1-wed-web`), y su etiqueta dice *"usado en el pedido web #123"*.
+- Si el cliente igual trae ese código al mostrador, el panel no dice un
+  genérico "ya canjeado": dice **"YA USÓ su 2x1 de hoy: lo pidió por la
+  web. No corresponde dárselo de nuevo."** Y no ofrece el botón de canjear.
+- **El caso más común es el que no tiene código:** el cliente que llega y
+  dice "quiero mi 2x1". Ahora la ficha del socio (buscarlo por email o
+  WhatsApp, en el panel o en el mostrador) muestra el estado del 2x1 de
+  hoy: disponible, ya usado por la web, o código reclamado sin canjear.
+- Cruzado en las dos direcciones: quien reclamó el código no puede pedir
+  por la web, y quien pidió por la web no puede reclamar el código.
+
 **Si el local cancela el pedido, el 2x1 vuelve.** Sin eso, pedirlo y que te
 lo cancelen te dejaba sin beneficio hasta el miércoles siguiente.
 
@@ -418,6 +435,21 @@ Con la migración corrida y la bandera en `true`, **siendo miércoles**:
    importa** — que los dos caminos compartan el límite.
 5. Cancelá ese pedido desde el panel y volvé a **Pedir**: el 2x1 tiene que
    volver a aparecer.
+
+**La prueba que más importa — que no se pueda usar dos veces:**
+
+1. Pedí el 2x1 por la web.
+2. En el panel (o en el mostrador), buscá tu propio socio por email. Tiene
+   que decir **"Ya usó su 2x1 de hoy: lo pidió por la web"**.
+3. Andá a **Mis cupones**, copiá el código de ese 2x1 y ponelo en el
+   validador del panel. Tiene que decir **"YA USÓ su 2x1 de hoy: lo pidió
+   por la web. No corresponde dárselo de nuevo"** — y no darte el botón de
+   canjear.
+4. En **Beneficios**, intentá reclamar el código del 2x1: tiene que decir
+   que ya lo usaste en un pedido web.
+
+Y al revés: reclamá el código primero (sin usarlo), y después intentá
+pedirlo por la web. No tiene que aparecer en la carta.
 
 **Y los casos que NO tienen que dejar:**
 

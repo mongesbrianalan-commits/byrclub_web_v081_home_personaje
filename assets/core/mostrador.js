@@ -494,6 +494,28 @@
 
   /* El campo de cupón aparece recién cuando hay un socio identificado:
      un vale es de alguien, no se puede aplicar a un consumidor final. */
+
+  /* --- 2x1 de socio de los miércoles ---
+     Lo que hay que mirar cuando alguien llega y lo pide sin mostrar nada.
+     El servidor dice si ya lo usó hoy y por dónde; acá sólo se muestra, en
+     el mismo renglón donde el cajero ya está mirando al socio. */
+  function show2x1(perk) {
+    setCouponStatus("", "");   /* limpia lo del socio anterior */
+
+    if (!perk || !perk.isWednesday) return; // no es miércoles: no hay nada que decir
+
+    if (!perk.used) {
+      setCouponStatus("🎉 Tiene el 2x1 de socio disponible.", "ok");
+      return;
+    }
+
+    setCouponStatus(
+      perk.via === "web"
+        ? "⛔ Ya usó su 2x1 de hoy: lo pidió por la web. No corresponde dárselo."
+        : "⛔ Ya usó su 2x1 de hoy" + (perk.status === "pending" ? " (reclamó el código, todavía sin canjear)." : "."),
+      perk.via === "web" || perk.status !== "pending" ? "error" : ""
+    );
+  }
   function showCouponBlock(on) {
     if (!couponBlock) return;
     couponBlock.hidden = !on;
@@ -523,6 +545,7 @@
       customerEmail = u.email || "";
       setCustomerStatus("✅ " + u.name + " · " + Number(u.points || 0).toLocaleString("es-AR") + " pts", "ok");
       showCouponBlock(true);
+      show2x1(u.perk2x1);
     } catch (e) {
       customerEmail = "";
       setCustomerStatus("No hay conexión. Probá de nuevo.", "error");

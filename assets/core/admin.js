@@ -484,13 +484,21 @@
     const pending = r.status === "pending";
     const expired = pending && r.expired;
     const canRedeem = pending && !expired;
+
     if (expired) {
       redeemState.textContent = "Vencido";
       redeemState.className = "redeem-state expired";
+    } else if (r.usedOnWeb) {
+      /* El 2x1 pedido por la web ya se consumió en el pedido. Se dice con
+         todas las letras: si no, el cajero ve "Ya canjeado" y queda dudando
+         si el cliente vino más temprano o si hay un error. */
+      redeemState.textContent = "YA USADO — lo pidió por la web";
+      redeemState.className = "redeem-state redeemed";
     } else {
       redeemState.textContent = pending ? "Pendiente" : "Ya canjeado";
       redeemState.className = "redeem-state " + (pending ? "pending" : "redeemed");
     }
+
     redeemConfirm.hidden = !canRedeem;
     redeemConfirm.disabled = !canRedeem;
     redeemConfirm.textContent = "Marcar como canjeado ✓";
