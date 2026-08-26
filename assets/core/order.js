@@ -46,8 +46,6 @@
   const submitBtn    = $("[data-submit]");
   const statusEl     = $("[data-order-status]");
   const successEl    = $("[data-order-success]");
-  const layoutEl     = $(".order-layout");
-  const heroEl       = $(".order-hero");
 
   if (!menuList) return;
 
@@ -909,14 +907,15 @@
     const profileLink = $("[data-success-profile]");
     if (profileLink) profileLink.style.display = isMember ? "" : "none";
 
+    /* El panel de éxito flota por encima de la carta, así que no hace falta
+       esconderla: se cierra el carrito, se traba el scroll de atrás y listo.
+       Antes se ocultaban el layout y el hero, y la confirmación quedaba como
+       una sección al final de la página. */
     if (orderCartEl) orderCartEl.classList.remove("is-open");
     show(cartOverlay, false);
-    document.body.style.overflow = "";
-    show(layoutEl, false);
-    show(heroEl, false);
     show(cartFab, false);
+    document.body.style.overflow = "hidden";
     show(successEl, true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
 
     pollOrderStatus(order.id);
   }
@@ -980,8 +979,9 @@
     notesInput.value = "";
     addressInput.value = "";
     show(successEl, false);
-    show(layoutEl, true);
-    show(heroEl, true);
+    /* El layout nunca se escondió (el panel flotaba encima): solo hay que
+       devolver el scroll y volver a poner la barra del carrito. */
+    document.body.style.overflow = "";
     renderCart();
     // Los steppers de productos simples vuelven a "Agregar +".
     menuList.querySelectorAll("[data-stepper-for]").forEach((holder) => {

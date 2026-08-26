@@ -151,9 +151,32 @@
     color: #fff; font-size: 1rem; cursor: pointer; }
 }
 
-/* --- Éxito --- */
-.order-success { display: grid; place-items: center; padding: 20px 0; }
-.success-card { max-width: 560px; width: 100%; text-align: center; background: rgba(4,18,58,.9); border: 1px solid rgba(255,255,255,.16); border-radius: 26px; padding: 40px 28px; box-shadow: 0 18px 40px rgba(0,0,0,.4); }
+/* --- Éxito: panel que aparece POR ENCIMA de todo ------------------------
+   Antes era una sección más, al final de la página: el cliente mandaba el
+   pedido y la confirmación le quedaba abajo del menú, donde había que ir a
+   buscarla. Ahora flota sobre la carta, con el mismo movimiento que el
+   carrito: en el celular sube desde abajo, en la compu aparece centrado.
+
+   Se sale con los dos botones de adentro ("Ver mis pedidos" / "Hacer otro
+   pedido"). No cierra al tocar el fondo a propósito: es una confirmación,
+   conviene que se lea antes de sacarla. */
+.order-success { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(2,10,40,.66); backdrop-filter: blur(3px); overflow-y: auto; animation: successFade .22s ease; }
+.success-card { max-width: 560px; width: 100%; text-align: center; background: rgba(4,18,58,.97); border: 1px solid rgba(255,255,255,.16); border-radius: 26px; padding: 34px 26px; box-shadow: 0 24px 60px rgba(0,0,0,.55); max-height: calc(100vh - 40px); overflow-y: auto; animation: successPop .3s cubic-bezier(.2,.9,.3,1.15); }
+
+@keyframes successFade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes successPop { from { transform: translateY(16px) scale(.97); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes successSheet { from { transform: translateY(100%) } to { transform: none } }
+
+/* En el celular sube desde abajo, pegado al borde, igual que el carrito. */
+@media (max-width: 900px) {
+  .order-success { place-items: end center; padding: 0; }
+  .success-card { border-radius: 24px 24px 0 0; max-height: 92vh; padding: 26px 20px 24px; animation: successSheet .3s ease; }
+}
+
+/* Quien prefiera no ver animaciones, no las ve. */
+@media (prefers-reduced-motion: reduce) {
+  .order-success, .success-card { animation: none; }
+}
 /* Aviso de "te escribimos por WhatsApp": es lo que el cliente necesita
    saber apenas manda el pedido, así que va destacado y no como un renglón
    más de texto. */
@@ -386,3 +409,6 @@ body.order-light .opt-row input { accent-color: var(--ord-accent); }
 /* El aviso de WhatsApp en claro: verde legible sobre blanco. */
 body.order-light .success-contact { background: #e8f9ed; border-color: #b6e7c4; color: #1d6b39; }
 body.order-light .success-contact b { color: #14532d; }
+
+/* El velo del panel de éxito, en claro. */
+body.order-light .order-success { background: rgba(11, 31, 82, .45); }
