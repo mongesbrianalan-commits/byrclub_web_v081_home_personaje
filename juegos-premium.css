@@ -1,3 +1,4 @@
+@charset "UTF-8";
 .games-page{background:#020a2a;color:#fff}.games-main{overflow:hidden;background:radial-gradient(circle at 78% 6%,rgba(119,47,255,.2),transparent 22%),radial-gradient(circle at 8% 18%,rgba(0,128,255,.28),transparent 25%),linear-gradient(180deg,#092f9e 0,#061c6b 38%,#030d38 72%,#020922 100%)}
 .games-hero{position:relative;min-height:720px;display:grid;grid-template-columns:minmax(0,.92fr) minmax(430px,1.08fr);align-items:center;gap:30px;padding:80px clamp(24px,6vw,100px) 90px;isolation:isolate}
 .games-doodles{position:absolute;inset:0;z-index:-1;opacity:.26;background-image:radial-gradient(circle at 18% 22%,#fff 0 2px,transparent 2.5px),radial-gradient(circle at 72% 68%,#ffd51f 0 2px,transparent 2.5px),linear-gradient(115deg,transparent 47%,rgba(255,255,255,.08) 48% 52%,transparent 53%);background-size:62px 62px,78px 78px,280px 280px;mask-image:linear-gradient(#000,transparent 95%)}
