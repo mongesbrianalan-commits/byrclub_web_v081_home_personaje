@@ -172,6 +172,19 @@
     @keyframes noaPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(78,230,109,.4); } 50% { box-shadow: 0 0 0 10px rgba(78,230,109,0); } }
     @media (prefers-reduced-motion: reduce) { .new-order-alert { animation: none; } }
     .bell-toggle.is-off { opacity: .55; }
+    /* --- Pago al delivery: la cuenta grande y la lista de viajes --- */
+    .dd-pay { background: rgba(123,255,160,.1); border: 1px solid rgba(123,255,160,.3); border-radius: 16px; padding: 14px 16px; margin: 4px 0 12px; }
+    .dd-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-weight: 800; padding: 3px 0; }
+    .dd-line span:last-child { font-variant-numeric: tabular-nums; }
+    .dd-line.is-total { border-top: 2px dashed rgba(255,255,255,.25); margin-top: 8px; padding-top: 10px; }
+    .dd-line.is-total span { font-family: "Lilita One"; font-size: 1.5rem; color: #7bffa0; }
+    .dd-warn { margin-top: 8px; font-weight: 700; font-size: .85rem; color: #ffe79a; }
+    .dd-empty { color: #9bd1ff; font-weight: 700; padding: 8px 2px; }
+    .dd-trip { display: flex; gap: 10px; align-items: baseline; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 8px 12px; margin-bottom: 6px; font-weight: 700; font-size: .9rem; }
+    .dd-trip__h { flex: 0 0 auto; color: #9bd1ff; font-variant-numeric: tabular-nums; }
+    .dd-trip__w { flex: 1; min-width: 0; }
+    .dd-trip__a { display: block; color: #9fb0d6; font-weight: 600; font-size: .84rem; }
+
     /* --- Estadísticas de pedidos --- */
     .stats-period { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
@@ -404,6 +417,23 @@
         <p class="admin-hint-line" data-bell-hint style="margin-top:0"></p>
         <p class="auth-form-status" data-orders-admin-status></p>
         <div class="orders-admin-list" data-orders-admin-list></div>
+      </div>
+
+      <div class="admin-block">
+        <h2>🛵 Pago al delivery</h2>
+        <p class="admin-hint-line">💡 Las entregas de la <b>jornada</b>, no del día de calendario: van de las 6 de la mañana a las 6 de la mañana siguiente, así lo que sale después de medianoche se le cuenta al turno en el que trabajó.</p>
+        <div class="admin-row">
+          <button type="button" class="admin-btn-inline" data-dd-prev>←</button>
+          <label class="auth-field" style="flex:1 1 150px"><span>Jornada del</span><input type="date" data-dd-date></label>
+          <button type="button" class="admin-btn-inline" data-dd-next>→</button>
+        </div>
+        <div class="admin-row">
+          <label class="auth-field"><span>Por viaje</span><input type="number" data-dd-per-trip min="0" step="10" inputmode="numeric"></label>
+          <label class="auth-field"><span>Fijo del día</span><input type="number" data-dd-daily min="0" step="100" inputmode="numeric" placeholder="0"></label>
+        </div>
+        <div class="dd-pay" data-dd-pay hidden></div>
+        <p class="auth-form-status" data-dd-status></p>
+        <div data-dd-list></div>
       </div>
 
       <div class="admin-block">

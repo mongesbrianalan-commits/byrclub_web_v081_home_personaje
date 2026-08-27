@@ -82,6 +82,50 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 ## Sesión del 27 de agosto de 2026 (desde casa)
 
+### Contador de entregas para pagarle al delivery
+
+Al cerrar hay que contar cuántos envíos hizo el delivery y multiplicarlos por
+lo que se le paga por viaje. El único número parecido era el de "Delivery vs.
+retiro", que **no servía para eso**: contaba por día de calendario, así que se
+reiniciaba a las 21:00 y partía el turno al medio.
+
+En el panel, pestaña **Pedidos**, hay ahora un bloque **🛵 Pago al delivery**
+con la cuenta hecha:
+
+```
+🛵 Viajes de la jornada        7
+7 × $490                  $3.430
+Fijo del día             $15.000
+─────────────────────────────────
+A pagar                  $18.430
+```
+
+Debajo va la **lista de los viajes** (hora, pedido, cliente, dirección) para
+poder repasarla con él si hace falta.
+
+**La jornada va de 6 de la mañana a 6 de la mañana**, no de medianoche a
+medianoche. Un pedido de las 00:20 del sábado se le cuenta al **viernes**, que
+es el turno en el que trabajó. A las 6 de la mañana no hay nadie laburando, así
+que el corte nunca parte un servicio. Si contás a la una de la mañana, el
+bloque ya te muestra la jornada correcta sin tocar nada.
+
+**Cuenta las entregas hechas, no las pedidas:** los pedidos cancelados quedan
+afuera, porque por un pedido cancelado nadie salió a la calle. Y entran tanto
+los pedidos web como los cargados en el mostrador para mandar: lo que define un
+viaje es que la comida salga en moto, no de dónde vino el pedido.
+
+**Las dos tarifas** (por viaje y fijo del día) se escriben ahí mismo y quedan
+guardadas en ese navegador. No están en `config.php` a propósito: cambian
+seguido y no tienen por qué esperar un deploy ni entrar por FTP. Lo que cuenta
+el servidor —cuántos viajes hubo— no depende de ellas.
+
+> **Si los envíos cobrados no dan lo mismo que cantidad × tarifa, te avisa.**
+> Puede pasar si cambió el precio del envío en el medio de la jornada, o si
+> algún viaje salió sin cobrarlo. Es mejor verlo que arrastrar la diferencia a
+> la cuenta.
+
+Con las flechas **← →** se mira cualquier jornada anterior.
+
 ### Las horas estaban 3 adelantadas en toda la web
 
 Reportado: entró un pedido 20:33 y el panel decía **23:33**. Era cierto, y no

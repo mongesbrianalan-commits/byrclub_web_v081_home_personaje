@@ -1440,6 +1440,130 @@
   }
 
   /* ---------------------------------------------------------
+     Pago al delivery
+     ---------------------------------------------------------
+     Los viajes de la JORNADA (6 a 6, no el día de calendario) y la cuenta
+     hecha: cantidad x lo que se le paga por viaje, más el fijo del día.
+
+     Las dos tarifas se guardan en el navegador y no en el servidor: cambian
+     seguido y no tienen por qué esperar a un deploy ni a tocar config.php por
+     FTP. El número que importa —cuántos viajes hubo— lo cuenta el servidor.
+  --------------------------------------------------------- */
+
+  const ddDate    = document.querySelector("[data-dd-date]");
+  const ddPrev    = document.querySelector("[data-dd-prev]");
+  const ddNext    = document.querySelector("[data-dd-next]");
+  const ddPerTrip = document.querySelector("[data-dd-per-trip]");
+  const ddDaily   = document.querySelector("[data-dd-daily]");
+  const ddPay     = document.querySelector("[data-dd-pay]");
+  const ddStatus  = document.querySelector("[data-dd-status]");
+  const ddList    = document.querySelector("[data-dd-list]");
+  const DD_KEY    = "byr_delivery_pay_v1";
+  let ddData = null;
+
+  function ddLoadRates() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(DD_KEY) || "{}") || {}; } catch (e) { /* sin datos */ }
+    if (ddPerTrip) ddPerTrip.value = Number(saved.perTrip) > 0 ? saved.perTrip : 490;
+    if (ddDaily) ddDaily.value = Number(saved.daily) > 0 ? saved.daily : "";
+  }
+
+  function ddSaveRates() {
+    try {
+      localStorage.setItem(DD_KEY, JSON.stringify({
+        perTrip: Number(ddPerTrip && ddPerTrip.value) || 0,
+        daily: Number(ddDaily && ddDaily.value) || 0,
+      }));
+    } catch (e) { /* modo privado: no pasa nada, sólo no se recuerda */ }
+  }
+
+  function ddRenderPay() {
+    if (!ddPay || !ddData) return;
+    const n       = Number(ddData.count) || 0;
+    const perTrip = Number(ddPerTrip && ddPerTrip.value) || 0;
+    const daily   = Number(ddDaily && ddDaily.value) || 0;
+    const viajes  = n * perTrip;
+
+    let html =
+      `<div class="dd-line"><span>🛵 Viajes de la jornada</span><span>${fmt(n)}</span></div>` +
+      `<div class="dd-line"><span>${fmt(n)} × ${money(perTrip)}</span><span>${money(viajes)}</span></div>`;
+    if (daily > 0) {
+      html += `<div class="dd-line"><span>Fijo del día</span><span>${money(daily)}</span></div>`;
+    }
+    html += `<div class="dd-line is-total"><span>A pagar</span><span>${money(viajes + daily)}</span></div>`;
+
+    /* Los envíos realmente cobrados deberían dar lo mismo. Si no dan, hay que
+       verlo: cambió el precio del envío, o entró un viaje sin cobrarlo. */
+    const cobrado = Number(ddData.shippingTotal) || 0;
+    if (n > 0 && cobrado !== viajes) {
+      html += `<div class="dd-warn">⚠️ Los envíos cobrados a los clientes suman ${money(cobrado)}, ` +
+        `no ${money(viajes)}. Puede que haya cambiado el precio del envío, o que algún viaje ` +
+        `haya salido sin cobrarlo.</div>`;
+    }
+    ddPay.innerHTML = html;
+    ddPay.hidden = false;
+  }
+
+  function ddRenderList() {
+    if (!ddList || !ddData) return;
+    const list = ddData.orders || [];
+    if (!list.length) {
+      ddList.innerHTML = `<p class="dd-empty">No hubo entregas en esta jornada.</p>`;
+      return;
+    }
+    ddList.innerHTML = list.map((o) =>
+      `<div class="dd-trip">` +
+        `<span class="dd-trip__h">${escapeHtml(o.whenLabel || "")}</span>` +
+        `<span class="dd-trip__w">#${o.id} · ${escapeHtml(o.customerName || "")}` +
+          `<small class="dd-trip__a">${escapeHtml(o.address || "sin dirección")}</small></span>` +
+        `<span>${money(o.shippingCost)}</span>` +
+      `</div>`
+    ).join("");
+  }
+
+  async function loadDeliveryDay() {
+    if (!ddDate) return;
+    // La cocina no ve plata: se le esconde el bloque entero, como en stats.
+    if (currentRole === "cocina") {
+      const block = ddDate.closest(".admin-block");
+      if (block) block.hidden = true;
+      return;
+    }
+    setStatus(ddStatus, "Cargando…", "");
+    try {
+      const body = ddDate.value ? { date: ddDate.value } : {};
+      ddData = await api("admin/delivery-day.php", body);
+      // Sin fecha elegida, el server decide cuál es la jornada en curso.
+      if (!ddDate.value && ddData.shift) ddDate.value = ddData.shift.ymd;
+      ddRenderPay();
+      ddRenderList();
+      const s = ddData.shift || {};
+      setStatus(ddStatus, `Jornada del ${s.label || "—"} · de ${s.from || "?"} a ${s.to || "?"}.`, "");
+    } catch (error) {
+      setStatus(ddStatus, error.message, "error");
+    }
+  }
+
+  function ddShiftDay(days) {
+    if (!ddDate || !ddDate.value) return;
+    const [y, m, d] = ddDate.value.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + days);
+    ddDate.value = dt.toISOString().slice(0, 10);
+    loadDeliveryDay();
+  }
+
+  if (ddDate) {
+    ddLoadRates();
+    ddDate.addEventListener("change", loadDeliveryDay);
+    if (ddPrev) ddPrev.addEventListener("click", () => ddShiftDay(-1));
+    if (ddNext) ddNext.addEventListener("click", () => ddShiftDay(1));
+    [ddPerTrip, ddDaily].forEach((el) => {
+      if (el) el.addEventListener("input", () => { ddSaveRates(); ddRenderPay(); });
+    });
+  }
+
+  /* ---------------------------------------------------------
      Estadísticas: delivery vs. retiro vs. mostrador
   --------------------------------------------------------- */
 
@@ -2012,6 +2136,7 @@
     loadEditableProducts(); // productos para el editor de pedidos pendientes
     loadOrders();
     loadOrderStats();
+    loadDeliveryDay();
   }
 
   /* ---------------------------------------------------------

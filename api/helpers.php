@@ -96,6 +96,52 @@ function byr_day_start_db(int $daysAgo = 0): string
     return gmdate('Y-m-d H:i:s', $start + byr_db_utc_offset());
 }
 
+/**
+ * Los dos extremos de una JORNADA de trabajo, escritos en el reloj de la base.
+ *
+ * Una jornada no es un día de calendario: el turno arranca a la tarde y puede
+ * terminar pasada la medianoche. Si se cortara a las 00:00, un pedido de las
+ * 00:20 caería en el día siguiente y no se le contaría al turno en el que se
+ * trabajó — que es justo lo que hay que pagarle al delivery.
+ *
+ * Por eso el corte es a las 06:00 de Argentina (configurable con
+ * 'shift_start_hour'): a esa hora no hay nadie trabajando, así que ninguna
+ * jornada se parte al medio.
+ *
+ * $ymd = null → la jornada en curso. Antes de las 06:00, esa es la que arrancó
+ * AYER: a las 00:20 del sábado todavía se está laburando el viernes.
+ */
+function byr_shift_bounds(?string $ymd = null): array
+{
+    $hhmm = (string) byr_setting('shift_start_hour', '06:00');
+    if (!preg_match('/^\d{1,2}:\d{2}$/', $hhmm)) {
+        $hhmm = '06:00';
+    }
+    [$h, $m] = array_map('intval', explode(':', $hhmm));
+    $tz = new DateTimeZone(BYR_TZ);
+
+    if ($ymd !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $ymd)) {
+        $start = (new DateTimeImmutable($ymd . ' 00:00:00', $tz))->setTime($h, $m);
+    } else {
+        $now   = new DateTimeImmutable('now', $tz);
+        $start = $now->setTime($h, $m);
+        if ($now < $start) {
+            $start = $start->modify('-1 day'); // madrugada: sigue siendo la jornada de ayer
+        }
+    }
+    $end = $start->modify('+1 day');
+    $off = byr_db_utc_offset();
+
+    return [
+        'ymd'     => $start->format('Y-m-d'),
+        'startDb' => gmdate('Y-m-d H:i:s', $start->getTimestamp() + $off),
+        'endDb'   => gmdate('Y-m-d H:i:s', $end->getTimestamp() + $off),
+        'label'   => $start->format('d/m'),
+        'from'    => $start->format('d/m H:i'),
+        'to'      => $end->format('d/m H:i'),
+    ];
+}
+
 /* =========================================================
    Beneficios de socio — montos (fáciles de cambiar acá)
 ========================================================= */
