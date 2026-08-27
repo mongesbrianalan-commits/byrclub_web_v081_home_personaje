@@ -82,6 +82,59 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 ## Sesión del 27 de agosto de 2026 (desde casa)
 
+### Las horas estaban 3 adelantadas en toda la web
+
+Reportado: entró un pedido 20:33 y el panel decía **23:33**. Era cierto, y no
+era sólo el panel.
+
+**La causa.** El hosting corre en **UTC**, tres horas adelante de Argentina.
+La base guarda ahí (`created_at`, `NOW()`, todo), y **nadie fijaba la zona
+horaria en ningún lado**. Cada parte del código que necesitaba la hora se la
+arreglaba sola — el horario de pedidos y el 2x1 lo hacían bien, con la zona
+puesta a mano — y las que se olvidaban mostraban la hora del servidor como si
+fuera la de acá.
+
+Ahora hay **una sola regla**, escrita en `api/helpers.php`:
+
+- **PHP piensa en hora de Argentina** (`date_default_timezone_set`).
+- **La base sigue guardando en su reloj**, que es UTC. Eso no se tocó: cambiarlo
+  obligaría a migrar todas las filas viejas y dejaría la columna con dos
+  relojes mezclados.
+- **Para mostrar una fecha de la base se pasa por `byr_dt_local()`.**
+
+> El servidor le **pregunta a la base** cuánto adelanta respecto de UTC, en vez
+> de darlo por sentado. Hoy Hostinger la tiene en UTC; si algún día la mueven,
+> las horas siguen saliendo bien sin tocar una línea.
+
+**Lo que estaba mal, además del pedido:**
+
+- **La comanda impresa** salía con la misma hora de más.
+- **Las estadísticas de "Hoy"** se reiniciaban a las **21:00** — o sea en el
+  medio del turno, porque a esa hora ya era el día siguiente en UTC.
+- **El límite diario de los juegos** (ruleta, raspadita, memotest) y **la
+  racha** cambiaban de día también a las 21:00: quien jugaba a las 22 tenía
+  otra partida gratis.
+- **El "ya lo usó hoy" del 2x1** en el mostrador tenía el mismo corte de las
+  21:00 — justo cuando importa saberlo.
+- **Los vales** (`Mis cupones`) mostraban el vencimiento 3 horas más tarde, y
+  cerca de medianoche con el día cambiado.
+
+**Y uno que apareció buscando esto:** el 2x1 guardaba sus vales con la fecha
+en hora de Argentina, dentro de una tabla donde todo lo demás está en UTC. Era
+coherente para contar el día, pero **no** para el vencimiento, que se compara
+contra `NOW()`: **el código del 2x1 se moría a las 21 horas en vez de a las
+24.** Ahora lo guarda con `NOW()` como todos los demás vales.
+
+**Cómo se muestra ahora.** El servidor manda la hora **ya formateada**
+(`createdAtLabel`, `openedAtLabel`, `expiresAtLabel`…) y el navegador la
+imprime tal cual. Es el mismo patrón que ya usaba el Prode con `kickoffLabel`.
+El navegador ya no hace cuentas de husos, que es donde se colaba el error.
+
+> **El horario para pedir no estaba mal**: ése ya calculaba en hora de
+> Argentina (por eso el pedido de las 20:33 entró). Es de **19:40 a 23:30**,
+> no de 20:00 — se cambia con `'order_hours' => ['20:00', '23:30']` en el
+> `api/config.php` **del servidor**.
+
 ### Prode: pegar la fecha entera en vez de cargarla partido por partido
 
 Cargar una fecha eran cinco campos por partido, catorce veces. Ahora en el
@@ -562,6 +615,20 @@ Alias de transferencia: **BYRDOCKSUD.MP** (por defecto en `api/menu.php`,
 pisable desde `config.php` con `'transfer_alias'`).
 
 ---
+
+## Para probar las horas (2 minutos, apenas entre un pedido)
+
+1. **Lo reportado:** que entre un pedido y que el panel diga **la hora del
+   reloj de la pared**, no tres más.
+2. **La comanda impresa** de ese pedido tiene que decir la misma hora.
+3. **Mis cupones** (en el perfil): la fecha de un vale tiene que coincidir con
+   el día real, sobre todo si lo sacaste después de las 21.
+4. **La prueba que sólo se puede hacer de noche:** mirá las estadísticas
+   (abajo de los pedidos) **después de las 21:00**. El número de "Hoy" tiene
+   que seguir sumando los pedidos del turno, no arrancar de cero.
+5. **Los juegos:** jugá la raspadita después de las 22 y volvé a entrar. Tiene
+   que decir *"ya jugaste hoy"* hasta la medianoche de verdad, no dejarte
+   jugar de nuevo.
 
 ## Para probar la carga de la fecha del Prode (se puede desde casa)
 

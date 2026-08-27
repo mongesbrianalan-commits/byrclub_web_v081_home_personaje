@@ -1216,7 +1216,7 @@
 
     card.innerHTML = `
       <div class="oa-top">
-        <div class="oa-id">Pedido #${o.id} <small>· ${escapeHtml(fmtDateTime(o.createdAt))}</small></div>
+        <div class="oa-id">Pedido #${o.id} <small>· ${escapeHtml(fmtDateTime(o.createdAt, o.createdAtLabel))}</small></div>
         <span class="oa-badge ${st.cls}">${st.label}</span>
       </div>
       <div class="oa-customer">${escapeHtml(o.customerName || "—")}${waLink}</div>
@@ -1931,15 +1931,37 @@
     return box;
   }
 
-  function fmtDateTime(value) {
+  /**
+   * Fecha y hora para mostrar.
+   *
+   * Si el servidor mandó la etiqueta ya hecha (`...Label`), se usa esa y listo:
+   * viene en hora de Argentina. La cuenta de acá abajo es el respaldo para los
+   * endpoints que todavía no la mandan — y es la que tenía el error de las 3
+   * horas: `new Date("2026-08-27T23:33:00")` sin zona lo toma como hora local,
+   * pero la base guarda en UTC, así que un pedido de las 20:33 salía 23:33.
+   * Por eso el respaldo ahora lo lee como UTC y lo pasa a Argentina.
+   *
+   * Las partes se arman a mano y no con toLocaleString: el locale es-AR
+   * ignora el "2-digit" del mes y devuelve 27/8 en vez de 27/08.
+   */
+  function argParts(value) {
+    const d = new Date(String(value).replace(" ", "T") + "Z");
+    if (isNaN(d.getTime())) return null;
+    const out = {};
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(d).forEach((x) => { out[x.type] = x.value; });
+    return out;
+  }
+
+  function fmtDateTime(value, label) {
+    if (label) return label;
     if (!value) return "";
-    const d = new Date(String(value).replace(" ", "T"));
-    if (isNaN(d.getTime())) return String(value);
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-    return `${dd}/${mm} ${hh}:${mi}`;
+    const p = argParts(value);
+    if (!p) return String(value);
+    return `${p.day}/${p.month} ${p.hour}:${p.minute}`;
   }
 
   function initOrders() {
@@ -2436,7 +2458,7 @@
             <span>Turno #${s.id}</span>
             <span class="caja-hist-diff ${diffCls}">${diffTxt}</span>
           </div>
-          <div class="caja-hist-when">${escapeHtml(fmtDateTime(s.openedAt))} → ${escapeHtml(fmtDateTime(s.closedAt))}${s.closedBy ? " · " + escapeHtml(s.closedBy) : ""}</div>
+          <div class="caja-hist-when">${escapeHtml(fmtDateTime(s.openedAt, s.openedAtLabel))} → ${escapeHtml(fmtDateTime(s.closedAt, s.closedAtLabel))}${s.closedBy ? " · " + escapeHtml(s.closedBy) : ""}</div>
           ${methodRows(s.byMethod)}
           <div class="caja-line caja-line-total"><span>Total ventas</span><b>${money(s.salesTotal)}</b></div>
           <div class="caja-line"><span>Efectivo esperado</span><b>${s.expectedCash === null ? "—" : money(s.expectedCash)}</b></div>
@@ -2482,7 +2504,7 @@
     cajaPanel.innerHTML = `
       <div class="caja-state">
         <div class="caja-badge caja-badge-on">● Caja abierta</div>
-        <div class="caja-meta">Abierta ${escapeHtml(fmtDateTime(session.openedAt))} · Fondo inicial <b>${money(session.openingFloat)}</b></div>
+        <div class="caja-meta">Abierta ${escapeHtml(fmtDateTime(session.openedAt, session.openedAtLabel))} · Fondo inicial <b>${money(session.openingFloat)}</b></div>
 
         <div class="caja-block">
           <h3>Ventas del turno (X)</h3>

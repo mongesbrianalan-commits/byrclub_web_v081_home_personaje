@@ -30,8 +30,11 @@ $row = $pdo->query(
       WHERE created_at > (NOW() - INTERVAL 1 DAY)"
 )->fetch();
 
-$oldest = $row && $row['oldest_waiting'] ? strtotime($row['oldest_waiting']) : null;
-$stuck  = $oldest ? max(0, time() - $oldest) : 0;
+/* Hace cuánto espera el trabajo más viejo. La fecha viene del reloj de la base
+   y PHP ahora piensa en hora de Argentina: sin convertirla, strtotime() la
+   leería como si fuera de acá y darían 3 horas de menos (o sea, cero). */
+$oldestDt = $row ? byr_dt_local($row['oldest_waiting'] ?? null) : null;
+$stuck    = $oldestDt ? max(0, time() - $oldestDt->getTimestamp()) : 0;
 
 $errRow = $pdo->query(
     "SELECT last_error FROM print_jobs

@@ -70,6 +70,11 @@ foreach ($orders as $o) {
         'couponLabel'    => $o['coupon_label'],
         'createdAt'      => $o['created_at'],
         'confirmedAt'    => $o['confirmed_at'],
+
+        /* Formateadas en hora de Argentina por el servidor (la base guarda en
+           UTC): el socio veía su pedido con 3 horas de más. */
+        'createdAtLabel'   => byr_dt_label($o['created_at']),
+        'confirmedAtLabel' => byr_dt_label($o['confirmed_at']),
         'items'          => $itemsByOrder[$oid] ?? [],
     ];
 }

@@ -356,9 +356,9 @@ function byr_print_fulfill(array $o): string
 
 function byr_print_when(array $o): string
 {
-    $raw = $o['createdAt'] ?? null;
-    $ts  = $raw ? strtotime((string) $raw) : time();
-    return date('d/m H:i', $ts ?: time());
+    /* La fecha viene del reloj de la base (UTC): hay que pasarla a hora de
+       Argentina o la comanda sale con 3 horas de más. */
+    return byr_dt_label($o['createdAt'] ?? null) ?? date('d/m H:i');
 }
 
 /* =========================================================

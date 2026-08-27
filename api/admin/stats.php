@@ -75,8 +75,11 @@ function byr_stats_bucket(PDO $pdo, string $kindExpr, string $totalExpr, ?string
     return $out;
 }
 
-$today = date('Y-m-d 00:00:00');
-$week  = date('Y-m-d 00:00:00', strtotime('-6 days')); // hoy + los 6 anteriores
+/* Los cortes de día van en hora de Argentina, traducidos al reloj de la base.
+   Con date() a secas el día cambiaba a las 21:00 de acá (el server está en
+   UTC): el número de "Hoy" se reiniciaba en el medio del turno. */
+$today = byr_day_start_db(0);
+$week  = byr_day_start_db(6); // hoy + los 6 anteriores
 
 json_out([
     'ok'      => true,

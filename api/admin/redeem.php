@@ -40,13 +40,17 @@ if ($upd->rowCount() === 1) {
 }
 
 /* No se actualizó: o no existe, o ya estaba canjeado, o venció. Averiguamos cuál. */
+/* "Hoy" es el día de ACÁ, no el del servidor: con CURDATE() el día cambiaba a
+   las 21:00 de Argentina, así que un 2x1 canjeado a las 22:00 del miércoles
+   figuraba como del jueves — justo cuando el mostrador necesita saber si ya lo
+   usó hoy. */
 $stmt = $pdo->prepare(
     'SELECT prize_id, prize_label, status, redeemed_at, expires_at,
             (expires_at IS NOT NULL AND expires_at <= NOW()) AS is_expired,
-            DATE(redeemed_at) = CURDATE() AS redeemed_today
+            (redeemed_at IS NOT NULL AND redeemed_at >= ?) AS redeemed_today
        FROM redemptions WHERE code = ?'
 );
-$stmt->execute([$code]);
+$stmt->execute([byr_day_start_db(0), $code]);
 $row = $stmt->fetch();
 if (!$row) {
     json_out(['error' => 'No existe ningún premio con ese código.', 'code' => 'not-found'], 404);

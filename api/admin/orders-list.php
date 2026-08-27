@@ -124,6 +124,12 @@ foreach ($orders as $o) {
         'couponMultiplier' => BYR_POINT_MULTIPLIERS[$o['coupon_prize_id'] ?? ''] ?? 1,
         'createdAt'      => $o['created_at'],
         'confirmedAt'    => $o['confirmed_at'],
+
+        /* Ya formateadas en hora de Argentina. El panel las muestra tal cual:
+           cuando hacía la cuenta él, con la fecha cruda de la base (que está
+           en UTC), un pedido de las 20:33 aparecía como 23:33. */
+        'createdAtLabel'   => byr_dt_label($o['created_at']),
+        'confirmedAtLabel' => byr_dt_label($o['confirmed_at']),
         'items'          => $itemsByOrder[$oid] ?? [],
     ];
 }

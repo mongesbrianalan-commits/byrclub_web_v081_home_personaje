@@ -24,6 +24,7 @@ json_out([
     'session' => [
         'id'           => (int) $s['id'],
         'openedAt'     => $s['opened_at'],
+        'openedAtLabel' => byr_dt_label($s['opened_at']),  // hora de Argentina
         'openingFloat' => (int) $s['opening_float'],
     ],
     'totals'  => $totals,

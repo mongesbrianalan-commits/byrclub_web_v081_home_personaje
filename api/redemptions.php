@@ -52,6 +52,11 @@ foreach ($rows as $r) {
         'status'      => $r['status'],                 // 'pending' | 'redeemed'
         'createdAt'   => $r['created_at'],
         'expiresAt'   => $r['expires_at'],             // null = no vence
+        /* En hora de Argentina: el vale que vence 20:00 se mostraba 23:00
+           (y cerca de medianoche, directamente con el día cambiado). */
+        'createdAtLabel'  => byr_dt_label($r['created_at'], 'd/m'),
+        'expiresAtLabel'  => byr_dt_label($r['expires_at'], 'd/m'),
+        'redeemedAtLabel' => byr_dt_label($r['redeemed_at'], 'd/m'),
         'secondsLeft' => $secondsLeft,                 // null = no vence; <=0 = vencido
         'expired'     => $expired,
         'redeemedAt'  => $r['redeemed_at'],

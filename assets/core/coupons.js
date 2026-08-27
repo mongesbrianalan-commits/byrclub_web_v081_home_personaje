@@ -22,15 +22,23 @@
 
   /* --- Utilidades --- */
 
-  function fmtDate(value) {
+  /* Fecha para mostrar. Si el servidor mandó la etiqueta ya hecha se usa esa
+     (viene en hora de Argentina). El respaldo lee el valor de la base como
+     UTC, que es como está guardado: sin la "Z", el navegador lo tomaba como
+     hora local y cerca de medianoche mostraba el día siguiente. */
+  function fmtDate(value, label) {
+    if (label) return label;
     if (!value) return "";
-    // MySQL DATETIME "2026-08-05 14:30:00" → válido en todos los navegadores.
-    const d = new Date(String(value).replace(" ", "T"));
+    // Sin la "Z" el navegador lo tomaba como hora local, pero la base guarda
+    // en UTC: cerca de medianoche mostraba el día siguiente.
+    const d = new Date(String(value).replace(" ", "T") + "Z");
     if (isNaN(d.getTime())) return "";
-    // Formato fijo dd/mm (no dependemos del locale, que a veces ignora 2-digit).
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    return dd + "/" + mm;
+    // A mano y no con toLocaleDateString: es-AR ignora el "2-digit" del mes.
+    const p = {};
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit",
+    }).formatToParts(d).forEach((x) => { p[x.type] = x.value; });
+    return p.day + "/" + p.month;
   }
 
   function show(el, visible) {
@@ -131,7 +139,7 @@
     const label = document.createElement("b");
     label.textContent = c.label || "Premio";
     const sub = document.createElement("span");
-    const date = fmtDate(c.createdAt);
+    const date = fmtDate(c.createdAt, c.createdAtLabel);
     sub.textContent = [c.source, date].filter(Boolean).join(" · ");
     meta.append(label, sub);
 
@@ -187,7 +195,7 @@
     if (redeemed && c.redeemedAt) {
       const when = document.createElement("p");
       when.className = "coupon-redeemed-at";
-      when.textContent = "Canjeado el " + fmtDate(c.redeemedAt);
+      when.textContent = "Canjeado el " + fmtDate(c.redeemedAt, c.redeemedAtLabel);
       article.append(when);
     }
 

@@ -28,13 +28,23 @@
   function money(n) { return "$" + Number(n || 0).toLocaleString("es-AR"); }
   function show(el, v) { if (el) el.hidden = !v; }
 
-  function fmtDate(value) {
+  /* Fecha para mostrar. Si el servidor mandó la etiqueta ya hecha se usa esa
+     (viene en hora de Argentina). El respaldo lee el valor de la base como
+     UTC, que es como está guardado: sin la "Z", el navegador lo tomaba como
+     hora local y cerca de medianoche mostraba el día siguiente. */
+  function fmtDate(value, label) {
+    if (label) return label;
     if (!value) return "";
-    const d = new Date(String(value).replace(" ", "T"));
+    // Sin la "Z" el navegador lo tomaba como hora local, pero la base guarda
+    // en UTC: cerca de medianoche mostraba el día siguiente.
+    const d = new Date(String(value).replace(" ", "T") + "Z");
     if (isNaN(d.getTime())) return "";
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    return dd + "/" + mm;
+    // A mano y no con toLocaleDateString: es-AR ignora el "2-digit" del mes.
+    const p = {};
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit",
+    }).formatToParts(d).forEach((x) => { p[x.type] = x.value; });
+    return p.day + "/" + p.month;
   }
 
   function orderCard(o) {
@@ -47,7 +57,7 @@
     top.className = "order-card-top";
     const id = document.createElement("div");
     id.className = "order-card-id";
-    id.innerHTML = "Pedido #" + o.id + "<small>" + fmtDate(o.createdAt) + "</small>";
+    id.innerHTML = "Pedido #" + o.id + "<small>" + fmtDate(o.createdAt, o.createdAtLabel) + "</small>";
     const badge = document.createElement("span");
     badge.className = "order-badge " + st.cls;
     badge.textContent = st.label;

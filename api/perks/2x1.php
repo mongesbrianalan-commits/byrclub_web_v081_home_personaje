@@ -45,18 +45,19 @@ function byr_2x1_is_wednesday(): bool
 }
 
 /**
- * Límites del día de hoy en hora de Argentina. Como los vales del 2x1 se
- * guardan con created_at en hora local, comparar contra estos límites es
- * correcto sin importar el huso del servidor.
+ * Los dos extremos del día de HOY en Argentina, escritos en el reloj de la
+ * base para poder compararlos contra created_at.
+ *
+ * Antes esto devolvía la hora local a secas, porque el 2x1 guardaba sus vales
+ * con created_at en hora de Argentina — una isla de reloj propio dentro de una
+ * tabla donde todo lo demás está en UTC. Era coherente para contar el día,
+ * pero no con el vencimiento (`expires_at > NOW()`), así que el 2x1 se moría a
+ * las 21 horas en vez de a las 24. Ahora los vales se guardan con NOW() como
+ * todos, y el que traduce es este helper.
  */
 function byr_2x1_day_bounds(): array
 {
-    $now = byr_2x1_now();
-
-    return [
-        (clone $now)->setTime(0, 0, 0)->format('Y-m-d H:i:s'),
-        (clone $now)->modify('+1 day')->setTime(0, 0, 0)->format('Y-m-d H:i:s'),
-    ];
+    return [byr_day_start_db(0), byr_day_start_db(-1)];
 }
 
 /**
@@ -192,7 +193,7 @@ function byr_2x1_web_offer(PDO $pdo, ?int $userId): array
  */
 function byr_2x1_consume_for_order(PDO $pdo, int $userId, int $orderId): int
 {
-    $now   = byr_2x1_now()->format('Y-m-d H:i:s');
+    /* Las fechas las pone la base con NOW(), como el resto de la tabla. */
     $label = BYR_2X1_LABEL . ' — usado en el pedido web #' . $orderId;
 
     /* Si el socio ya había reclamado el código y no lo usó, REUSAMOS esa fila
@@ -212,10 +213,10 @@ function byr_2x1_consume_for_order(PDO $pdo, int $userId, int $orderId): int
 
         $upd = $pdo->prepare(
             'UPDATE redemptions
-                SET prize_id = ?, prize_label = ?, status = "redeemed", redeemed_at = ?
+                SET prize_id = ?, prize_label = ?, status = "redeemed", redeemed_at = NOW()
               WHERE id = ? AND status = "pending"'
         );
-        $upd->execute([BYR_2X1_PRIZE_ID_WEB, $label, $now, (int) $existing['id']]);
+        $upd->execute([BYR_2X1_PRIZE_ID_WEB, $label, (int) $existing['id']]);
 
         /* Si no actualizó nada, se lo canjearon en el local justo en el medio:
            el beneficio ya está gastado y no corresponde crear otro. */
@@ -227,7 +228,7 @@ function byr_2x1_consume_for_order(PDO $pdo, int $userId, int $orderId): int
     $ins = $pdo->prepare(
         'INSERT INTO redemptions
            (user_id, code, prize_id, prize_label, source, status, created_at, expires_at, redeemed_at)
-         VALUES (?, ?, ?, ?, ?, "redeemed", ?, ?, ?)'
+         VALUES (?, ?, ?, ?, ?, "redeemed", NOW(), NOW(), NOW())'
     );
     $ins->execute([
         $userId,
@@ -235,9 +236,6 @@ function byr_2x1_consume_for_order(PDO $pdo, int $userId, int $orderId): int
         BYR_2X1_PRIZE_ID_WEB,
         $label,
         BYR_2X1_SOURCE,
-        $now,
-        $now,
-        $now,
     ]);
 
     return (int) $pdo->lastInsertId();

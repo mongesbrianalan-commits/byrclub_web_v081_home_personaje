@@ -136,12 +136,14 @@ function byr_progress_metrics(PDO $pdo, int $userId, array $state): array
     }
 
     /* Premios: los vales emitidos, que viven en la base y no en el estado. */
+    /* "Hoy" arranca a la medianoche de Argentina, no a la del servidor (que
+       está en UTC: el día le cambiaba a las 21:00 de acá). */
     $stmt = $pdo->prepare(
-        'SELECT COUNT(*) AS total, SUM(DATE(created_at) = CURDATE()) AS hoy
+        'SELECT COUNT(*) AS total, SUM(created_at >= ?) AS hoy
            FROM redemptions
           WHERE user_id = ?'
     );
-    $stmt->execute([$userId]);
+    $stmt->execute([byr_day_start_db(0), $userId]);
     $prizes = $stmt->fetch();
     if (!$prizes) {
         $prizes = ['total' => 0, 'hoy' => 0];

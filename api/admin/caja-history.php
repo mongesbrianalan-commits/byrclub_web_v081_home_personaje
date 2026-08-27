@@ -78,6 +78,9 @@ foreach ($rows as $s) {
         'id'            => $sid,
         'openedAt'      => $s['opened_at'],
         'closedAt'      => $s['closed_at'],
+        /* En hora de Argentina, listas para mostrar (ver byr_dt_label). */
+        'openedAtLabel' => byr_dt_label($s['opened_at']),
+        'closedAtLabel' => byr_dt_label($s['closed_at']),
         'openedBy'      => $s['opened_by_name'],
         'closedBy'      => $s['closed_by_name'],
         'openingFloat'  => (int) $s['opening_float'],

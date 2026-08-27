@@ -53,16 +53,21 @@ if ($method === 'POST') {
         json_out(['ok' => true, 'claimed' => true, 'reused' => true, 'code' => $existing['code']]);
     }
 
-    $now  = byr_2x1_now()->format('Y-m-d H:i:s');
     $code = byr_generate_redemption_code($pdo);
 
+    /* Las fechas las pone la BASE con NOW(), como todos los demás vales.
+       Antes se le pasaba la hora de Argentina calculada en PHP, y eso dejaba
+       este vale con un reloj distinto al del resto de la tabla: como el
+       vencimiento se compara contra NOW() (UTC), el 2x1 se moría a las 21
+       horas en vez de a las 24. Dentro de un mismo INSERT, MySQL garantiza
+       que los dos NOW() valen igual. */
     $ins = $pdo->prepare(
         'INSERT INTO redemptions (user_id, code, prize_id, prize_label, source, status, created_at, expires_at)
-         VALUES (?, ?, ?, ?, ?, "pending", ?, DATE_ADD(?, INTERVAL ? HOUR))'
+         VALUES (?, ?, ?, ?, ?, "pending", NOW(), DATE_ADD(NOW(), INTERVAL ? HOUR))'
     );
     $ins->execute([
         $id, $code, BYR_2X1_PRIZE_ID, BYR_2X1_LABEL, BYR_2X1_SOURCE,
-        $now, $now, BYR_REDEMPTION_TTL_HOURS,
+        BYR_REDEMPTION_TTL_HOURS,
     ]);
 
     json_out(['ok' => true, 'claimed' => true, 'reused' => false, 'code' => $code]);

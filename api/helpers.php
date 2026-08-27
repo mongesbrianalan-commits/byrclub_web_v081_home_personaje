@@ -9,6 +9,94 @@ require_once __DIR__ . '/db.php';
 header('Content-Type: application/json; charset=utf-8');
 
 /* =========================================================
+   Hora — todo el sistema piensa en hora de Argentina
+   ---------------------------------------------------------
+   El hosting corre en UTC, así que hasta acá cada lugar que necesitaba la
+   hora se la arreglaba solo (y los que se olvidaban mostraban 23:33 para un
+   pedido que había entrado 20:33). Ahora hay una sola regla:
+
+     - PHP piensa en hora de Argentina        (date_default_timezone_set)
+     - La base guarda en SU reloj, que es UTC (NOW(), created_at, ...)
+     - Para MOSTRAR una fecha de la base se pasa por byr_dt_local()
+
+   Lo que la base guarda NO se toca: cambiarlo obligaría a migrar todas las
+   filas viejas y a dejar la columna con dos relojes mezclados.
+========================================================= */
+
+const BYR_TZ = 'America/Argentina/Buenos_Aires';
+
+date_default_timezone_set(BYR_TZ);
+
+/**
+ * Cuánto adelanta el reloj de la BASE respecto de UTC, en segundos.
+ *
+ * Se le pregunta a la base en vez de darlo por sentado: hoy Hostinger la tiene
+ * en UTC (0), pero si mañana la mueven, las horas siguen saliendo bien sin
+ * tocar una línea. Se consulta una sola vez por request.
+ */
+function byr_db_utc_offset(): int
+{
+    static $off = null;
+    if ($off === null) {
+        try {
+            $off = (int) db()->query('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())')->fetchColumn();
+        } catch (Throwable $e) {
+            $off = 0; // si falla, asumimos UTC, que es como está hoy
+        }
+    }
+    return $off;
+}
+
+/** Un DATETIME de la base (en el reloj de la base) → DateTime en hora de Argentina. */
+function byr_dt_local(?string $dbDateTime): ?DateTimeImmutable
+{
+    if ($dbDateTime === null || trim($dbDateTime) === '') {
+        return null;
+    }
+    $off  = byr_db_utc_offset();
+    $sign = $off < 0 ? '-' : '+';
+    $abs  = abs($off);
+    $tz   = sprintf('%s%02d:%02d', $sign, intdiv($abs, 3600), intdiv($abs % 3600, 60));
+
+    try {
+        $dt = new DateTimeImmutable($dbDateTime, new DateTimeZone($tz));
+        return $dt->setTimezone(new DateTimeZone(BYR_TZ));
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
+/**
+ * Etiqueta lista para mostrar de un DATETIME de la base, en hora de Argentina.
+ * Es lo que se manda al navegador: así el panel no hace cuentas de husos, que
+ * es donde se venía colando el error de las 3 horas.
+ */
+function byr_dt_label(?string $dbDateTime, string $format = 'd/m H:i'): ?string
+{
+    $dt = byr_dt_local($dbDateTime);
+    return $dt ? $dt->format($format) : null;
+}
+
+/**
+ * Medianoche argentina de hace $daysAgo días, escrita en el reloj de la BASE,
+ * para poder compararla contra created_at.
+ *
+ * Sin esto, "hoy" se calculaba con date('Y-m-d') sobre un servidor en UTC: el
+ * día cambiaba a las 21:00 de Argentina, o sea que las estadísticas del día se
+ * reiniciaban en el medio del turno.
+ */
+function byr_day_start_db(int $daysAgo = 0): string
+{
+    /* Negativo = hacia adelante: -1 es la medianoche de mañana, que sirve para
+       cerrar el rango de "hoy". */
+    $start = (new DateTimeImmutable('today', new DateTimeZone(BYR_TZ)))
+        ->modify(($daysAgo <= 0 ? '+' . abs($daysAgo) : '-' . $daysAgo) . ' days')
+        ->getTimestamp();
+
+    return gmdate('Y-m-d H:i:s', $start + byr_db_utc_offset());
+}
+
+/* =========================================================
    Beneficios de socio — montos (fáciles de cambiar acá)
 ========================================================= */
 const BYR_WELCOME_BONUS  = 300; // puntos de regalo al crear la cuenta
@@ -111,7 +199,7 @@ function byr_minutes_of_day(string $hhmm): int
  */
 function byr_orders_window(): array
 {
-    $now  = new DateTime('now', new DateTimeZone('America/Argentina/Buenos_Aires'));
+    $now  = new DateTime('now', new DateTimeZone(BYR_TZ));
     $hora = $now->format('H:i');
     $h    = byr_order_hours();
 
