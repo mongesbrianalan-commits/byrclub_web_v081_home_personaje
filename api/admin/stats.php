@@ -7,6 +7,9 @@
  * lo lleva", pero una la carga el cajero en el local y la otra la pidió el
  * cliente por la web. Mezclarlas haría que "take away" no signifique nada.
  *
+ * Un pedido cargado en el mostrador PARA MANDAR cuenta como delivery, no como
+ * mostrador: lo que separa los tres números es cómo sale la comida.
+ *
  * Los pedidos cancelados no cuentan.
  *
  * Respuesta: { ok, periods: { today, week, all }, deliveryFee }
@@ -24,9 +27,13 @@ require_role($pdo, ['cajero']);
 $hasChannel  = byr_pos_ready($pdo);
 $hasShipping = byr_shipping_ready($pdo);
 
+/* El delivery se pregunta PRIMERO, antes que el canal: una venta cargada en
+   el mostrador que sale en moto es un delivery igual que la que se pidió por
+   la web (sale una moto, se cobra el envío). "Mostrador" queda para lo que
+   de verdad se lleva el cliente que está parado en el local. */
 $kindExpr = $hasChannel
-    ? "CASE WHEN o.channel = 'mostrador' THEN 'mostrador'
-            WHEN o.fulfillment = 'delivery' THEN 'delivery'
+    ? "CASE WHEN o.fulfillment = 'delivery' THEN 'delivery'
+            WHEN o.channel = 'mostrador' THEN 'mostrador'
             ELSE 'pickup' END"
     : "CASE WHEN o.fulfillment = 'delivery' THEN 'delivery' ELSE 'pickup' END";
 

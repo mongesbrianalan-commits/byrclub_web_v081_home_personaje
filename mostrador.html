@@ -25,6 +25,9 @@
     .pos-change-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 8px 12px; border-radius: 12px; background: rgba(123,255,160,.1); border: 1px solid rgba(123,255,160,.3); }
     .pos-change-row strong { color: #7bffa0; font-size: 1.15rem; }
     .pos-checkout { display: flex; flex-direction: column; gap: 12px; }
+    /* El delivery cargado desde el mostrador: que se vea de lejos en el cartel
+       de la venta, para que nadie la deje en la barra esperando al cliente. */
+    .pos-success-fulfill { margin: -4px 0 10px; font-weight: 800; font-size: .92rem; color: #9bd1ff; }
     .pos-checkout .auth-field textarea, .pos-checkout .auth-field input, .pos-checkout .auth-field select { width: 100%; box-sizing: border-box; }
   </style>
 </head>
@@ -74,12 +77,47 @@
             <p class="cart-empty" data-cart-empty>Elegí productos de la carta 👈</p>
           </div>
 
+          <!-- Subtotal y envío solo aparecen si la venta sale en moto. -->
+          <div class="cart-total-row cart-sub-row" data-cart-sub-row hidden>
+            <span>Subtotal</span>
+            <strong data-cart-subtotal>$0</strong>
+          </div>
+          <div class="cart-total-row cart-sub-row" data-cart-ship-row hidden>
+            <span>🛵 Envío</span>
+            <strong data-cart-shipping>$0</strong>
+          </div>
           <div class="cart-total-row">
             <span>Total</span>
             <strong data-cart-total>$0</strong>
           </div>
 
           <div class="pos-checkout" data-checkout hidden>
+            <!-- Cómo sale la comida. Va primero porque el delivery cambia el
+                 total, y el cajero canta el precio recién después de elegir. -->
+            <div class="checkout-block">
+              <span class="checkout-label">¿Cómo se lo lleva?</span>
+              <div class="fulfillment-toggle" role="radiogroup" aria-label="Forma de entrega">
+                <label class="fulfill-opt is-active" data-fulfill-opt="pickup">
+                  <input type="radio" name="posFulfillment" value="pickup" checked>
+                  <span>🛍️ Se lo lleva</span>
+                </label>
+                <label class="fulfill-opt" data-fulfill-opt="delivery">
+                  <input type="radio" name="posFulfillment" value="delivery">
+                  <span>🛵 Delivery</span>
+                </label>
+              </div>
+            </div>
+
+            <label class="auth-field" data-address-field hidden>
+              <span>Dirección de entrega</span>
+              <input type="text" data-address placeholder="Calle, número, entre calles…" autocomplete="off">
+            </label>
+
+            <label class="auth-field" data-phone-field hidden>
+              <span>WhatsApp <small>(opcional, para avisarle)</small></span>
+              <input type="tel" data-phone placeholder="11 5854 5653" inputmode="tel" autocomplete="off">
+            </label>
+
             <div class="checkout-block">
               <span class="checkout-label">Cliente <small>(opcional, para sumar puntos)</small></span>
               <div class="pos-customer-row">
@@ -130,6 +168,7 @@
         <div class="success-emoji">✅</div>
         <h2>¡Venta cobrada!</h2>
         <p>Venta <strong data-success-id>#0</strong> · <span data-success-method>—</span></p>
+        <p class="pos-success-fulfill" data-success-fulfill hidden></p>
         <div class="success-summary" data-success-summary></div>
         <p class="pos-print-note" data-print-note role="status" style="margin:0 0 10px;font-weight:800;font-size:.88rem;color:#9bd1ff"></p>
         <div class="pos-print-row" style="display:flex;gap:10px;margin-bottom:12px">

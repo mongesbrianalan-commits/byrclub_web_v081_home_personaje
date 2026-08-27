@@ -1,6 +1,6 @@
 # Desde dónde arrancar
 
-Última sesión: **26 de agosto de 2026**, desde la PC de casa.
+Última sesión: **27 de agosto de 2026**, desde la PC de casa.
 Todo lo de abajo ya está en GitHub y desplegado en byrclub.com.
 
 Antes que nada, al cambiar de máquina: **`git pull`**.
@@ -77,6 +77,60 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 > El trabajo del estado en el servidor no necesitó migración: lo que agregó
 > (`missions`, `progress`) vive dentro del JSON de `users.state`.
+
+---
+
+## Sesión del 27 de agosto de 2026 (desde casa)
+
+### El mostrador ahora puede mandar el pedido a domicilio
+
+Hasta ahora toda venta de mostrador se guardaba como "se lo lleva", sin
+excepción. Pero el que viene al local no siempre se lo lleva: a veces pide,
+paga y quiere que se lo mandemos. Eso no se podía cargar.
+
+Arriba del checkout del mostrador hay ahora un selector **🛍️ Se lo lleva /
+🛵 Delivery** — el mismo que ve el cliente en la web, pero lo toca el cajero.
+Si elige delivery aparecen **dirección** (obligatoria) y **WhatsApp**
+(opcional), y el envío se suma al total.
+
+**No hizo falta ninguna migración.** Las columnas ya existían todas
+(`fulfillment`, `address`, `customer_phone`, `shipping_cost`): lo único que
+pasaba es que `pos-sale.php` escribía `"pickup"` fijo. Ahora escribe lo que
+eligió el cajero y valida la dirección del lado del servidor, no sólo en el
+navegador.
+
+**El envío es el mismo $490 de la web**, con la misma regla de siempre: se
+congela en el pedido, y **no suma puntos** (los puntos salen de la comida).
+En la caja entra el total con envío incluido, y el vuelto se calcula sobre
+ese número — antes se calculaba sobre la comida sola, que ahora daría mal.
+
+**Tres cosas que había que arreglar alrededor, o el delivery de mostrador
+quedaba a medias:**
+
+- **La comanda decía sólo `MOSTRADOR`.** Ahora dice `MOSTRADOR - DELIVERY` y
+  sale con la dirección. Si no, el que la prepara la dejaba en la barra
+  esperando a alguien que no iba a venir a buscarla.
+- **La comanda no decía que ya estaba pagado.** Ahora sale
+  `YA PAGO EN EL LOCAL - $X - NO COBRAR`. El que reparte lleva comida ya
+  cobrada en la caja; sin ese renglón le cobra de nuevo a alguien que pagó.
+- **No aparecía en el panel.** La lista de pedidos arrancaba con un `JOIN` a
+  `users`, así que todo lo de consumidor final quedaba afuera de rebote —
+  incluido un delivery cargado en el mostrador, que es justo lo que hay que
+  despachar y seguir. Ahora el `JOIN` es `LEFT` y la regla se escribió a
+  propósito: **la venta de mostrador entra a la lista sólo si es delivery**
+  (o si tiene socio, como antes). Las que el cliente se lleva siguen sin
+  aparecer: ya están cobradas y entregadas, y llenarían "En curso" de
+  pedidos que nadie va a cerrar.
+
+**En las estadísticas cuenta como delivery, no como mostrador.** Lo que
+separa los tres números es cómo sale la comida: si sale una moto y se cobra
+envío, es un delivery, lo haya cargado el cajero o el cliente. "Mostrador"
+queda para lo que se lleva el que está parado en el local.
+
+> **Lo que NO se agregó: "comer en el local".** El selector tiene dos
+> opciones, no tres, porque son las dos que pediste. Si algún día querés
+> separar *para llevar* de *comer acá*, eso sí necesita una migración
+> chica (agregarle un valor al ENUM `fulfillment`).
 
 ---
 
@@ -470,6 +524,31 @@ Alias de transferencia: **BYRDOCKSUD.MP** (por defecto en `api/menu.php`,
 pisable desde `config.php` con `'transfer_alias'`).
 
 ---
+
+## Para probar el delivery de mostrador (hace falta estar en el local)
+
+Necesita la **caja abierta** y, para que salga la comanda, la impresora
+prendida. Desde casa se puede probar todo menos el papel.
+
+1. Abrí **Mostrador**, armá una venta y elegí **🛵 Delivery**. Tienen que
+   aparecer dirección y WhatsApp, y el total tiene que subir **$490**.
+2. Tocá **Cobrar** sin poner dirección: no tiene que dejar.
+3. Pagá con efectivo poniendo `$20.000`: el **vuelto** tiene que descontar
+   también el envío (comida + 490), no sólo la comida.
+4. Cobrala. El cartel de la venta tiene que decir **🛵 Delivery** con la
+   dirección, y el resumen tiene que mostrar la línea de **Envío**.
+5. **La comanda impresa** tiene que decir arriba `MOSTRADOR - DELIVERY`, con
+   la dirección debajo y el renglón **`YA PAGO EN EL LOCAL - $X - NO COBRAR`**.
+6. Andá al **panel → pedidos**: esa venta tiene que **aparecer en la lista**
+   (aunque sea consumidor final) para poder marcarla en camino y entregada.
+7. Volvé al mostrador y tocá **Nueva venta**: la entrega tiene que volver a
+   "se lo lleva" y la dirección tiene que estar vacía. (Si se arrastrara, la
+   próxima venta saldría a la dirección del cliente anterior.)
+8. Hacé una venta normal (**🛍️ Se lo lleva**): sin envío, sin dirección, la
+   comanda dice `MOSTRADOR` como siempre, y **no** aparece en la lista del
+   panel — igual que antes.
+9. En **estadísticas** (abajo de los pedidos), la venta del punto 4 tiene que
+   sumar en **delivery**, no en mostrador.
 
 ## Para probar el 2x1 por la web
 

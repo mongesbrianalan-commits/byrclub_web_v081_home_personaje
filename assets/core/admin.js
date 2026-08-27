@@ -1188,7 +1188,9 @@
       card.append(editToggle);
     } else if (o.status !== "cancelled") {
       // Pedido aceptado (o más avanzado): mostrar puntos + control de estado.
-      if (o.pointsAwarded !== null) {
+      /* Con 0 no se dice nada: una venta de mostrador a consumidor final no
+         acredita puntos, y "se acreditaron +0" sólo confunde. */
+      if (o.pointsAwarded) {
         const p = document.createElement("div");
         p.className = "oa-fulfill";
         p.innerHTML = `🪙 Se acreditaron <b style="color:var(--green)">+${fmt(o.pointsAwarded)}</b> puntos.`;

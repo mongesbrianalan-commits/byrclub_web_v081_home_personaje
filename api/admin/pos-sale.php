@@ -7,9 +7,17 @@
  * Como en create.php, los precios se RECALCULAN del lado del servidor: el
  * cliente solo manda qué producto, cantidad y qué opciones eligió.
  *
+ * La venta de mostrador no es siempre "se lo lleva ahora": mucha gente viene
+ * al local, pide y paga, pero quiere que se lo mandemos. Por eso el cajero
+ * elige la entrega igual que el cliente en la web (`fulfillment`), y si es
+ * delivery se cobra el envío y se guarda la dirección.
+ *
  * Body JSON:
  *   items:         [{ slug|id, qty, options?, note? }]   (al menos 1)
  *   paymentMethod: "efectivo"|"debito"|"credito"|"qr"|"transfer"
+ *   fulfillment:   "pickup" | "delivery"  (por defecto pickup: se lo lleva)
+ *   address:       string (obligatorio si delivery)
+ *   phone:         string (opcional; contacto para el que reparte)
  *   tendered:      int    (opcional; efectivo recibido, para el vuelto)
  *   customerEmail: string (opcional; socio a sumar puntos. Vacío = consumidor final)
  *   couponCode:    string (opcional; vale del socio. El "2x puntos" duplica lo acreditado)
@@ -42,11 +50,27 @@ $tendered   = array_key_exists('tendered', $in) && $in['tendered'] !== '' && $in
 $custEmail  = strtolower(trim((string) ($in['customerEmail'] ?? '')));
 $couponCode = strtoupper(trim((string) ($in['couponCode'] ?? '')));
 
+/* Entrega: lo mismo que elige el cliente en la web, pero lo carga el cajero.
+   Cualquier cosa que no sea "delivery" es "se lo lleva", que es el caso
+   normal del mostrador y lo que venía pasando siempre. */
+$fulfillment = ($in['fulfillment'] ?? 'pickup') === 'delivery' ? 'delivery' : 'pickup';
+$address     = trim((string) ($in['address'] ?? ''));
+$phone       = trim((string) ($in['phone'] ?? ''));
+
+$cap = function (string $s, int $n): string {
+    return function_exists('mb_substr') ? mb_substr($s, 0, $n) : substr($s, 0, $n);
+};
+$address = $cap($address, 255);
+$phone   = $cap($phone, 40);
+
 if (!$itemsIn) {
     json_out(['error' => 'La venta está vacía.'], 422);
 }
 if (!in_array($payMethod, byr_payment_methods(), true)) {
     json_out(['error' => 'Elegí un medio de pago.'], 422);
+}
+if ($fulfillment === 'delivery' && $address === '') {
+    json_out(['error' => 'Para el delivery hace falta la dirección.', 'code' => 'address-required'], 422);
 }
 if ($couponCode !== '' && $custEmail === '') {
     json_out([
@@ -154,7 +178,15 @@ if (!$lines) {
     json_out(['error' => 'Los productos de la venta ya no están disponibles.'], 422);
 }
 
-/* --- Puntos (solo si hay socio): misma tasa que los pedidos online --- */
+/* --- Envío: se cobra igual que en la web, y se congela en el pedido -------
+   Si la migración del envío no está corrida, el delivery de mostrador se
+   cobra sin flete en vez de romperse (mismo criterio que create.php). */
+$shippingReady = byr_shipping_ready($pdo);
+$shipping      = ($fulfillment === 'delivery' && $shippingReady) ? byr_delivery_fee() : 0;
+$chargeTotal   = $itemsTotal + $shipping;
+
+/* --- Puntos (solo si hay socio): misma tasa que los pedidos online ---
+   Se calculan sobre la COMIDA: el envío no suma puntos. */
 $rate = (int) byr_setting('order_points_per_amount', 100);
 if ($rate < 1) {
     $rate = 100;
@@ -193,16 +225,24 @@ try {
         $pointsAwarded = $pointsAwarded * $multiplier;
     }
 
+    /* La columna del envío es de una migración posterior: se suma sólo si
+       está, para que la venta se guarde igual aunque falte correrla. */
+    $shipCol = $shippingReady ? ', shipping_cost' : '';
+    $shipVal = $shippingReady ? ', ?' : '';
+
     $ins = $pdo->prepare(
-        'INSERT INTO orders
-           (user_id, status, fulfillment, channel, customer_name,
+        "INSERT INTO orders
+           (user_id, status, fulfillment, channel, customer_name, customer_phone, address,
             items_total, points_suggested, points_awarded, coupon_code, coupon_label,
-            confirmed_at, confirmed_by, served_by, paid_at, session_id)
-         VALUES (?, "confirmed", "pickup", "mostrador", ?, ?, ?, ?, ?, ?, NOW(), ?, ?, NOW(), ?)'
+            confirmed_at, confirmed_by, served_by, paid_at, session_id$shipCol)
+         VALUES (?, \"confirmed\", ?, \"mostrador\", ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, NOW(), ?$shipVal)"
     );
-    $ins->execute([
+    $params = [
         $customer ? (int) $customer['id'] : null,
+        $fulfillment,
         $customerName,
+        $phone !== '' ? $phone : null,
+        $fulfillment === 'delivery' ? $address : null,
         $itemsTotal,
         $pointsSuggested,
         $pointsAwarded,
@@ -211,7 +251,11 @@ try {
         $admin,
         $admin,
         (int) $session['id'],
-    ]);
+    ];
+    if ($shippingReady) {
+        $params[] = $shipping;
+    }
+    $ins->execute($params);
     $orderId = (int) $pdo->lastInsertId();
 
     $insItem = $pdo->prepare(
@@ -229,7 +273,8 @@ try {
         'INSERT INTO payments (order_id, session_id, method, amount, created_by)
          VALUES (?, ?, ?, ?, ?)'
     );
-    $payIns->execute([$orderId, (int) $session['id'], $payMethod, $itemsTotal, $admin]);
+    /* En la caja entra lo que realmente se cobró: la comida MÁS el envío. */
+    $payIns->execute([$orderId, (int) $session['id'], $payMethod, $chargeTotal, $admin]);
 
     /* Puntos al socio (si hay). */
     $newBalance = null;
@@ -273,9 +318,10 @@ foreach (byr_print_auto() as $kind) {
     }
 }
 
-/* Vuelto (solo informativo, para efectivo). */
-$change = ($payMethod === 'efectivo' && $tendered !== null && $tendered >= $itemsTotal)
-    ? $tendered - $itemsTotal
+/* Vuelto (solo informativo, para efectivo). Se calcula sobre el total
+   cobrado: con delivery, el envío también lo paga el cliente. */
+$change = ($payMethod === 'efectivo' && $tendered !== null && $tendered >= $chargeTotal)
+    ? $tendered - $chargeTotal
     : null;
 
 json_out([
@@ -284,6 +330,11 @@ json_out([
     'sale'  => [
         'id'            => $orderId,
         'itemsTotal'    => $itemsTotal,
+        'shippingCost'  => $shipping,
+        'total'         => $chargeTotal,
+        'fulfillment'   => $fulfillment,
+        'address'       => $fulfillment === 'delivery' ? $address : null,
+        'customerPhone' => $phone !== '' ? $phone : null,
         'items'         => $lines,
         'paymentMethod' => $payMethod,
         'tendered'      => $tendered,

@@ -19,6 +19,10 @@
   const cartItemsEl  = $("[data-cart-items]");
   const cartEmptyEl  = $("[data-cart-empty]");
   const cartTotalEl  = $("[data-cart-total]");
+  const cartSubRow   = $("[data-cart-sub-row]");
+  const cartSubtotalEl = $("[data-cart-subtotal]");
+  const cartShipRow  = $("[data-cart-ship-row]");
+  const cartShippingEl = $("[data-cart-shipping]");
   const checkoutEl   = $("[data-checkout]");
   const customerInput= $("[data-customer-input]");
   const customerFind = $("[data-customer-find]");
@@ -28,6 +32,12 @@
   const couponBlock  = $("[data-coupon-block]");
   const couponInput  = $("[data-coupon-input]");
   const couponStatus = $("[data-coupon-status]");
+  /* Entrega: el que pide en el mostrador no siempre se lo lleva. */
+  const addressField = $("[data-address-field]");
+  const addressInput = $("[data-address]");
+  const phoneField   = $("[data-phone-field]");
+  const phoneInput   = $("[data-phone]");
+
   const payMethodSel = $("[data-pay-method]");
   const tenderedField= $("[data-tendered-field]");
   const tenderedInput= $("[data-tendered]");
@@ -47,6 +57,7 @@
   let optionSets = {};
   let customerEmail = "";   // socio resuelto (vacío = consumidor final)
   let cajaOpen = false;
+  let deliveryFee = 0;      // envío fijo; lo manda el server en menu.php
 
   /* --- Utilidades --- */
   function money(n) { return "$" + Number(n || 0).toLocaleString("es-AR"); }
@@ -202,12 +213,65 @@
     return t;
   }
 
+  /* --- Entrega ---------------------------------------------------------
+     "Se lo lleva" es lo de siempre y no cobra envío. "Delivery" pide la
+     dirección y suma el flete, igual que un pedido de la web: el servidor
+     lo vuelve a calcular al cobrar, esto es para que el cajero lo cante. */
+
+  function currentFulfillment() {
+    const checked = document.querySelector('input[name="posFulfillment"]:checked');
+    return checked && checked.value === "delivery" ? "delivery" : "pickup";
+  }
+
+  function shippingCost() {
+    return currentFulfillment() === "delivery" ? deliveryFee : 0;
+  }
+
+  function saleTotal() {
+    return cartTotal() + (cart.size === 0 ? 0 : shippingCost());
+  }
+
+  /* Pinta subtotal / envío / total. Las dos primeras filas solo aparecen
+     cuando hay envío, para no ensuciar la venta normal del mostrador. */
+  function renderTotals() {
+    if (!cartTotalEl) return;
+    const sub  = cartTotal();
+    const ship = cart.size === 0 ? 0 : shippingCost();
+    show(cartSubRow, ship > 0);
+    show(cartShipRow, ship > 0);
+    if (cartSubtotalEl) cartSubtotalEl.textContent = money(sub);
+    if (cartShippingEl) cartShippingEl.textContent = money(ship);
+    cartTotalEl.textContent = money(sub + ship);
+  }
+
+  function applyFulfillment(kind) {
+    const isDelivery = kind === "delivery";
+    show(addressField, isDelivery);
+    show(phoneField, isDelivery);
+    if (!isDelivery && addressInput) addressInput.value = "";
+    renderTotals();
+    recomputeChange();
+  }
+
+  function initFulfillment() {
+    const opts = document.querySelectorAll("[data-fulfill-opt]");
+    opts.forEach((opt) => {
+      const input = opt.querySelector("input");
+      if (!input) return;
+      input.addEventListener("change", () => {
+        opts.forEach((o) => o.classList.toggle("is-active", o === opt));
+        applyFulfillment(opt.getAttribute("data-fulfill-opt"));
+      });
+    });
+    applyFulfillment(currentFulfillment());
+  }
+
   function renderCart() {
     cartItemsEl.textContent = "";
     if (cart.size === 0) {
       cartItemsEl.append(cartEmptyEl);
       show(cartEmptyEl, true);
-      cartTotalEl.textContent = money(0);
+      renderTotals();
       show(checkoutEl, false);
       recomputeChange();
       return;
@@ -251,7 +315,7 @@
       cartItemsEl.append(line);
     });
 
-    cartTotalEl.textContent = money(cartTotal());
+    renderTotals();
     show(checkoutEl, true);
     recomputeChange();
   }
@@ -571,7 +635,8 @@
     const isCash = payMethodSel.value === "efectivo";
     show(tenderedField, isCash);
     if (!isCash) { show(changeRow, false); return; }
-    const total = cartTotal();
+    /* El vuelto se calcula sobre lo que paga: con delivery, el envío también. */
+    const total = saleTotal();
     const tendered = parseInt(tenderedInput.value, 10);
     if (isNaN(tendered) || tendered < total) { show(changeRow, false); return; }
     changeEl.textContent = money(tendered - total);
@@ -587,6 +652,14 @@
     if (cart.size === 0) { setStatus("La venta está vacía.", "error"); return; }
     if (!cajaOpen) { setStatus("Abrí la caja antes de vender (pestaña Caja del panel).", "error"); return; }
 
+    const fulfillment = currentFulfillment();
+    const address = addressInput ? addressInput.value.trim() : "";
+    if (fulfillment === "delivery" && address === "") {
+      setStatus("Para el delivery hace falta la dirección.", "error");
+      if (addressInput) addressInput.focus();
+      return;
+    }
+
     const items = [];
     cart.forEach((it) => { items.push({ slug: it.slug, qty: it.qty, options: it.optionsPayload || {}, note: it.note || "" }); });
 
@@ -595,6 +668,9 @@
     const payload = {
       items,
       paymentMethod: payMethod,
+      fulfillment,
+      address: fulfillment === "delivery" ? address : "",
+      phone: fulfillment === "delivery" && phoneInput ? phoneInput.value.trim() : "",
       tendered: isNaN(tendered) ? null : tendered,
       customerEmail,
       couponCode: couponInput ? couponInput.value.trim().toUpperCase() : "",
@@ -635,6 +711,20 @@
     const methodEl = $("[data-success-method]");
     if (methodEl) methodEl.textContent = METHOD_LABELS[sale.paymentMethod] || sale.paymentMethod;
 
+    /* Si sale en moto hay que decirlo grande y con la dirección: es lo único
+       que distingue esta venta de una que el cliente se lleva del mostrador. */
+    const fulfillEl = $("[data-success-fulfill]");
+    if (fulfillEl) {
+      if (sale.fulfillment === "delivery") {
+        fulfillEl.textContent = "🛵 Delivery · " + (sale.address || "sin dirección") +
+          (sale.customerPhone ? " · " + sale.customerPhone : "");
+        show(fulfillEl, true);
+      } else {
+        fulfillEl.textContent = "";
+        show(fulfillEl, false);
+      }
+    }
+
     const summary = $("[data-success-summary]");
     if (summary) {
       summary.textContent = "";
@@ -648,10 +738,18 @@
         row.append(a, b);
         summary.append(row);
       });
+      const ship = Number(sale.shippingCost || 0);
+      if (ship > 0) {
+        const sRow = document.createElement("div");
+        sRow.className = "ss-line";
+        sRow.innerHTML = "<span>🛵 Envío</span><span>" + money(ship) + "</span>";
+        summary.append(sRow);
+      }
       const totalRow = document.createElement("div");
       totalRow.className = "ss-line ss-total";
       const ta = document.createElement("span"); ta.textContent = "Total";
-      const tb = document.createElement("b"); tb.textContent = money(sale.itemsTotal);
+      const tb = document.createElement("b");
+      tb.textContent = money(sale.total !== undefined ? sale.total : sale.itemsTotal);
       totalRow.append(ta, tb);
       summary.append(totalRow);
       if (sale.change !== null && sale.change !== undefined) {
@@ -684,7 +782,11 @@
     // Impresión. La comanda ya salió sola al cobrar (el server la encoló y el
     // agente del local la imprime); estos botones son para volver a sacarla o
     // para el ticket del cliente, que no se imprime en cada venta.
-    const forPrint = Object.assign({ fulfillment: "mostrador" }, sale);
+    /* El respaldo por el navegador rotula igual que la térmica: MOSTRADOR si
+       se lo lleva, DELIVERY (con dirección) si sale en moto. */
+    const forPrint = Object.assign({}, sale, {
+      fulfillment: sale.fulfillment === "delivery" ? "delivery" : "mostrador",
+    });
     const note = $("[data-print-note]");
     const auto = Array.isArray(printed) ? printed : [];
     if (note) {
@@ -748,6 +850,14 @@
     showCouponBlock(false);
     tenderedInput.value = "";
     payMethodSel.value = "efectivo";
+
+    /* La entrega vuelve a "se lo lleva": el delivery es la excepción, y
+       arrastrarlo a la venta siguiente manda comida a la dirección anterior. */
+    if (addressInput) addressInput.value = "";
+    if (phoneInput) phoneInput.value = "";
+    const pickupOpt = document.querySelector('[data-fulfill-opt="pickup"] input');
+    if (pickupOpt) { pickupOpt.checked = true; pickupOpt.dispatchEvent(new Event("change")); }
+
     show(successEl, false);
     show(layoutEl, true);
     show(heroEl, true);
@@ -769,6 +879,10 @@
       if (res.status === 401) return;
       const data = await res.json();
       optionSets = data.optionSets || {};
+      /* Mismo envío que la web. Si la migración no está corrida viene 0, y el
+         delivery de mostrador se cobra sin flete en vez de romperse. */
+      deliveryFee = Number(data.deliveryFee) || 0;
+      renderTotals();
       const cats = Array.isArray(data.categories) ? data.categories : [];
       show(menuLoading, false);
       if (!cats.length) {
@@ -826,6 +940,7 @@
     if (!allowed) return;
     loadMenu();
     checkCaja();
+    initFulfillment();
     renderCart();
     customerFind.addEventListener("click", findCustomer);
     customerInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); findCustomer(); } });

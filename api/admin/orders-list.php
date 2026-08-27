@@ -8,6 +8,7 @@
  * (últimos primero, pendientes arriba).
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../caja.php';   // byr_pos_ready(): saber si existe `channel`
 
 $pdo = db();
 require_role($pdo, ['cajero', 'cocina']);
@@ -27,16 +28,37 @@ $sql = "SELECT o.id, o.user_id, o.status, o.fulfillment, o.customer_name, o.cust
                u.email AS customer_email,
                r.prize_id AS coupon_prize_id
           FROM orders o
-          JOIN users u ON u.id = o.user_id
+          LEFT JOIN users u ON u.id = o.user_id
           LEFT JOIN redemptions r
                  ON r.code = o.coupon_code AND r.user_id = o.user_id";
+
+$where  = [];
 $params = [];
 if ($status === 'active') {
     // "En curso": aceptados que todavía se están preparando/entregando.
-    $sql .= ' WHERE o.status IN ("confirmed", "preparing", "on_the_way")';
+    $where[] = 'o.status IN ("confirmed", "preparing", "on_the_way")';
 } elseif (in_array($status, $allowed, true)) {
-    $sql .= ' WHERE o.status = ?';
+    $where[] = 'o.status = ?';
     $params[] = $status;
+}
+
+/* Qué ventas de mostrador entran a la lista.
+   Una venta de mostrador que el cliente se lleva ya está cobrada y entregada:
+   no hay nada que hacer con ella, y llenaría "En curso" de pedidos que nadie
+   va a cerrar. Pero si es DELIVERY hay algo que despachar y seguir, así que
+   tiene que aparecer como cualquier otro pedido.
+
+   Antes la lista arrancaba con un JOIN a users, que dejaba afuera de rebote a
+   todo lo de consumidor final (user_id NULL). Ahora el JOIN es LEFT y la
+   decisión se toma acá, a propósito. */
+if (byr_pos_ready($pdo)) {
+    $where[] = "NOT (o.channel = 'mostrador' AND o.user_id IS NULL AND o.fulfillment <> 'delivery')";
+} else {
+    $where[] = 'o.user_id IS NOT NULL';
+}
+
+if ($where) {
+    $sql .= ' WHERE ' . implode(' AND ', $where);
 }
 $sql .= ' ORDER BY (o.status = "pending") DESC, o.created_at DESC LIMIT 100';
 

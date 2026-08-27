@@ -216,6 +216,16 @@ function byr_escpos_comanda(array $o): string
         $b .= BYR_ESC . 'E' . "\x00";
     }
 
+    /* Mostrador: el cliente ya pagó en la caja. Si esto sale en moto hay que
+       decirlo, o el que reparte le cobra de nuevo a alguien que ya pagó. */
+    if (($o['channel'] ?? '') === 'mostrador' && ($o['fulfillment'] ?? '') === 'delivery') {
+        $total = (int) ($o['itemsTotal'] ?? 0) + (int) ($o['shippingCost'] ?? 0);
+        $b .= BYR_ESC . 'E' . "\x01";
+        $b .= byr_print_wrap(byr_t('YA PAGO EN EL LOCAL - ' . byr_print_money($total)
+            . ' - NO COBRAR'));
+        $b .= BYR_ESC . 'E' . "\x00";
+    }
+
     $b .= byr_print_rule();
 
     foreach (($o['items'] ?? []) as $ln) {
@@ -333,10 +343,15 @@ function byr_print_cut(): string
 
 function byr_print_fulfill(array $o): string
 {
+    $isDelivery = ($o['fulfillment'] ?? 'pickup') === 'delivery';
+
+    /* Una venta de mostrador también puede salir en moto: el que la prepara
+       tiene que ver DELIVERY, si no la deja en la barra esperando a alguien
+       que no va a venir a buscarla. */
     if (($o['channel'] ?? '') === 'mostrador') {
-        return 'MOSTRADOR';
+        return $isDelivery ? 'MOSTRADOR - DELIVERY' : 'MOSTRADOR';
     }
-    return ($o['fulfillment'] ?? 'pickup') === 'delivery' ? 'DELIVERY' : 'RETIRO';
+    return $isDelivery ? 'DELIVERY' : 'RETIRO';
 }
 
 function byr_print_when(array $o): string
