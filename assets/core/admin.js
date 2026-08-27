@@ -638,6 +638,157 @@
   const pmatchStatus = document.querySelector("[data-pmatch-status]");
   const pmatchList = document.querySelector("[data-pmatch-list]");
 
+  /* ---------------------------------------------------------
+     Prode — pegar la fecha entera
+     ---------------------------------------------------------
+     Cargar de a un partido son cinco campos por catorce partidos. Acá se pega
+     la lista y el servidor la interpreta. Va en dos pasos a propósito:
+     "Revisar" no toca nada y muestra cómo entendió cada línea; recién con eso
+     a la vista aparece el botón de cargar. Pegar catorce partidos a ciegas y
+     que entren mal es peor que cargarlos a mano.
+  --------------------------------------------------------- */
+
+  const pbRound   = document.querySelector("[data-pb-round]");
+  const pbText    = document.querySelector("[data-pb-text]");
+  const pbReview  = document.querySelector("[data-pb-review]");
+  const pbCommit  = document.querySelector("[data-pb-commit]");
+  const pbStatus  = document.querySelector("[data-pb-status]");
+  const pbPreview = document.querySelector("[data-pb-preview]");
+
+  /* Llama al endpoint sin pasar por api(): cuando rechaza por líneas con error
+     el cuerpo trae el detalle línea por línea, y api() lo tira. */
+  async function pbCall(dryRun) {
+    const res = await fetch(`${API}admin/prode-bulk-matches.php`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        roundName: String(pbRound.value || "").trim(),
+        text: String(pbText.value || ""),
+        dryRun,
+      }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch (e) { /* respuesta no-JSON */ }
+    return { ok: res.ok, data };
+  }
+
+  function pbRenderPreview(rows) {
+    pbPreview.innerHTML = "";
+    if (!Array.isArray(rows) || !rows.length) return;
+    const list = document.createElement("div");
+    list.className = "pb-list";
+
+    rows.forEach((r) => {
+      const row = document.createElement("div");
+      row.className = "pb-row is-" + r.kind;
+
+      const ln = document.createElement("span");
+      ln.className = "pb-row__ln";
+      ln.textContent = r.line;
+
+      const main = document.createElement("div");
+      main.className = "pb-row__main";
+
+      if (r.kind === "match") {
+        main.innerHTML = `⚽ <b>${escapeHtml(r.home)}</b> vs <b>${escapeHtml(r.away)}</b>` +
+          `<div class="pb-row__when">${escapeHtml(r.kickoffLabel || "")}</div>`;
+      } else if (r.kind === "day") {
+        main.innerHTML = `📅 Día para las líneas de abajo: <b>${escapeHtml(r.date)}</b>`;
+      } else if (r.kind === "duplicate") {
+        const why = r.duplicate === "ya-cargado"
+          ? "ya estaba cargado en esta fecha"
+          : "está repetido en la lista";
+        main.innerHTML = `⏭️ <b>${escapeHtml(r.home)}</b> vs <b>${escapeHtml(r.away)}</b> — se saltea, ${why}.`;
+      } else {
+        main.innerHTML = `⚠️ ${escapeHtml(r.error || "No se pudo interpretar.")}` +
+          `<div class="pb-row__raw">${escapeHtml(r.raw || "")}</div>`;
+      }
+
+      row.append(ln, main);
+      list.append(row);
+    });
+
+    pbPreview.append(list);
+  }
+
+  function pbSummary(c) {
+    const bits = [];
+    if (c.matches) bits.push(`${c.matches} partido${c.matches === 1 ? "" : "s"}`);
+    if (c.duplicates) bits.push(`${c.duplicates} repetido${c.duplicates === 1 ? "" : "s"} (se saltean)`);
+    if (c.errors) bits.push(`${c.errors} con error`);
+    return bits.join(" · ") || "nada";
+  }
+
+  async function prodeBulkReview() {
+    if (!String(pbRound.value || "").trim()) {
+      setStatus(pbStatus, "Ponele un nombre a la fecha (ej. \"Fecha 8\").", "error");
+      return;
+    }
+    if (!String(pbText.value || "").trim()) {
+      setStatus(pbStatus, "Pegá la lista de partidos.", "error");
+      return;
+    }
+    pbReview.disabled = true;
+    pbCommit.hidden = true;
+    setStatus(pbStatus, "Revisando…", "");
+    try {
+      const { ok, data } = await pbCall(true);
+      if (!ok) {
+        pbPreview.innerHTML = "";
+        setStatus(pbStatus, data.error || "No se pudo revisar la lista.", "error");
+        return;
+      }
+      pbRenderPreview(data.rows);
+      const c = data.counts || {};
+      if (c.errors) {
+        setStatus(pbStatus, `⚠️ ${pbSummary(c)}. Corregí las líneas marcadas y volvé a revisar: así como está no se carga nada.`, "error");
+        return;
+      }
+      if (!c.matches) {
+        setStatus(pbStatus, "Todos los partidos de la lista ya estaban cargados en esta fecha.", "error");
+        return;
+      }
+      const dondeVa = data.roundExists
+        ? `se van a agregar a la fecha «${data.roundName}», que ya existe (ID ${data.roundId})`
+        : `se va a crear la fecha «${data.roundName}»`;
+      setStatus(pbStatus, `✅ ${pbSummary(c)}. Si está bien, ${dondeVa}.`, "ok");
+      pbCommit.textContent = `Cargar ${c.matches} partido${c.matches === 1 ? "" : "s"}`;
+      pbCommit.hidden = false;
+    } catch (error) {
+      setStatus(pbStatus, "No hay conexión. Probá de nuevo.", "error");
+    } finally {
+      pbReview.disabled = false;
+    }
+  }
+
+  async function prodeBulkCommit() {
+    pbCommit.disabled = true;
+    pbReview.disabled = true;
+    setStatus(pbStatus, "Cargando…", "");
+    try {
+      const { ok, data } = await pbCall(false);
+      if (!ok) {
+        if (Array.isArray(data.rows)) pbRenderPreview(data.rows);
+        setStatus(pbStatus, data.error || "No se pudieron cargar los partidos.", "error");
+        return;
+      }
+      pbRenderPreview(data.rows);
+      const c = data.counts || {};
+      setStatus(pbStatus, `✅ Cargados ${c.matches} partidos en «${data.roundName}» · fecha ID ${data.roundId}.`, "ok");
+      pbCommit.hidden = true;
+      /* El ID de la fecha es lo que piden los dos bloques de resultados: se lo
+         dejamos puesto para no tener que anotarlo. */
+      if (pmatchRoundId) pmatchRoundId.value = data.roundId;
+      if (prodeRoundId) prodeRoundId.value = data.roundId;
+    } catch (error) {
+      setStatus(pbStatus, "No hay conexión. Puede que se hayan cargado igual: tocá Revisar para ver si quedaron.", "error");
+    } finally {
+      pbCommit.disabled = false;
+      pbReview.disabled = false;
+    }
+  }
+
   async function prodeAddMatch() {
     const roundName = String(pmRound.value || "").trim();
     const home = String(pmHome.value || "").trim();
@@ -836,6 +987,12 @@
 
   if (teamsSyncBtn) teamsSyncBtn.addEventListener("click", prodeSyncTeams);
 
+  if (pbReview) pbReview.addEventListener("click", prodeBulkReview);
+  if (pbCommit) pbCommit.addEventListener("click", prodeBulkCommit);
+  /* Tocar la lista invalida lo revisado: el botón de cargar se esconde hasta
+     que se vuelva a revisar, para no cargar algo distinto de lo que se vio. */
+  if (pbText) pbText.addEventListener("input", () => { if (pbCommit) pbCommit.hidden = true; });
+  if (pbRound) pbRound.addEventListener("input", () => { if (pbCommit) pbCommit.hidden = true; });
   if (pmAddBtn) pmAddBtn.addEventListener("click", prodeAddMatch);
   if (pmatchLoadBtn) pmatchLoadBtn.addEventListener("click", prodeLoadMatches);
 

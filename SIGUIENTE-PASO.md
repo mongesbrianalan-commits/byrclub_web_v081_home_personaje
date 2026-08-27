@@ -82,6 +82,44 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 ## Sesión del 27 de agosto de 2026 (desde casa)
 
+### Prode: pegar la fecha entera en vez de cargarla partido por partido
+
+Cargar una fecha eran cinco campos por partido, catorce veces. Ahora en el
+panel (pestaña **⚽ Prode**) hay un bloque **📥 Pegar la fecha entera**: se
+pega la lista tal como viene y el servidor la interpreta.
+
+**Va en dos pasos, a propósito.** **Revisar** no toca nada: muestra cómo
+entendió cada línea, una por una. Recién con eso a la vista aparece el botón
+de cargar. Pegar catorce partidos a ciegas y que entren mal es peor que
+cargarlos a mano.
+
+**Si una línea queda mal, no se carga ninguna.** Media fecha cargada obliga a
+revisar uno por uno cuál entró. Se corrige esa línea y se vuelve a pegar la
+lista entera: los que ya estaban se saltean solos, así que pegar dos veces no
+duplica nada.
+
+**Formatos que entiende** (el día y la hora, en cualquier orden en la línea):
+
+- Día: `30/08`, `30 de agosto`, `2026-08-30`. Una línea que sea **sólo** un
+  día (*Sábado 30/08*) le pone esa fecha a todas las de abajo.
+- Hora: `21:00`, `21h30`, `21hs`. **El punto no** (`21.00`): choca con las
+  fechas escritas `30.08`, y preferimos que te avise antes que cargar el día
+  equivocado sin que nadie se entere.
+- Equipos: `vs`, `-` o `|`. Las viñetas y la numeración (`1)`, `-`) se
+  ignoran solas.
+
+Todo en **hora de Argentina**, y se guarda en UTC como la carga de a uno. Los
+escudos se buscan igual que siempre; si un equipo no está en `prode_teams`, el
+partido entra igual sin escudo.
+
+> **El guion sin año no se lee como fecha.** `Lanus 2-1 Platense` se leería
+> como "2 de enero" y el partido entraría con el día cambiado sin aviso. Con
+> guion hay que poner el año (`30-08-2026`); para la forma corta van la barra
+> o el punto, que es como viene el fixture.
+
+La carga de a un partido **sigue estando**, para agregar uno suelto o
+corregir.
+
 ### El mostrador ahora puede mandar el pedido a domicilio
 
 Hasta ahora toda venta de mostrador se guardaba como "se lo lleva", sin
@@ -524,6 +562,33 @@ Alias de transferencia: **BYRDOCKSUD.MP** (por defecto en `api/menu.php`,
 pisable desde `config.php` con `'transfer_alias'`).
 
 ---
+
+## Para probar la carga de la fecha del Prode (se puede desde casa)
+
+1. Panel → **⚽ Prode** → **📥 Pegar la fecha entera**. Ponele un nombre
+   (ej. *Fecha de prueba*) y pegá esto tal cual:
+
+   ```
+   Sábado 30/08
+   19:15  Racing vs Independiente
+   21:00  Boca Juniors vs River Plate
+   Domingo 31/08
+   17:00  Talleres - Belgrano
+   ```
+
+2. Tocá **Revisar**. Tienen que salir 2 líneas de día y **3 partidos**, con
+   el horario ya resuelto. **Todavía no se cargó nada.**
+3. Tocá **Cargar 3 partidos**. Te tiene que dar el **ID de la fecha**, y ese
+   ID queda puesto solo en los dos bloques de resultados de más abajo.
+4. **La prueba que importa:** volvé a tocar **Revisar** con la misma lista.
+   Los tres tienen que salir como **repetidos (se saltean)** y el botón de
+   cargar no tiene que aparecer. Si en vez de eso se cargan de nuevo, avisá.
+5. Agregá una línea mal a propósito (`Lanus 2-1 Platense`) y revisá: tiene
+   que marcarla en rojo y decir que así no se carga **ninguno**.
+6. Entrá a **prodes.html** y mirá que los tres partidos se vean con el día y
+   la hora correctos.
+7. Cuando termines, borrá la fecha de prueba desde phpMyAdmin (`prode_matches`
+   y `prode_rounds`).
 
 ## Para probar el delivery de mostrador (hace falta estar en el local)
 
