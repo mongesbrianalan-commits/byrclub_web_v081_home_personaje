@@ -854,31 +854,53 @@
       const awayIn = teamNameInput(m.away);
       const saveTeams = document.createElement("button");
       saveTeams.type = "button"; saveTeams.className = "admin-btn-inline";
-      saveTeams.textContent = "Guardar equipos";
+      saveTeams.textContent = "Guardar";
       saveTeams.style.cssText = "padding:7px 12px";
       teamRow.append(homeIn, vs, awayIn, saveTeams);
 
+      /* Horario en hora de Argentina (el server lo pasa a UTC). */
+      const timeRow = document.createElement("div");
+      timeRow.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px";
+      const dateIn = document.createElement("input");
+      dateIn.type = "date"; dateIn.value = m.date || "";
+      const timeIn = document.createElement("input");
+      timeIn.type = "time"; timeIn.value = m.time || "";
+      const timeLabel = document.createElement("small");
+      timeLabel.textContent = "Horario";
+      timeLabel.style.cssText = "color:#9fb4dc;font-weight:800";
+      timeRow.append(timeLabel, dateIn, timeIn);
+
       const meta = document.createElement("small");
       meta.style.cssText = "display:block;margin-top:5px;color:#9fb4dc";
-      meta.textContent = `#${m.id} · ${m.kickoffLabel || ""} · ${m.status === "finished" ? "Jugado" : "Pendiente"}`;
+      const metaText = (label) =>
+        `#${m.id} · ${label || ""} · ${m.status === "finished" ? "Jugado" : "Pendiente"}`;
+      meta.textContent = metaText(m.kickoffLabel);
 
       const editSt = document.createElement("small");
       editSt.style.cssText = "display:block;margin-top:2px;font-weight:700";
 
-      info.append(teamRow, meta, editSt);
+      info.append(teamRow, timeRow, meta, editSt);
 
       saveTeams.addEventListener("click", async () => {
         const home = String(homeIn.value || "").trim();
         const away = String(awayIn.value || "").trim();
+        const date = String(dateIn.value || "").trim();
+        const time = String(timeIn.value || "").trim();
         if (!home || !away) {
           editSt.textContent = "Completá ambos equipos.";
+          editSt.style.color = "#ffd35a";
+          return;
+        }
+        if ((date && !time) || (!date && time)) {
+          editSt.textContent = "Para cambiar el horario cargá día y hora.";
           editSt.style.color = "#ffd35a";
           return;
         }
         saveTeams.disabled = true;
         saveTeams.textContent = "Guardando…";
         try {
-          const r = await api("admin/prode-edit-match.php", { matchId: m.id, home, away });
+          const r = await api("admin/prode-edit-match.php", { matchId: m.id, home, away, date, time });
+          if (r.kickoffLabel) meta.textContent = metaText(r.kickoffLabel);
           editSt.textContent = `✅ Guardado · escudos: local ${r.homeLogo ? "✓" : "✗"} · visitante ${r.awayLogo ? "✓" : "✗"}`;
           editSt.style.color = "#7bffa0";
         } catch (error) {
@@ -886,7 +908,7 @@
           editSt.style.color = "#ff8f9a";
         } finally {
           saveTeams.disabled = false;
-          saveTeams.textContent = "Guardar equipos";
+          saveTeams.textContent = "Guardar";
         }
       });
 
@@ -939,7 +961,44 @@
         }
       });
 
-      row.append(info, hg, sep, ag, btn, st);
+      /* Borrar: primer clic pide el detalle al server y avisa qué se lleva
+         puesto; el segundo confirma. Sin confirmar no se borra nada. */
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "admin-btn-inline";
+      del.textContent = "Borrar";
+      del.style.cssText = "background:#8c1626;box-shadow:0 6px 0 #5c0d18";
+      let armed = false;
+
+      del.addEventListener("click", async () => {
+        del.disabled = true;
+        try {
+          if (!armed) {
+            const p = await api("admin/prode-delete-match.php", { matchId: m.id });
+            const preds = p.preds
+              ? `${p.preds} pronóstico${p.preds === 1 ? "" : "s"} cargado${p.preds === 1 ? "" : "s"}`
+              : "sin pronósticos cargados";
+            let aviso = `⚠️ Vas a borrar ${p.home} vs ${p.away} (${preds}). Apretá "Confirmar" para hacerlo.`;
+            if (p.scored) aviso += ` Ojo: ${p.scored} ya tenían puntos y la XP que se repartió no se devuelve.`;
+            st.textContent = aviso;
+            st.style.color = "#ffd35a";
+            armed = true;
+            del.textContent = "Confirmar";
+            return;
+          }
+          const r = await api("admin/prode-delete-match.php", { matchId: m.id, confirm: true });
+          row.remove();
+          setStatus(pmatchStatus, `🗑️ Borrado ${r.home} vs ${r.away} (${r.preds} pronósticos).`, "ok");
+        } catch (error) {
+          st.textContent = error.message;
+          st.style.color = "#ff8f9a";
+          armed = false;
+          del.textContent = "Borrar";
+        } finally {
+          del.disabled = false;
+        }
+      });
+
+      row.append(info, hg, sep, ag, btn, del, st);
       pmatchList.append(row);
     });
   }

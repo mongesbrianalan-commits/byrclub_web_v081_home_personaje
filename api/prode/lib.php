@@ -119,6 +119,21 @@ function byr_prode_kickoff_label(string $kickoffUtc): string
     return ($dias[$dt->format('D')] ?? $dt->format('D')) . ' ' . $dt->format('H:i');
 }
 
+/**
+ * Día y hora en hora de Argentina, separados: ['2026-08-29', '21:30'].
+ * Los usa el panel para precargar los inputs de horario de un partido.
+ */
+function byr_prode_kickoff_local(string $kickoffUtc): array
+{
+    try {
+        $dt = new DateTime($kickoffUtc, new DateTimeZone('UTC'));
+        $dt->setTimezone(new DateTimeZone(BYR_PRODE_TZ));
+    } catch (Exception $e) {
+        return ['', ''];
+    }
+    return [$dt->format('Y-m-d'), $dt->format('H:i')];
+}
+
 /** ¿El partido ya arrancó? (bloquea la carga/edición del pronóstico) */
 function byr_prode_is_locked(string $kickoffUtc): bool
 {

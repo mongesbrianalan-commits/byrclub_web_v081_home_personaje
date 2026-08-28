@@ -36,11 +36,14 @@ $stmt->execute([$roundId]);
 
 $matches = [];
 foreach ($stmt->fetchAll() as $m) {
+    $local = byr_prode_kickoff_local($m['kickoff']);
     $matches[] = [
         'id'           => (int) $m['id'],
         'home'         => $m['home_team'],
         'away'         => $m['away_team'],
         'kickoffLabel' => byr_prode_kickoff_label($m['kickoff']),
+        'date'         => $local[0],
+        'time'         => $local[1],
         'status'       => $m['status'],
         'homeGoals'    => $m['home_goals'] !== null ? (int) $m['home_goals'] : null,
         'awayGoals'    => $m['away_goals'] !== null ? (int) $m['away_goals'] : null,
