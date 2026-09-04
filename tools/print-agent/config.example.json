@@ -1,5 +1,5 @@
 {
-  "_ayuda": "Copiar este archivo como config.json y completar. config.json NO se sube a GitHub porque tiene el token.",
+  "_ayuda": "Lo mas facil es correr Configurar.cmd, que escribe config.json solo. Si preferis a mano: copiar este archivo como config.json y completar. config.json NO se sube a GitHub porque tiene el token.",
 
   "apiBase": "https://byrclub.com/api/",
 
