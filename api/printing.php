@@ -315,17 +315,6 @@ function byr_escpos_ticket(array $o): string
     $b .= byr_t('¡Gracias por tu compra!') . "\n";
     $b .= byr_t('byrclub.com') . "\n";
 
-    /* AVISO TEMPORAL: perdimos el WhatsApp de siempre. El ticket es el único
-       papel que se lleva el cliente, así que el número nuevo se va con él.
-       Va en negrita (ESC E) para que no se pierda entre el resto del pie.
-       Borrar cuando recuperemos el número viejo. */
-    $b .= byr_print_rule();
-    $b .= BYR_ESC . 'E' . "\x01";
-    $b .= byr_t('NUEVO WhatsApp: 11 2523 9243') . "\n";
-    $b .= BYR_ESC . 'E' . "\x00";
-    $b .= byr_t('El numero anterior ya no esta activo.') . "\n";
-    $b .= BYR_ESC . 'a' . "\x00";
-
     return $b . byr_print_cut();
 }
 
