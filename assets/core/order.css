@@ -426,3 +426,12 @@ body.order-light .order-closed { background: #fff3e6; border-color: #ffcf9a; col
 body.order-light .order-closed b { color: #5c300a; }
 body.order-light .order-closed.is-soon { background: #e8f9ed; border-color: #b6e7c4; color: #1d6b39; }
 body.order-light .order-closed.is-soon b { color: #14532d; }
+
+/* --- Aviso de WhatsApp alternativo (TEMPORAL) ---------------------------
+   El componente .wa-alert vive en styles.css, escrito para el fondo oscuro.
+   Acá solo se da vuelta para esta página, igual que el resto del bloque claro.
+   Va arriba del todo, incluso antes del aviso de horario, porque el cliente lo
+   tiene que ver aunque el local esté cerrado. */
+body.order-light .wa-alert { background: #e8f9ed; border-color: #b6e7c4; }
+body.order-light .wa-alert__copy strong { color: #14532d; }
+body.order-light .wa-alert__copy p { color: #1d6b39; }
