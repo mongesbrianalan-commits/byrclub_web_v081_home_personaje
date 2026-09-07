@@ -385,7 +385,7 @@ while ($true) {
         Write-Log "Trabajo #$($job.id) ($($job.kind)) NO salio: $err" 'ERROR'
         try { Invoke-Api -Url $ackUrl -Method POST -Token $cfg.token -Body @{ jobId = $job.id; ok = $false; error = $err } | Out-Null } catch { }
       } else {
-        $ref = if ($job.orderId) { "pedido #$($job.orderId)" } else { "prueba" }
+        $ref = if ($job.orderId) { "pedido #$($job.orderId)" } elseif ($job.kind -eq "report") { "cierre de caja" } else { "prueba" }
         Write-Log "Impreso: $($job.kind) de $ref (trabajo #$($job.id))"
         try { Invoke-Api -Url $ackUrl -Method POST -Token $cfg.token -Body @{ jobId = $job.id; ok = $true } | Out-Null } catch {
           Write-Log "Se imprimio el trabajo #$($job.id) pero no pude confirmarlo. Se va a reintentar." 'WARN'

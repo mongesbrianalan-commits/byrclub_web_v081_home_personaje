@@ -2754,7 +2754,7 @@
     try {
       const body = countedRaw === "" ? {} : { countedCash: parseInt(countedRaw, 10) || 0 };
       const r = await api("admin/caja-close.php", body);
-      renderZ(r.z);
+      renderZ(r.z, r.printed);
       setStatus(cajaMsg, "✅ Caja cerrada.", "ok");
     } catch (error) {
       setStatus(cajaMsg, error.message, "error");
@@ -2762,7 +2762,10 @@
     }
   }
 
-  function renderZ(z) {
+  // `printed` viene del cierre: true si el Z quedó encolado en la térmica.
+  // Undefined cuando el Z se re-renderiza por otro motivo (ahí no se dice nada,
+  // que es distinto de decir que no se imprimió).
+  function renderZ(z, printed) {
     const diffTxt = z.difference === null
       ? "—"
       : (z.difference === 0 ? "✅ Sin diferencia"
@@ -2786,9 +2789,44 @@
           <div class="caja-line"><span>Contado</span><b>${z.countedCash === null ? "—" : money(z.countedCash)}</b></div>
           <div class="caja-line caja-line-total"><span>Diferencia</span><b>${diffTxt}</b></div>
         </div>
+        <div class="oa-print-row">
+          <button type="button" class="oa-print-btn" data-caja-print-btn>🖨️ Reimprimir cierre</button>
+          <small class="oa-print-note" data-caja-print-note></small>
+        </div>
         <button type="button" class="auth-submit" data-caja-new-btn>Abrir una nueva caja</button>
       </div>`;
     cajaPanel.querySelector("[data-caja-new-btn]").addEventListener("click", loadCaja);
+
+    // Al cerrar, el Z sale solo. Acá solo se avisa qué pasó y queda el botón
+    // para volver a sacarlo: si la impresora estaba apagada o sin papel, el
+    // turno ya está cerrado y sin esto no habría forma de recuperar el papel.
+    const printNote = cajaPanel.querySelector("[data-caja-print-note]");
+    if (printed === true) {
+      printNote.textContent = "🖨️ El cierre salió por la impresora del local.";
+    } else if (printed === false) {
+      printNote.className = "oa-print-note error";
+      printNote.textContent = "La impresora no está disponible: el cierre no se imprimió. La caja quedó cerrada igual.";
+    }
+
+    const printBtn = cajaPanel.querySelector("[data-caja-print-btn]");
+    printBtn.addEventListener("click", async () => {
+      const idle = "🖨️ Reimprimir cierre";
+      printBtn.disabled = true;
+      printBtn.textContent = "Enviando…";
+      printNote.className = "oa-print-note";
+      printNote.textContent = "";
+      try {
+        await api("admin/print-job.php", { kind: "report", sessionId: z.sessionId });
+        printBtn.textContent = "✅ Enviado";
+        printNote.textContent = "Mandado a la impresora del local.";
+        setTimeout(() => { printBtn.textContent = idle; printBtn.disabled = false; }, 2500);
+      } catch (error) {
+        printBtn.textContent = idle;
+        printBtn.disabled = false;
+        printNote.className = "oa-print-note error";
+        printNote.textContent = error.message;
+      }
+    });
   }
 
   function initCaja() {

@@ -7,6 +7,7 @@
  */
 require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/../caja.php';
+require_once __DIR__ . '/../printing.php';
 require_method('POST');
 
 $pdo   = db();
@@ -34,9 +35,19 @@ $upd = $pdo->prepare(
 );
 $upd->execute([$admin, $expected, $counted, $diff, (int) $s['id']]);
 
+/* El cierre sale por la térmica solo, sin que nadie apriete nada: es el papel
+   que se archiva con la plata. Va DESPUÉS del UPDATE para que el ticket lea de
+   la base ya cerrada (fecha y quién cerró).
+
+   Si la impresora está apagada o falta la migración, esto devuelve null y la
+   caja queda cerrada igual: no se pierde un cierre por una impresora. El panel
+   avisa con `printed` y ofrece reimprimir. */
+$jobId = byr_print_enqueue($pdo, 'report', null, $admin, (int) $s['id']);
+
 json_out([
-    'ok' => true,
-    'z'  => [
+    'ok'      => true,
+    'printed' => $jobId !== null,
+    'z'       => [
         'sessionId'    => (int) $s['id'],
         'openedAt'     => $s['opened_at'],
         'openingFloat' => (int) $s['opening_float'],

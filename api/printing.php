@@ -41,14 +41,19 @@ function byr_print_ready(PDO $pdo): bool
 }
 
 /**
- * A qué estación va cada tipo de impresión. Con una sola impresora, las dos
+ * A qué estación va cada tipo de impresión. Con una sola impresora, todas
  * apuntan a 'cocina' y no hay nada que configurar. Si algún día hay una
  * segunda térmica en la caja, se agrega en config.php:
  *   'print_station_ticket' => 'caja',
+ *   'print_station_report' => 'caja',
  */
 function byr_print_station(string $kind): string
 {
-    $key = $kind === 'ticket' ? 'print_station_ticket' : 'print_station_comanda';
+    $keys = [
+        'ticket' => 'print_station_ticket',
+        'report' => 'print_station_report',
+    ];
+    $key = $keys[$kind] ?? 'print_station_comanda';
     $st  = trim((string) byr_setting($key, 'cocina'));
     return $st !== '' ? substr($st, 0, 30) : 'cocina';
 }
@@ -318,6 +323,102 @@ function byr_escpos_ticket(array $o): string
     return $b . byr_print_cut();
 }
 
+/**
+ * Cierre de caja (reporte Z). No lleva ítems ni pedidos: es el resumen del
+ * turno, con las ventas por medio de pago y el arqueo del efectivo.
+ *
+ * Recibe el `$z` que arma byr_print_load_cierre() leyendo la base, con la misma
+ * forma que devuelve caja-close.php pero además con closedAt y quién abrió y
+ * cerró, que en el papel importan y en la pantalla no estaban.
+ *
+ * Los números que el cajero busca de un vistazo (total vendido, efectivo
+ * esperado y diferencia) van en doble ancho, que son 24 columnas y no 48.
+ */
+function byr_escpos_cierre(array $z): string
+{
+    $t  = $z['totals'] ?? [];
+    $by = $t['byMethod'] ?? [];
+
+    /* Mismos nombres que usa el ticket, para no tener dos vocabularios. */
+    $labels = ['efectivo' => 'Efectivo', 'debito' => 'Débito', 'credito' => 'Crédito',
+               'qr' => 'QR', 'transfer' => 'Transferencia'];
+
+    $b  = BYR_ESC . '@';
+    $b .= BYR_ESC . 't' . "\x00";
+
+    $b .= BYR_ESC . 'a' . "\x01";
+    $b .= BYR_GS . '!' . "\x11" . byr_t('BYR DOCKSUD') . "\n" . BYR_GS . '!' . "\x00";
+    $b .= BYR_GS . '!' . "\x01" . byr_t('CIERRE DE CAJA') . "\n" . BYR_GS . '!' . "\x00";
+    $b .= byr_t('Turno #' . (int) ($z['sessionId'] ?? 0)) . "\n";
+    $b .= byr_t('Reporte Z - no fiscal') . "\n";
+
+    $b .= BYR_ESC . 'a' . "\x00";
+    $b .= byr_print_rule();
+    $b .= byr_print_row(byr_t('Apertura'), byr_t(byr_dt_label($z['openedAt'] ?? null) ?? '-'));
+    $b .= byr_print_row(byr_t('Cierre'), byr_t(byr_dt_label($z['closedAt'] ?? null) ?? date('d/m H:i')));
+    if (!empty($z['openedBy'])) {
+        $b .= byr_print_row(byr_t('Abrió'), byr_t($z['openedBy']));
+    }
+    if (!empty($z['closedBy'])) {
+        $b .= byr_print_row(byr_t('Cerró'), byr_t($z['closedBy']));
+    }
+
+    /* Los cinco medios van siempre, incluso en cero: este papel se archiva, y
+       un renglón ausente deja la duda de si se controló o no. */
+    $b .= byr_print_rule();
+    $b .= byr_t('VENTAS POR MEDIO DE PAGO') . "\n";
+    foreach ($labels as $k => $lbl) {
+        $b .= byr_print_row(byr_t($lbl), byr_print_money($by[$k] ?? 0));
+    }
+    $b .= byr_print_rule();
+    /* \x11 es doble alto Y ancho (ver la comanda): recién ahí el renglón mide
+       24 columnas en vez de 48. Con \x01 (solo doble alto) el importe quedaría
+       clavado a mitad del papel. */
+    $b .= BYR_GS . '!' . "\x11";
+    $b .= byr_print_row(byr_t('TOTAL'), byr_print_money($t['salesTotal'] ?? 0), 24);
+    $b .= BYR_GS . '!' . "\x00";
+    $b .= byr_print_row(byr_t('Operaciones'), byr_t((string) (int) ($t['paymentsCount'] ?? 0)));
+
+    /* Arqueo: lo que tiene que haber en el cajón, desglosado para poder
+       rastrear una diferencia sin abrir el panel. */
+    $b .= byr_print_rule();
+    $b .= byr_t('EFECTIVO EN CAJA') . "\n";
+    $b .= byr_print_row(byr_t('Fondo inicial'), byr_print_money($z['openingFloat'] ?? 0));
+    $b .= byr_print_row(byr_t('Ventas en efectivo'), byr_print_money($by['efectivo'] ?? 0));
+    $b .= byr_print_row(byr_t('Ingresos'), byr_print_money($t['cashIn'] ?? 0));
+    $b .= byr_print_row(byr_t('Egresos'), byr_t('-' . byr_print_money($t['cashOut'] ?? 0)));
+    $b .= byr_print_rule();
+    $b .= BYR_GS . '!' . "\x11";
+    $b .= byr_print_row(byr_t('ESPERADO'), byr_print_money($z['expectedCash'] ?? 0), 24);
+    $b .= BYR_GS . '!' . "\x00";
+
+    if (($z['countedCash'] ?? null) === null) {
+        /* Se puede cerrar sin contar la plata: el papel lo tiene que decir, si
+           no parece un arqueo que dio perfecto. */
+        $b .= byr_print_row(byr_t('Contado'), byr_t('sin arqueo'));
+    } else {
+        $d = (int) ($z['difference'] ?? 0);
+        $b .= byr_print_row(byr_t('Contado'), byr_print_money($z['countedCash']));
+        $b .= BYR_GS . '!' . "\x11";
+        $b .= byr_print_row(
+            byr_t('DIFERENCIA'),
+            byr_t($d < 0 ? '-' . byr_print_money(-$d) : byr_print_money($d)),
+            24
+        );
+        $b .= BYR_GS . '!' . "\x00";
+        $b .= BYR_ESC . 'a' . "\x01";
+        $b .= byr_t($d === 0 ? 'SIN DIFERENCIA' : ($d > 0 ? 'SOBRA EN CAJA' : 'FALTA EN CAJA')) . "\n";
+        $b .= BYR_ESC . 'a' . "\x00";
+    }
+
+    $b .= byr_print_rule();
+    $b .= BYR_ESC . 'a' . "\x01";
+    $b .= byr_t('Impreso ' . date('d/m/Y H:i')) . "\n";
+    $b .= byr_t('Firma: ______________________') . "\n";
+
+    return $b . byr_print_cut();
+}
+
 /** Prueba de impresora (la que dispara el botón "Probar impresora"). */
 function byr_escpos_test(): string
 {
@@ -436,20 +537,89 @@ function byr_print_load_order(PDO $pdo, int $orderId): ?array
 }
 
 /**
+ * Arma el cierre de un turno leyéndolo de la base, con la misma forma que
+ * devuelve caja-close.php. Devuelve null si no existe el turno o si todavía
+ * no se corrió la migración de caja.
+ *
+ * Que el papel se arme desde la base y no desde lo que tenía a mano el que
+ * cierra es a propósito: una reimpresión días después tiene que dar idéntico.
+ */
+function byr_print_load_cierre(PDO $pdo, int $sessionId): ?array
+{
+    require_once __DIR__ . '/caja.php';
+    try {
+        $st = $pdo->prepare(
+            'SELECT s.id, s.opened_at, s.closed_at, s.opening_float,
+                    s.expected_cash, s.counted_cash, s.difference,
+                    uo.name AS opened_by_name, uc.name AS closed_by_name
+               FROM cash_sessions s
+               LEFT JOIN users uo ON uo.id = s.opened_by
+               LEFT JOIN users uc ON uc.id = s.closed_by
+              WHERE s.id = ?'
+        );
+        $st->execute([$sessionId]);
+        $row = $st->fetch();
+    } catch (Throwable $e) {
+        /* Sin 2026-08-caja.sql no hay `cash_sessions`: no hay nada que imprimir. */
+        return null;
+    }
+    if (!$row) {
+        return null;
+    }
+
+    $totals = byr_session_totals($pdo, $sessionId, (int) $row['opening_float']);
+
+    return [
+        'sessionId'    => (int) $row['id'],
+        'openedAt'     => $row['opened_at'],
+        'closedAt'     => $row['closed_at'],
+        'openedBy'     => $row['opened_by_name'],
+        'closedBy'     => $row['closed_by_name'],
+        'openingFloat' => (int) $row['opening_float'],
+        /* Un turno todavía abierto no tiene `expected_cash` guardado: ahí vale
+           el calculado en vivo (es el caso de un Z de prueba). */
+        'expectedCash' => $row['expected_cash'] === null
+            ? (int) $totals['expectedCash']
+            : (int) $row['expected_cash'],
+        'countedCash'  => $row['counted_cash'] === null ? null : (int) $row['counted_cash'],
+        'difference'   => $row['difference'] === null ? null : (int) $row['difference'],
+        'totals'       => $totals,
+    ];
+}
+
+/**
  * Encola una impresión. Devuelve el id del trabajo, o null si no se pudo
  * (falta la migración, no existe el pedido, etc.).
+ *
+ * Para `report` el que manda es $sessionId (el turno de caja), no $orderId:
+ * un cierre no cuelga de ningún pedido.
  *
  * NUNCA lanza: cobrar una venta no puede fallar porque la impresora tenga
  * algún problema. El que llama decide si le avisa al cajero.
  */
-function byr_print_enqueue(PDO $pdo, string $kind, ?int $orderId = null, ?int $createdBy = null): ?int
-{
+function byr_print_enqueue(
+    PDO $pdo,
+    string $kind,
+    ?int $orderId = null,
+    ?int $createdBy = null,
+    ?int $sessionId = null
+): ?int {
     if (!byr_print_ready($pdo)) {
         return null;
     }
     try {
         if ($kind === 'test') {
             $payload = byr_escpos_test();
+            $orderId = null;
+        } elseif ($kind === 'report') {
+            if (!$sessionId) {
+                return null;
+            }
+            $z = byr_print_load_cierre($pdo, $sessionId);
+            if (!$z) {
+                return null;
+            }
+            $payload = byr_escpos_cierre($z);
             $orderId = null;
         } else {
             if (!$orderId) {
