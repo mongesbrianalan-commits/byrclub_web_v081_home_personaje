@@ -66,6 +66,11 @@
     <div class="order-layout">
       <!-- Carta -->
       <section class="order-menu" aria-label="Menú">
+        <!-- 2x1 de socio: solo aparece los miércoles y cuando el que mira NO
+             lo puede pedir (sin sesión, o ya lo usó). Si lo puede pedir, el
+             producto va primero en la carta con su cintita y esto no se
+             muestra. Lo llena order.js con lo que dice el servidor. -->
+        <p class="order-perk-note" data-perk-note hidden></p>
         <p class="order-loading" data-menu-loading>Cargando el menú…</p>
         <p class="order-error" data-menu-error hidden>No pudimos cargar el menú. Probá recargar la página.</p>
         <div data-menu-list></div>

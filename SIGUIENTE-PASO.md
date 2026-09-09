@@ -28,8 +28,13 @@ comportarse distinto sólo cuando vos les elegís algo en el panel.
 
 ## ⚠️ Para prender el 2x1 por la web (dos pasos, los hacés vos)
 
-Está desplegado y **apagado**. Queda así hasta que hagas estas dos cosas —
-podés hacerlas hoy o el miércoles que viene, sin depender de un deploy.
+> **9 de septiembre de 2026:** la bandera del paso 2 **ya está en `true`** en
+> el servidor (se ve en `api/menu.php`, que responde `perk2x1.enabled: true`).
+> Falta confirmar el paso 1: **entrá a Pedir con tu cuenta un miércoles**; si
+> el 2x1 no aparece primero en la carta, es que la migración no se corrió y
+> `api/menu.php` lo está apagando solo (el producto no existe en la base).
+
+Los dos pasos, por si hay que rehacerlos — no dependen de un deploy.
 
 **1. La migración** (phpMyAdmin → base `u932188446_byrclub` → pestaña SQL).
 Crea el producto del 2x1, desactivado:
@@ -57,7 +62,20 @@ VALUES ('promo-2x1-doble-cheese', 'promos', '2x1 Doble Cheese con papas',
 > tocar el código ni esperar a GitHub.
 
 Con las dos hechas, el 2x1 aparece **primero en la carta**, con su cintita
-dorada, sólo los miércoles y sólo a socios que no lo usaron.
+dorada, sólo los miércoles y sólo a socios que no lo usaron. Se pide **solo
+eso** si se quiere: es un producto más, no hace falta sumar nada al carrito
+ni adjuntar ningún cupón.
+
+**Al que NO lo puede pedir ahora, se lo decimos.** Antes, el que entraba sin
+sesión un miércoles no veía nada del 2x1: el producto simplemente no estaba
+en la carta, y no había forma de enterarse de que existía. Ahora arriba de la
+carta aparece un aviso amarillo —sólo los miércoles, y sólo si no lo puede
+pedir— que dice qué hay y lo manda a ingresar. Al que ya lo usó le dice eso.
+
+**El 2x1 no se puede duplicar en el carrito.** El servidor ya recortaba la
+cantidad a 1 (es uno por socio por miércoles), pero el carrito dejaba subirla
+y mostraba $32.000 para un pedido que después se cobraba $16.000. Ahora el
+"+" de esa línea queda apagado.
 
 **Para apagarlo:** poné la bandera en `false`. Los pedidos ya hechos no se
 tocan.

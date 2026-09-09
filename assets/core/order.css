@@ -233,6 +233,11 @@
 .product-card.is-perk:hover { border-color: rgba(255,213,31,1); }
 .product-perk-tag { display: inline-block; align-self: flex-start; margin-bottom: 8px; padding: 4px 10px; border-radius: 999px; background: #ffd51f; color: #07164d; font-size: .72rem; font-weight: 900; letter-spacing: .02em; text-transform: uppercase; }
 
+/* El aviso para el que HOY no lo puede pedir (sin cuenta, o ya lo usó). */
+.order-perk-note { margin: 0 0 18px; padding: 14px 18px; border-radius: 16px; font-weight: 800; font-size: .95rem; line-height: 1.4; background: rgba(255,213,31,.14); border: 1px solid rgba(255,213,31,.45); color: #ffe89a; }
+.order-perk-note b { color: #fff; }
+.order-perk-note a { color: #fff; text-decoration: underline; }
+
 /* =========================================================
    TEMA CLARO — solo la página de pedidos
    ---------------------------------------------------------
@@ -401,6 +406,9 @@ body.order-light .product-card.is-perk {
   box-shadow: 0 0 0 1px rgba(255, 213, 31, .5), 0 10px 26px rgba(180, 140, 0, .16);
 }
 body.order-light .product-card.is-perk:hover { border-color: #e8b800; }
+body.order-light .order-perk-note { background: #fffae0; border-color: #ffd51f; color: #6b4e00; }
+body.order-light .order-perk-note b { color: #3d2c00; }
+body.order-light .order-perk-note a { color: #0a42d8; }
 
 /* El amarillo como color de control (tildes, radios) se pierde sobre blanco:
    sirve para fondos, no para trazos finos. */

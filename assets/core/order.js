@@ -16,6 +16,7 @@
   const menuList     = $("[data-menu-list]");
   const menuLoading  = $("[data-menu-loading]");
   const menuError    = $("[data-menu-error]");
+  const perkNote     = $("[data-perk-note]");
   const cartItemsEl  = $("[data-cart-items]");
   const cartEmptyEl  = $("[data-cart-empty]");
   const cartTotalEl  = $("[data-cart-total]");
@@ -138,6 +139,43 @@
 
   function is2x1(p) {
     return Boolean(perk2x1 && perk2x1.slug && p.slug === perk2x1.slug);
+  }
+
+  /* Tope de unidades por línea. El 2x1 es UNO por socio por miércoles: el
+     servidor lo recorta a 1 igual (create.php), así que si acá dejáramos
+     sumar de a dos el carrito mostraría un total que después no se cobra. */
+  function maxQty(slug) {
+    return is2x1({ slug: slug }) ? 1 : 50;
+  }
+
+  /* Cuando el 2x1 está en juego pero este visitante no lo puede pedir, lo
+     decimos en vez de callarnos: el miércoles la mitad de la gente entra
+     justo por eso, y sin sesión el producto ni aparece en la carta. */
+  function renderPerkNote() {
+    if (!perkNote) return;
+
+    if (!perk2x1 || !perk2x1.enabled || !perk2x1.isWednesday || perk2x1.canOrder) {
+      show(perkNote, false);   // no aplica, o ya está primero en la carta
+      return;
+    }
+
+    if (perk2x1.used) {
+      perkNote.innerHTML =
+        "🎉 <b>Ya usaste tu 2x1 de este miércoles.</b> Vuelve el miércoles que viene.";
+      show(perkNote, true);
+      return;
+    }
+
+    if (!isMember) {
+      perkNote.innerHTML =
+        "🎉 <b>Hoy es miércoles de socio: 2x1 en la Doble Cheese con papas.</b> " +
+        "<a href=\"ingresar.html?next=/pedir.html\">Entrá con tu cuenta</a> y te aparece " +
+        "primero en la carta, para pedir solo eso.";
+      show(perkNote, true);
+      return;
+    }
+
+    show(perkNote, false);
   }
 
   function productCard(p) {
@@ -287,7 +325,7 @@
     const lineId = "p:" + p.slug;
     const existing = cart.get(lineId);
     if (existing) {
-      existing.qty = Math.min(existing.qty + 1, 50);
+      existing.qty = Math.min(existing.qty + 1, maxQty(p.slug));
     } else {
       cart.set(lineId, {
         lineId, slug: p.slug, name: p.name, unitPrice: p.price,
@@ -305,7 +343,7 @@
     if (line.qty <= 0) {
       cart.delete(lineId);
     } else {
-      line.qty = Math.min(line.qty, 50);
+      line.qty = Math.min(line.qty, maxQty(line.slug));
     }
     if (!line.isOption) refreshSimpleStepper(line.slug);
     renderCart();
@@ -331,6 +369,12 @@
     plus.className = "qty-btn";
     plus.setAttribute("aria-label", "Agregar uno");
     plus.textContent = "+";
+    /* El 2x1 no se puede duplicar: el "+" queda apagado en vez de sumar algo
+       que el servidor después recorta. */
+    if (line && line.qty >= maxQty(line.slug)) {
+      plus.disabled = true;
+      plus.title = "El 2x1 de socio es uno por miércoles.";
+    }
     plus.addEventListener("click", () => { changeLineQty(lineId, 1); if (afterChange) afterChange(); });
     box.append(minus, num, plus);
     return box;
@@ -654,7 +698,7 @@
     const lineId = "o:" + p.slug + ":" + signature(payload) + (noteClean ? "|n:" + noteClean : "");
     const existing = cart.get(lineId);
     if (existing) {
-      existing.qty = Math.min(existing.qty + 1, 50);
+      existing.qty = Math.min(existing.qty + 1, maxQty(p.slug));
     } else {
       cart.set(lineId, {
         lineId, slug: p.slug, name: p.name, unitPrice: p.price + pt.delta,
@@ -681,11 +725,11 @@
     cart.delete(line.lineId);
     const existing = cart.get(newLineId);
     if (existing) {
-      existing.qty = Math.min(existing.qty + qty, 50);
+      existing.qty = Math.min(existing.qty + qty, maxQty(p.slug));
     } else {
       cart.set(newLineId, {
         lineId: newLineId, slug: p.slug, name: p.name, unitPrice: p.price + pt.delta,
-        qty: Math.min(qty, 50), optionsText: pt.text, optionsPayload: payload, note: noteClean, isOption: true,
+        qty: Math.min(qty, maxQty(p.slug)), optionsText: pt.text, optionsPayload: payload, note: noteClean, isOption: true,
       });
     }
     renderCart();
@@ -1065,6 +1109,7 @@
       perk2x1 = data.perk2x1 || null;
       orderHours = data.orderHours || null;
       renderHours();
+      renderPerkNote();
       applyHoursToSubmit();
       initPayment(); // recién ahora sabemos si hay que preguntar y con qué alias
       const cats = Array.isArray(data.categories) ? data.categories : [];
