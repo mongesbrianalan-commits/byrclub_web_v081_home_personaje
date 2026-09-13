@@ -628,12 +628,10 @@ footer{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:3
 @media(max-width:1100px){.benefits-hero{grid-template-columns:1fr;text-align:center}.benefits-copy>p,.motivation-card{margin-left:auto;margin-right:auto}.benefits-hero-art{min-height:480px}.member-strip{grid-template-columns:1fr 1fr;margin-left:20px;margin-right:20px;top:72px}.member-progress{grid-column:1/-1}.member-strip button{grid-column:1/-1}.legendary-section{margin-left:20px;margin-right:20px}.premium-reward-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:720px){.benefits-hero{padding:45px 18px 72px}.benefits-copy h1{font-size:3.8rem}.motivation-card{grid-template-columns:1fr;text-align:center}.motivation-card strong{grid-row:auto;font-size:4rem}.benefits-hero-art{min-height:380px}.benefits-hero-art>img:not(.benefits-mascot){height:350px}.benefits-mascot{width:150px!important;right:-8px}.member-strip{position:relative;top:auto;grid-template-columns:1fr;margin-top:-28px;text-align:center;gap:16px}.member-progress,.member-strip button{grid-column:auto}.legendary-section{grid-template-columns:1fr;padding:28px 22px;text-align:center}.legendary-meta{flex-direction:column;gap:6px}.legendary-visual{min-height:270px}.legendary-rays{width:320px;height:320px}.premium-reward-grid{grid-template-columns:1fr}.reward-image{height:290px}.premium-reward.wide{grid-template-columns:1fr}.premium-reward.wide .reward-image{min-height:320px}.reward-tabs{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:10px}.reward-tab{white-space:nowrap}.rewards-section{padding-left:16px;padding-right:16px}}
 
-/* --- AVISO TEMPORAL: estamos con un WhatsApp alternativo -------------------
-   Volvimos a perder el número de siempre. Por ahora vive solo en pedir.html:
-   el banner grande (.wa-alert) y el renglón del footer (.footer-wa). La
-   variante clara de esa página está en assets/core/order.css.
-   PARA SACARLO cuando recuperemos el número: borrar este bloque, el de
-   order.css, el <aside class="wa-alert"> y el <span class="footer-wa">. */
+/* --- Aviso de contacto por WhatsApp ----------------------------------------
+   Vive solo en pedir.html: el banner grande (.wa-alert) y el renglón del
+   footer (.footer-wa). La variante clara de esa página está en
+   assets/core/order.css. */
 .wa-alert{display:flex;align-items:center;gap:14px;max-width:1160px;margin:0 auto 16px;padding:14px 18px;border-radius:16px;background:rgba(37,211,102,.13);border:1px solid rgba(37,211,102,.42)}
 .wa-alert__icon{font-size:1.6rem;line-height:1;flex:0 0 auto}
 .wa-alert__copy{flex:1;min-width:0}
