@@ -372,6 +372,89 @@ function showRedeemMessage(card, message) {
   }
 }
 
+/* =========================================================
+   PRECIOS — los pone el servidor, no el HTML
+   ---------------------------------------------------------
+   El data-points y el "5.500 pts" que se ven en cada tarjeta son solo un
+   valor de arranque, para que la página no aparezca en blanco ni parpadee
+   mientras carga. El precio de verdad lo calcula el servidor desde la
+   carta (api/perks/rewards.php), así que apenas contesta se reescriben
+   los dos y se vuelve a dibujar.
+
+   Si la consulta falla, no se toca nada: queda lo que trae el HTML, que
+   son los mismos precios que el servidor calcula con la carta de hoy. Es
+   preferible mostrar un precio de hace un rato que una tarjeta vacía — y
+   el que cobra sigue siendo el servidor, así que nadie paga de menos por
+   ver un número viejo.
+========================================================= */
+
+function applyRewardPrices(rewards) {
+  rewards.forEach(reward => {
+    document.querySelectorAll(`[data-reward="${reward.id}"]`).forEach(card => {
+      card.dataset.points = String(reward.points);
+      card.dataset.level = String(reward.level);
+
+      /* El precio grande de la tarjeta. Las comunes lo llevan en
+         .reward-points y la sección legendaria en .legendary-meta. Los
+         otros textos (el "Te faltan X", el del botón) los reescribe
+         updateRewardCard con este mismo número, así que no hace falta
+         tocarlos acá. */
+      const price = card.querySelector(".reward-points strong, .legendary-meta strong");
+      if (price) {
+        price.textContent = `${formatBenefitPoints(reward.points)} pts`;
+      }
+    });
+  });
+
+  renderBeneficios();
+}
+
+/* El aviso de transición, cuando los precios acaban de cambiar. El texto
+   y hasta cuándo se muestra los decide el servidor: acá solo se pinta.
+   Sin aviso, el recuadro se queda oculto y no ocupa lugar. */
+function applyPriceNotice(notice) {
+  const box = document.querySelector("[data-price-notice]");
+  if (!box) return;
+
+  if (!notice || !notice.body) {
+    box.hidden = true;
+    box.textContent = "";
+    return;
+  }
+
+  /* textContent y no innerHTML: el aviso se edita desde config.php y no
+     tiene por qué poder meter etiquetas en la página. */
+  box.textContent = "";
+
+  if (notice.title) {
+    const title = document.createElement("p");
+    title.innerHTML = "<strong></strong>";
+    title.querySelector("strong").textContent = `📣 ${notice.title}`;
+    box.append(title);
+  }
+
+  const body = document.createElement("p");
+  body.textContent = notice.body;
+  box.append(body);
+
+  box.hidden = false;
+}
+
+async function loadRewardPrices() {
+  try {
+    const res = await fetch("/api/perks/rewards.php", { credentials: "same-origin" });
+    if (!res.ok) return;
+
+    const data = await res.json();
+    if (Array.isArray(data?.rewards) && data.rewards.length) {
+      applyRewardPrices(data.rewards);
+    }
+    applyPriceNotice(data?.notice);
+  } catch (error) {
+    /* Sin conexión: se queda con los precios del HTML. */
+  }
+}
+
 document.querySelectorAll("[data-reward-action]").forEach(button => {
   button.addEventListener("click", handleRedeem);
 });
@@ -383,3 +466,4 @@ window.addEventListener("byr:user-updated", renderBeneficios);
 window.addEventListener("byr:auth-change", renderBeneficios);
 
 renderBeneficios();
+loadRewardPrices();

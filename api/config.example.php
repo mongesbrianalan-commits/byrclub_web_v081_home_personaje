@@ -38,6 +38,34 @@ return [
     'order_points_per_amount' => 100,
 
     /*
+     * Cuántos PUNTOS cuesta cada peso de comida en el catálogo de
+     * Beneficios. Con 0.5, una hamburguesa de $11.000 sale 5.500 puntos y
+     * una Coca de $2.800 sale 1.400: mismo esfuerzo por peso de comida
+     * para todos los premios.
+     *
+     * Los precios NO están escritos en ningún lado: se calculan desde la
+     * carta, así que cuando subís el menú, los puntos suben solos. Subir
+     * este número encarece TODO el catálogo de una — es la perilla para
+     * mover si se siguen regalando demasiadas hamburguesas.
+     *
+     * Cambiarlo acá tiene efecto al instante, sin desplegar.
+     */
+    'perk_points_per_amount' => 0.5,
+
+    /*
+     * Aviso de precios en la página de Beneficios — texto de transición
+     * para cuando los precios cambian, así el socio que venía juntando se
+     * entera en vez de encontrarse con que el premio se le alejó.
+     *
+     * Se apaga solo el día que dice la fecha. Para sacarlo antes, poné la
+     * fecha en '' y desaparece al instante. Los textos también se pueden
+     * pisar acá si querés decirlo con otras palabras.
+     */
+    'perk_price_notice_until' => '2026-09-27',
+    // 'perk_price_notice_title' => 'Cambiaron los precios de los premios',
+    // 'perk_price_notice_body'  => 'Ahora cada premio cuesta según...',
+
+    /*
      * Cuánto cuesta un cupón — para el bloque "Qué cuestan los cupones"
      * del panel (pestaña Pedidos).
      *

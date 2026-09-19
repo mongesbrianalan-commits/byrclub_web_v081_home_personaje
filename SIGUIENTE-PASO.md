@@ -98,6 +98,112 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 ---
 
+## Sesión del 19 de septiembre de 2026 (desde casa) — parte 2
+
+### Los premios ahora cuestan lo que valen en la carta
+
+El catálogo de Beneficios era la puerta grande por donde salían
+hamburguesas, y los precios no tenían relación entre sí. Dividiendo puntos
+por precio de carta:
+
+| Premio | Puntos | Carta | Puntos por peso |
+|---|---|---|---|
+| Doble Cheese | 2.500 | $16.000 | **0,16** ← lo más barato |
+| Cheese Burger | 1.800 | $11.000 | **0,16** |
+| Papas | 900 | $4.000 | 0,23 |
+| Combo Toddy | 8.000 | $14.000 | 0,57 |
+
+Una hamburguesa salía **más barata que una porción de papas** por peso de
+comida regalada.
+
+**Ahora el precio se calcula: 0,5 puntos por cada peso de la carta.** Mismo
+esfuerzo por peso de comida para todos los premios.
+
+| Premio | Carta | Antes | Ahora |
+|---|---|---|---|
+| Coca-Cola 500cc | $2.800 | 500 | **1.400** |
+| Porción de papas | $4.000 | 900 | **2.000** |
+| Cheese Burger | $11.000 | 1.800 | **5.500** |
+| Doble Cheese | $16.000 | 2.500 | **8.000** |
+| Cuarto de BYR | $16.500 | 3.000 | **8.300** |
+| Americana | $18.000 | 3.800 | **9.000** |
+| Cannons | $19.500 | 4.500 | **9.800** |
+| La Triple | $21.500 | 5.200 | **10.800** |
+| Combo Toddy | $14.000 | 8.000 | **14.000** |
+
+El **Combo Toddy vale el doble** de lo que dice la carta a propósito: es el
+premio máximo del que vive toda la página, no una compra más. Los
+**niveles requeridos no se tocaron**.
+
+Una Cheese Burger pasó de **4,7 a 14,5 días** de juego diario.
+
+**Lo importante: cuando subas el menú, los puntos suben solos.** El precio
+ya no está escrito en ningún lado — sale del producto de la carta. Antes
+el mismo número vivía en cuatro lugares (el servidor, el `data-points`, el
+"1.800 pts" de la tarjeta y el texto del botón) y el día que se cambiaba
+uno y se olvidaba otro, el socio veía un precio y se le cobraba otro.
+
+Para mover **todo el catálogo de una**, en `api/config.php` del servidor:
+
+```php
+'perk_points_per_amount' => 0.5,   // 0.6 encarece todo un 20%
+```
+
+Sin desplegar, efecto al instante.
+
+### El aviso de transición
+
+El socio que venía juntando para una Cheese Burger pasó de necesitar 1.800
+a 5.500. Arriba de la vitrina aparece ahora un recuadro que lo explica:
+
+> 📣 **Cambiaron los precios de los premios**
+> Ahora cada premio cuesta según lo que vale en la carta, así que la comida
+> más cara es la que más puntos pide. Los puntos que tenías siguen siendo
+> tuyos: no se venció ni se perdió ninguno.
+
+**Se apaga solo el 27 de septiembre**, no hay que acordarse de sacarlo.
+Para cortarlo antes o estirarlo, en `api/config.php`:
+
+```php
+'perk_price_notice_until' => '',          // lo saca al instante
+'perk_price_notice_until' => '2026-10-05', // lo estira
+```
+
+### Por dentro
+
+- `api/perks/catalog.php` — los precios se calculan desde `products`. Se
+  escriben a mano solo el nivel, de qué producto sale cada premio y el
+  `factor` del Combo Toddy. Hay precios de respaldo por si la carta no
+  está cargada: sin ellos un premio quedaría en 0 puntos y se canjearía
+  gratis.
+- `api/perks/rewards.php` (nuevo) — la lista de precios para la página.
+- `beneficios.js` — pide los precios al servidor y los pinta. Si la
+  consulta falla se queda con los del HTML (que son los mismos), porque
+  vale más un precio de hace un rato que una tarjeta vacía. El que cobra
+  sigue siendo el servidor.
+- `beneficios.html` — los precios que trae de fábrica, actualizados.
+- `api/coupon-cost.php` — el mapa premio→producto ya no está duplicado:
+  los premios de Beneficios los toma del catálogo.
+
+### Lo que sigue sin tocarse
+
+Subir el catálogo **alarga el camino para todos por igual, incluido el que
+compra**. La causa de fondo sigue siendo el otro lado del mostrador:
+
+- **Se ganan ~380 puntos por día jugando gratis** (raspadita, ruleta,
+  memotest y tres misiones) contra **80 por un pedido de $8.000**. El 95%
+  de los puntos no viene de comprar. Con los precios nuevos, una Cheese
+  Burger son 14 días de juego o **$550.000 de compra**: la brecha no se
+  cerró, se agrandó.
+- La **ruleta** sigue con 33% de cupones.
+- **Conseguir un cupón paga puntos** (misión de 75, logros de 100 y 500).
+- No hay **tope diario** de hamburguesas gratis.
+
+Con el bloque "Qué cuestan los cupones" ya se puede ver, después de una
+semana, si esto alcanzó o si hay que ir por el lado de los juegos.
+
+---
+
 ## Sesión del 19 de septiembre de 2026 (desde casa)
 
 ### Los cupones ya se pueden medir (y la hamburguesa de la raspadita salía 5 veces más seguido de lo que convenía)

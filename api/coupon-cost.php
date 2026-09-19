@@ -29,30 +29,21 @@ require_once __DIR__ . '/roulette/catalog.php';
 require_once __DIR__ . '/perks/catalog.php';
 
 /**
- * Qué producto de la carta representa cada premio. Es lo que el cliente
- * se lleva cuando presenta el vale, así que su precio es lo que cuesta
- * el cupón.
+ * Qué producto de la carta representa cada premio que NO sale del
+ * catálogo de Beneficios.
  *
- * Un premio nuevo que no esté acá no rompe nada: cuenta como emitido y
- * canjeado, pero suma $0 al costo (y el panel lo marca como "sin precio"
- * para que se note que falta mapearlo).
+ * Los premios de Beneficios (Cheese Burger, Combo Toddy, papas, bebida…)
+ * ya dicen de qué producto salen en perks/catalog.php, porque de ahí sacan
+ * su precio en puntos. Repetirlos acá sería una segunda lista para
+ * mantener, así que byr_coupon_product_map() los toma de allá y esta
+ * constante se queda solo con lo que el catálogo no cubre: lo que reparten
+ * los juegos y los beneficios de socio.
  */
 const BYR_COUPON_PRODUCT = [
     /* Juegos (ruleta y raspadita) */
     'fries'           => 'papas-individual',
     'drink'           => 'beb-coca',
     'cheese-burger'   => 'simple-cheddar',
-
-    /* Catálogo de Beneficios (se pagan con puntos) */
-    'papas'           => 'papas-individual',
-    'coca-cola'       => 'beb-coca',
-    'doble-cheese'    => 'doble-cheddar',
-    'cuarto-byr'      => 'cuarto-de-byr',
-    'americana'       => 'americana',
-    'cannons'         => 'cannons',
-    'la-triple'       => 'la-triple',
-    'combo-triple'    => 'promo-triple-cheese',
-    'legendary'       => 'promo-triple-cheese',
 
     /* Beneficios de socio. El 2x1 regala una de las dos: cuesta una. */
     '2x1-wed'         => 'doble-cheddar',
@@ -77,6 +68,27 @@ const BYR_COUPON_FALLBACK = [
 ];
 
 /**
+ * Premio → producto de la carta, para TODOS los premios: los de los
+ * juegos (la constante de arriba) más los del catálogo de Beneficios, que
+ * declaran su propio producto porque de ahí sacan su precio en puntos.
+ *
+ * Los de los juegos van primero y los de Beneficios después, así que un
+ * id que esté en los dos (la Cheese Burger sale de la raspadita y también
+ * se canjea con puntos) se resuelve al mismo producto por los dos lados.
+ */
+function byr_coupon_product_map(): array
+{
+    $out = BYR_COUPON_PRODUCT;
+    foreach (BYR_PERK_REWARDS as $prizeId => $reward) {
+        if (!empty($reward['product'])) {
+            $out[$prizeId] = $reward['product'];
+        }
+    }
+
+    return $out;
+}
+
+/**
  * Precio (ARS) de cada premio conocido, indexado por prize_id.
  *
  * El orden de prioridad es: lo que diga config.php manda, después el
@@ -90,8 +102,9 @@ function byr_coupon_prices(PDO $pdo): array
         return $cache;
     }
 
+    $map   = byr_coupon_product_map();
     $slugs = array_values(array_unique(array_merge(
-        array_values(BYR_COUPON_PRODUCT),
+        array_values($map),
         array_filter(array_values(BYR_COUPON_FALLBACK))
     )));
 
@@ -106,7 +119,7 @@ function byr_coupon_prices(PDO $pdo): array
     }
 
     $out = [];
-    foreach (BYR_COUPON_PRODUCT as $prizeId => $slug) {
+    foreach ($map as $prizeId => $slug) {
         $out[$prizeId] = $prices[$slug] ?? null;
     }
     foreach (BYR_COUPON_FALLBACK as $prizeId => $slug) {
