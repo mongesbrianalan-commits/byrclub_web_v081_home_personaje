@@ -2432,6 +2432,21 @@
 
   function renderMenuAdmin(products) {
     menuAdminList.innerHTML = "";
+
+    /* Sin bebidas cargadas, el popup de la hamburguesa cae en la lista que
+       trae el código y no hay forma de tocar esos precios desde acá. Conviene
+       decirlo, porque desde el panel no se nota: simplemente no aparecen. */
+    const drinksWarn = document.querySelector("[data-menu-drinks-warn]");
+    if (drinksWarn) {
+      const drinks = products.filter((p) => p.category === "bebidas").length;
+      drinksWarn.hidden = drinks > 0;
+      if (!drinks) {
+        drinksWarn.textContent = "⚠️ No hay ninguna bebida cargada, así que el popup"
+          + " de la hamburguesa está usando los precios que trae el código y no se"
+          + " pueden editar desde acá. Se arregla corriendo 2026-08-menu-bebidas.sql.";
+      }
+    }
+
     if (menuCount) {
       const enCarta = products.filter((p) => p.available).length;
       menuCount.textContent = products.length + " productos · " + enCarta + " en la carta";

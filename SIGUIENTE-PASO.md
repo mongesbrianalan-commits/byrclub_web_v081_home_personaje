@@ -98,6 +98,59 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 ---
 
+## Sesión del 19 de septiembre de 2026 (desde casa) — parte 3
+
+### Las bebidas del popup ahora se editan desde el panel
+
+Había **dos listas de bebidas** con los mismos precios anotados dos veces:
+
+| | Dónde vivía | ¿Editable desde admin? |
+|---|---|---|
+| Bebidas sueltas del mostrador | tabla `products` (`beb-coca`…) | ✅ sí |
+| Bebidas del popup de la hamburguesa | `api/menu-options.php`, a mano | ❌ **no** |
+
+Cambiar la Coca en la pestaña Menú corregía el mostrador y **dejaba el popup
+como estaba**: la misma bebida se cobraba distinto según cómo la pidieras, y
+la única forma de emparejarlas era tocar código y desplegar.
+
+**Ahora el popup lee la carta.** Cambiás la Coca en la pestaña Menú y cambia
+en todos lados:
+
+- el **mostrador** (venta suelta),
+- el **popup de la hamburguesa** ("¿Sumás bebida?"),
+- y el **precio en puntos** del premio Coca-Cola en Beneficios, que desde la
+  parte 2 sale de la carta.
+
+**Destildar una bebida la saca del popup.** Si se acabó la Pepsi, la
+destildás en el panel y deja de ofrecerse, en vez de venderla y tener que
+avisar después. El orden también lo manda el `sort` de la carta.
+
+**Una bebida nueva aparece sola**: la cargás en el panel con categoría
+Bebidas y ya se ofrece en el popup, sin tocar nada más.
+
+**Papas y adicionales siguen en `menu-options.php`**, a mano, porque no son
+productos de la carta sino modificaciones de la hamburguesa. La lista de
+bebidas escrita en el archivo quedó como **respaldo**: se usa solo si no hay
+ninguna bebida cargada, para que el popup no salga vacío.
+
+En la pestaña Menú hay ahora dos avisos: uno que recuerda que las bebidas
+mandan en los dos lados, y otro que salta **solo si no hay bebidas
+cargadas** — porque desde el panel eso no se nota, simplemente no aparecen.
+Si lo ves, falta correr `2026-08-menu-bebidas.sql`.
+
+**No necesita migración** (salvo esa, si nunca se corrió).
+
+### Por dentro
+
+- `api/menu-options.php` — `byr_drink_options()` arma el grupo de bebida
+  desde `products`. Los ids de opción (`coca`, `agua-sin-gas`…) se mapean a
+  mano contra el slug, porque los manda el navegador al pedir y no pueden
+  cambiar de un día para el otro; dos no siguen el patrón (`beb-agua` es
+  `agua-sin-gas`, `beb-imperial` es `imperial-golden`).
+- `admin.html` + `assets/core/admin.js` — los dos avisos.
+
+---
+
 ## Sesión del 19 de septiembre de 2026 (desde casa) — parte 2
 
 ### Los premios ahora cuestan lo que valen en la carta

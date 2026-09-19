@@ -225,6 +225,7 @@
 
     /* --- Menú (admin) --- */
     .menu-admin-list { display: flex; flex-direction: column; gap: 10px; }
+    .admin-warn-line { margin: -6px 0 14px; font-weight: 800; font-size: .86rem; color: #ffd98a; }
 
     /* En PC el panel usa el ancho de la pantalla (no "modo celu"). El login y el
        cartel de acceso restringido siguen angostos. */
@@ -495,6 +496,8 @@
       <div class="admin-block">
         <h2>🍔 Menú — productos, precios y disponibilidad</h2>
         <p class="admin-hint-line">💡 Cambiá el precio o sacá de la carta con un clic. Con ✏️ editás el resto (nombre, descripción, categoría, orden). Se ve al instante cuando el cliente entra a pedir.</p>
+        <p class="admin-hint-line">🥤 Las <b>bebidas</b> de acá son también las que se ofrecen en el popup de la hamburguesa ("¿Sumás bebida?"). Cambiar el precio o destildar una la cambia en los dos lados: en el mostrador y al pedir por la web.</p>
+        <p class="admin-warn-line" data-menu-drinks-warn hidden></p>
 
         <div class="ma-toolbar">
           <button type="button" class="ma-new-btn" data-menu-new>➕ Nuevo producto</button>
