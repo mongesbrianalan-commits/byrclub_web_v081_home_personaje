@@ -38,6 +38,32 @@ return [
     'order_points_per_amount' => 100,
 
     /*
+     * Cuánto cuesta un cupón — para el bloque "Qué cuestan los cupones"
+     * del panel (pestaña Pedidos).
+     *
+     * El PRECIO de cada premio sale solo del producto de la carta: la
+     * "Cheese Burger gratis" vale lo que vale la Simple con Cheddar, y si
+     * la subís en el panel de Menú, sube sola acá. No hay que tocar nada.
+     *
+     * Lo que el panel no puede adivinar es cuánto te cuesta HACERLA, que
+     * depende de tus proveedores. Por eso muestra las dos cifras: el
+     * precio de carta (lo que dejás de facturar) y una estimación de
+     * mercadería con este porcentaje. 35% es un valor de arranque común
+     * en gastronomía; cambialo cuando tengas el número tuyo.
+     */
+    'coupon_food_cost_pct' => 35,
+
+    /*
+     * Precio a mano de un premio suelto, solo si hace falta pisarlo.
+     * Casi nunca se usa: sirve para los premios que no son un producto de
+     * la carta, como el "Premio sorpresa" (que se estima con una porción
+     * de papas). Si en la práctica das otra cosa, ponele su precio acá.
+     *
+     *   'coupon_costs' => ['surprise' => 5000],
+     */
+    'coupon_costs' => [],
+
+    /*
      * Costo de envío del delivery, en pesos. Es fijo para toda la zona.
      * El retiro en el local no paga envío, y el envío NO suma puntos
      * (los puntos se calculan sobre la comida).

@@ -1,6 +1,6 @@
 # Desde dónde arrancar
 
-Última sesión: **27 de agosto de 2026**, desde la PC de casa.
+Última sesión: **19 de septiembre de 2026**, desde la PC de casa.
 Todo lo de abajo ya está en GitHub y desplegado en byrclub.com.
 
 Antes que nada, al cambiar de máquina: **`git pull`**.
@@ -95,6 +95,101 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 > El trabajo del estado en el servidor no necesitó migración: lo que agregó
 > (`missions`, `progress`) vive dentro del JSON de `users.state`.
+
+---
+
+## Sesión del 19 de septiembre de 2026 (desde casa)
+
+### Los cupones ya se pueden medir (y la hamburguesa de la raspadita salía 5 veces más seguido de lo que convenía)
+
+El disparador: **uno de cada cinco pedidos venía con cupón**. La sensación era
+que se estaban regalando demasiadas hamburguesas, pero no había con qué
+confirmarlo: el bloque "Delivery vs. retiro" cuenta la plata que **entra**, y
+un pedido con "Cheese Burger gratis" figuraba igual que uno pago. Nadie
+llevaba la cuenta de lo que sale por la puerta sin cobrarse.
+
+**Primero medir.** En el panel, pestaña **Pedidos**, hay ahora un bloque
+**🎟️ Qué cuestan los cupones**, con los mismos tres períodos que las
+estadísticas de arriba (hoy / 7 días / desde siempre):
+
+```
+🎟️ Emitidos        42     vales que repartieron los juegos
+                          31% terminó canjeándose
+✅ Canjeados        13     4 vencieron sin usarse
+💸 Precio de carta  $74.300   lo que se dejó de facturar
+🥩 Costo estimado   $26.005   mercadería, al 35% del precio
+🧾 Pedidos c/cupón   9     de 46 pedidos — 20% de los pedidos
+```
+
+Abajo, el detalle **por premio** (emitidos, canjeados, precio y costo) y **por
+origen** (Raspadita, Ruleta, Canje de puntos, Miércoles de socio, Cumpleaños),
+ordenados por lo que más cuesta.
+
+**Emitidos y canjeados se cuentan por separado a propósito.** Los emitidos
+dicen cuánto *promete* el sistema; los canjeados, cuánto *costó*. Muchos vales
+vencen a las 24hs sin usarse, así que bajar una probabilidad a la mitad **no**
+baja el costo a la mitad. Sin esa diferencia a la vista es fácil tocar de más.
+
+Los precios **no están escritos en ningún lado**: salen del producto real de la
+carta (`papas-individual`, `simple-cheddar`, etc.). Si mañana sube la
+hamburguesa en el panel de Menú, sube sola acá también. El costo de mercadería
+sí es una estimación —35% del precio de carta— y se corrige en `api/config.php`
+del servidor cuando tengas el número propio:
+
+```php
+'coupon_food_cost_pct' => 35,   // qué % del precio de carta es mercadería
+'coupon_costs' => [             // opcional: precio a mano de un premio suelto
+    'surprise' => 5000,
+],
+```
+
+Un premio sin precio cargado no rompe nada: se cuenta igual y el bloque avisa
+con **"⚠️ N cupones canjeados no tienen precio cargado"**, así se nota que
+falta mapearlo en vez de mostrar un costo más bajo del real.
+
+**Después, el primer ajuste.** La **Cheese Burger gratis de la raspadita**
+pesaba 5 sobre 105: **una hamburguesa entera cada 21 raspaditas**, por cara,
+sin gastar un punto. Era el premio más caro de largo —$11.000 contra los
+$4.000 de las papas y los $2.800 de la bebida—. Ahora **pesa 1: una cada 105**.
+
+El golpe de suerte sigue existiendo, que es lo que engancha, pero cuesta cinco
+veces menos. Los 4 de peso que se le sacaron fueron a **"50 puntos"**, no a los
+otros cupones: papas, bebida y sorpresa quedaron **exactamente igual que
+antes**. Donde antes salía una hamburguesa, ahora salen puntos.
+
+| | antes | ahora |
+|---|---|---|
+| Cheese Burger gratis | 4,76% (1 cada 21) | **0,95% (1 cada 105)** |
+| Papas / bebida / sorpresa | 33,3% | 33,3% (igual) |
+| Cupones sobre el total | 38,1% | **34,3%** |
+
+**No necesita migración ni tocar config.php**: con el deploy ya queda.
+
+**Lo que todavía no se tocó**, y conviene mirar con el bloque nuevo después de
+una semana de datos:
+
+- La **ruleta** sigue con 4 de 12 casilleros en cupones (**33%**). Entre las
+  dos, un socio que juega todos los días genera **0,71 cupones por día** —
+  casi 5 por semana.
+- Los **puntos se imprimen mucho más rápido de lo que se venden**: comprando se
+  gana 1 punto cada $100 (un pedido de $8.000 = 80 puntos), y jugando gratis se
+  sacan ~380 por día entre raspadita, ruleta, memotest y las tres misiones. Un
+  día de jugar rinde como $38.000 de compra.
+- **Conseguir un cupón paga puntos**: la misión "Cazador de premios" da 75 por
+  sacar un premio, y los logros "Premio desbloqueado" y "Coleccionista" otros
+  100 y 500. Los puntos que se ganan sacando cupones compran el próximo.
+- No hay **tope diario** de hamburguesas gratis para todo el local.
+
+### Por dentro
+
+- `api/coupon-cost.php` (nuevo) — qué vale cada premio y cada cuánto sale.
+  Los precios salen de la tabla `products`; las probabilidades, de los
+  catálogos que sortean de verdad.
+- `api/admin/coupon-stats.php` (nuevo) — el endpoint del bloque.
+- `api/roulette/catalog.php` (nuevo) — la rueda y sus pesos, que estaban
+  sueltos dentro de `spin.php`. Se sacaron para que el reporte los lea de la
+  misma fuente que el juego, en vez de copiarlos y que queden desfasados.
+- `api/scratch/catalog.php` — el peso de la Cheese Burger.
 
 ---
 

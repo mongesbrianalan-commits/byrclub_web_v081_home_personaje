@@ -1698,6 +1698,182 @@
   }
 
   /* ---------------------------------------------------------
+     Costo de los cupones
+
+     Las estadísticas de arriba cuentan la plata que ENTRA. Ésta cuenta
+     la que no entra: cada vale que el cajero valida es comida que salió
+     sin cobrarse, y hasta ahora no figuraba en ningún lado.
+
+     Se muestran los emitidos y los canjeados por separado a propósito.
+     Los emitidos dicen cuánto promete el sistema; los canjeados, cuánto
+     costó de verdad. Bajar una probabilidad mueve el primero, y el
+     segundo solo en la proporción que la gente efectivamente use.
+  --------------------------------------------------------- */
+
+  const cupGrid   = document.querySelector("[data-cup-grid]");
+  const cupDetail = document.querySelector("[data-cup-detail]");
+  const cupPeriod = document.querySelector("[data-cup-period]");
+  const cupStatus = document.querySelector("[data-cup-status]");
+  let cupData  = null;
+  let cupRange = "today";
+
+  async function loadCouponStats() {
+    if (!cupGrid) return;
+    // La cocina no ve plata, igual que en las estadísticas de pedidos.
+    if (currentRole === "cocina") {
+      const block = cupGrid.closest(".admin-block");
+      if (block) block.hidden = true;
+      return;
+    }
+    setStatus(cupStatus, "Cargando…", "");
+    try {
+      cupData = await api("admin/coupon-stats.php", {});
+      renderCouponStats();
+      setStatus(cupStatus, "", "");
+    } catch (error) {
+      setStatus(cupStatus, error.message, "error");
+    }
+  }
+
+  function pct(part, whole) {
+    if (!whole) return null;
+    return Math.round((part / whole) * 100);
+  }
+
+  function renderCouponStats() {
+    if (!cupGrid || !cupData) return;
+    const p = (cupData.periods || {})[cupRange] || {};
+    const orders = p.orders || { total: 0, withCoupon: 0 };
+
+    // Cuántos de los emitidos terminaron usándose. Es el dato que dice si
+    // conviene tocar la emisión o el canje.
+    const useRate = pct(p.redeemed, p.issued);
+    const share   = pct(orders.withCoupon, orders.total);
+
+    const tiles = [
+      {
+        label: "🎟️ Emitidos",
+        n: fmt(p.issued),
+        sub: "vales que repartieron los juegos",
+        share: useRate === null ? "" : `${useRate}% terminó canjeándose`,
+      },
+      {
+        label: "✅ Canjeados",
+        n: fmt(p.redeemed),
+        sub: p.expired ? `${fmt(p.expired)} vencieron sin usarse` : "comida que salió sin cobrarse",
+      },
+      {
+        label: "💸 Precio de carta",
+        n: money(p.cost),
+        sub: "lo que se dejó de facturar",
+        cost: true,
+      },
+      {
+        label: "🥩 Costo estimado",
+        n: money(p.foodCost),
+        sub: `mercadería, al ${cupData.foodCostPct}% del precio`,
+        cost: true,
+      },
+      {
+        label: "🧾 Pedidos con cupón",
+        n: fmt(orders.withCoupon),
+        sub: `de ${fmt(orders.total)} pedidos`,
+        share: share === null ? "" : `${share}% de los pedidos`,
+      },
+    ];
+
+    cupGrid.innerHTML = "";
+    tiles.forEach((t) => {
+      const el = document.createElement("div");
+      el.className = "stat-tile"
+        + (t.cost ? " is-cost" : "")
+        + (Number(String(t.n).replace(/\D/g, "")) === 0 ? " is-empty" : "");
+      el.innerHTML = `
+        <div class="st-label">${t.label}</div>
+        <div class="st-n">${t.n}</div>
+        <div class="st-sub">${t.sub}</div>
+        ${t.share ? `<div class="st-share">${t.share}</div>` : ""}
+      `;
+      cupGrid.append(el);
+    });
+
+    renderCouponDetail(p);
+  }
+
+  function renderCouponDetail(p) {
+    if (!cupDetail) return;
+    const byPrize  = p.byPrize  || [];
+    const bySource = p.bySource || [];
+    const em       = cupData.emission || {};
+
+    // Cada cuánto sale un cupón en cada juego. Sale de los catálogos que
+    // sortean de verdad, así que es la probabilidad que está corriendo.
+    // Con coma decimal, como el resto de los números del panel.
+    const dec = (v, d) => Number(v || 0).toLocaleString("es-AR", {
+      minimumFractionDigits: d, maximumFractionDigits: d,
+    });
+    const rate = (v) => `${dec(Number(v || 0) * 100, 1)}%`;
+
+    const prizeRows = byPrize.map((r) => `
+      <tr class="${r.redeemed === 0 ? "is-zero" : ""}">
+        <td>${r.label}</td>
+        <td class="num">${fmt(r.issued)}</td>
+        <td class="num">${fmt(r.redeemed)}</td>
+        <td class="num">${r.price === null ? "—" : money(r.price)}</td>
+        <td class="num cost">${money(r.cost)}</td>
+      </tr>`).join("");
+
+    const sourceRows = bySource.map((r) => `
+      <tr class="${r.redeemed === 0 ? "is-zero" : ""}">
+        <td>${r.source}</td>
+        <td class="num">${fmt(r.issued)}</td>
+        <td class="num">${fmt(r.redeemed)}</td>
+        <td class="num cost">${money(r.cost)}</td>
+      </tr>`).join("");
+
+    cupDetail.innerHTML = `
+      <h3 class="cup-h3">Por premio</h3>
+      <table class="cup-table">
+        <thead><tr>
+          <th>Premio</th><th class="num">Emitidos</th><th class="num">Canjeados</th>
+          <th class="num">Precio</th><th class="num">Costo</th>
+        </tr></thead>
+        <tbody>${prizeRows || `<tr><td colspan="5">Ningún cupón en este período.</td></tr>`}</tbody>
+      </table>
+
+      <h3 class="cup-h3">Por origen</h3>
+      <table class="cup-table">
+        <thead><tr>
+          <th>De dónde salió</th><th class="num">Emitidos</th><th class="num">Canjeados</th><th class="num">Costo</th>
+        </tr></thead>
+        <tbody>${sourceRows || `<tr><td colspan="4">Ningún cupón en este período.</td></tr>`}</tbody>
+      </table>
+
+      <h3 class="cup-h3">Cada cuánto sale un cupón</h3>
+      <p class="cup-note">
+        Raspadita: <span class="cup-rate">${rate(em.scratch && em.scratch.coupon_rate)}</span> de las jugadas ·
+        Ruleta: <span class="cup-rate">${rate(em.wheel && em.wheel.coupon_rate)}</span> de los giros ·
+        un socio que juega a todos los días genera
+        <span class="cup-rate">${dec(em.per_active_day, 2)}</span> cupones por día.
+      </p>
+      ${p.unpriced ? `<p class="cup-warn">⚠️ ${fmt(p.unpriced)} cupones canjeados no tienen precio cargado: el costo real es mayor que el que se muestra.</p>` : ""}
+      ${cupData.hasExpiry === false ? `<p class="cup-warn">⚠️ Falta correr 2026-08-coupon-expiry.sql: no se puede saber cuáles vencieron sin usarse.</p>` : ""}
+    `;
+  }
+
+  if (cupPeriod) {
+    cupPeriod.querySelectorAll("[data-cup-range]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        cupRange = btn.getAttribute("data-cup-range");
+        cupPeriod.querySelectorAll("[data-cup-range]").forEach((b) => {
+          b.classList.toggle("is-active", b === btn);
+        });
+        renderCouponStats();
+      });
+    });
+  }
+
+  /* ---------------------------------------------------------
      Editar un pedido pendiente (agregar/cambiar/quitar ítems)
   --------------------------------------------------------- */
 
@@ -2195,6 +2371,7 @@
     loadEditableProducts(); // productos para el editor de pedidos pendientes
     loadOrders();
     loadOrderStats();
+    loadCouponStats();
     loadDeliveryDay();
   }
 
