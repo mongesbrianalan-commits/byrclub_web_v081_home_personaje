@@ -5,7 +5,7 @@
  * Body JSON:
  *   id?         int      (si viene, EDITA ese producto; si no, CREA uno nuevo)
  *   slug?       string   (requerido al crear; id estable)
- *   category    string   (hamburguesas|combos|papas|bebidas|otros)
+ *   category    string   (slug de menu_categories; ver api/menu-categories.php)
  *   name        string
  *   description string
  *   image?      string   (ruta bajo assets/ ; opcional)
@@ -16,16 +16,15 @@
  */
 require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/../menu-options.php';
+require_once __DIR__ . '/../menu-categories.php';
 require_method('POST');
 
 $pdo = db();
 require_admin($pdo);
 
-const BYR_PRODUCT_CATEGORIES = ['promos', 'entradas', 'hamburguesas', 'combos', 'papas', 'postres', 'bebidas', 'otros'];
-
 $in          = body_json();
 $id          = (int) ($in['id'] ?? 0);
-$slug        = strtolower(trim((string) ($in['slug'] ?? '')));
+$slug        = byr_slugify((string) ($in['slug'] ?? ''));
 $category    = (string) ($in['category'] ?? 'otros');
 $name        = trim((string) ($in['name'] ?? ''));
 $description = trim((string) ($in['description'] ?? ''));
@@ -43,7 +42,11 @@ if (!array_key_exists($optionSet, byr_option_set_choices())) {
 }
 $hasOptCol   = byr_product_option_set_ready($pdo);
 
-if (!in_array($category, BYR_PRODUCT_CATEGORIES, true)) {
+/* Las categorías las define el admin (tabla menu_categories), así que la
+   lista no está escrita acá: se pregunta. Una que no exista cae en "otros"
+   en vez de rechazar el guardado — el producto se guarda igual y se ve
+   dónde quedó. */
+if (!byr_category_exists($pdo, $category)) {
     $category = 'otros';
 }
 if ($name === '') {
@@ -83,9 +86,9 @@ if ($id > 0) {
 
 /* --- Crear --- */
 if ($slug === '') {
-    /* Generamos un slug simple a partir del nombre. */
-    $slug = preg_replace('/[^a-z0-9]+/', '-', strtolower($name));
-    $slug = trim($slug, '-') ?: ('prod-' . time());
+    /* Lo armamos con el nombre. Si no queda nada usable (un nombre de solo
+       emojis), uno con la hora, que al menos es único. */
+    $slug = byr_slugify($name) ?: ('prod-' . time());
 }
 
 $chk = $pdo->prepare('SELECT id FROM products WHERE slug = ?');

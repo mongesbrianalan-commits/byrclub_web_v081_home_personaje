@@ -194,6 +194,19 @@
     .stat-tile .st-sub { font-weight: 700; font-size: .84rem; color: #cfe4ff; margin-top: 6px; }
     .stat-tile .st-share { font-weight: 800; font-size: .8rem; color: #b8ffcb; margin-top: 2px; }
     .stat-tile.is-empty .st-n { color: rgba(255,255,255,.35); }
+    .stat-tile.is-cost .st-n { color: #ffb0b0; }
+
+    /* --- Costo de los cupones --- */
+    .cup-note { margin: 0 0 14px; font-weight: 700; font-size: .86rem; color: #9bd1ff; }
+    .cup-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: .9rem; }
+    .cup-table th { text-align: left; font-weight: 800; color: #9bd1ff; font-size: .8rem; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    .cup-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,.07); font-weight: 700; color: #e7f1ff; }
+    .cup-table td.num, .cup-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .cup-table td.cost { color: #ffb0b0; font-weight: 800; }
+    .cup-table tr.is-zero td { opacity: .5; }
+    .cup-h3 { font-family: "Lilita One"; font-size: 1.05rem; margin: 20px 0 0; color: var(--yellow); }
+    .cup-rate { font-weight: 800; color: #ffd98a; }
+    .cup-warn { margin: 12px 0 0; font-weight: 800; font-size: .85rem; color: #ffd98a; }
     .oa-total { border-top: 2px dashed rgba(255,255,255,.18); padding-top: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; font-family: "Lilita One"; font-size: 1.2rem; }
     .oa-total b { color: var(--yellow); }
     .oa-confirm-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
@@ -212,6 +225,26 @@
 
     /* --- Menú (admin) --- */
     .menu-admin-list { display: flex; flex-direction: column; gap: 10px; }
+    .admin-warn-line { margin: -6px 0 14px; font-weight: 800; font-size: .86rem; color: #ffd98a; }
+
+    /* --- Categorías del menú --- */
+    .cat-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .cat-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); }
+    .cat-row.is-off { opacity: .55; }
+    .cat-row__emoji { font-size: 1.3rem; width: 28px; text-align: center; }
+    .cat-row__name { font-weight: 900; flex: 1 1 130px; min-width: 0; }
+    .cat-row__meta { font-weight: 700; font-size: .82rem; color: #9bd1ff; }
+    .cat-row__slug { font-family: ui-monospace, monospace; font-size: .76rem; color: #7f9ac2; }
+    .cat-btn { border: 1px solid rgba(155,209,255,.35); background: rgba(155,209,255,.1); color: #cfe6ff; font-weight: 800; font-size: .85rem; border-radius: 11px; padding: 0 12px; min-height: 36px; cursor: pointer; }
+    .cat-btn:hover:not(:disabled) { background: rgba(155,209,255,.2); }
+    .cat-btn:disabled { opacity: .4; cursor: default; }
+    .cat-btn.danger { border-color: rgba(255,120,120,.4); background: rgba(255,120,120,.1); color: #ffb0b0; }
+    .cat-edit { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,.14); }
+    .cat-edit .ma-field { margin: 0; }
+    .cat-actions { width: 100%; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+    .cat-status { width: 100%; margin: 6px 0 0; font-weight: 800; font-size: .85rem; }
+    .cat-status.error { color: #ffb0b0; }
+    .cat-status.ok { color: #b8ffcb; }
 
     /* En PC el panel usa el ancho de la pantalla (no "modo celu"). El login y el
        cartel de acceso restringido siguen angostos. */
@@ -446,6 +479,19 @@
         <div class="stats-grid" data-stats-grid></div>
         <p class="auth-form-status" data-stats-status></p>
       </div>
+
+      <div class="admin-block">
+        <h2>🎟️ Qué cuestan los cupones</h2>
+        <p class="admin-hint-line">💡 <b>Emitidos</b> son los vales que repartieron los juegos. <b>Canjeados</b> son los que el cajero validó: esos son los que de verdad costaron comida. La diferencia vence sin usarse.</p>
+        <div class="stats-period" data-cup-period>
+          <button type="button" class="admin-tab-btn is-active" data-cup-range="today">Hoy</button>
+          <button type="button" class="admin-tab-btn" data-cup-range="week">Últimos 7 días</button>
+          <button type="button" class="admin-tab-btn" data-cup-range="all">Desde siempre</button>
+        </div>
+        <div class="stats-grid" data-cup-grid></div>
+        <div data-cup-detail></div>
+        <p class="auth-form-status" data-cup-status></p>
+      </div>
       </div><!-- /tab pedidos -->
 
       <div class="admin-tab" data-tab="caja" hidden>
@@ -467,8 +513,55 @@
 
       <div class="admin-tab" data-tab="menu" hidden>
       <div class="admin-block">
+        <h2>🗂️ Categorías de la carta</h2>
+        <p class="admin-hint-line">💡 Son las secciones que ve el cliente al pedir (Promos, Burgers, Papas…). Creá una nueva acá y después asignale productos desde el bloque de abajo.</p>
+        <p class="admin-warn-line" data-cat-warn hidden></p>
+
+        <div class="ma-toolbar">
+          <button type="button" class="ma-new-btn" data-cat-new>➕ Nueva categoría</button>
+          <span class="ma-count" data-cat-count></span>
+        </div>
+
+        <div class="ma-new" data-cat-new-form hidden>
+          <h3>Nueva categoría</h3>
+          <div class="ma-details">
+            <div class="ma-grid">
+              <label class="ma-field">
+                <span>Nombre</span>
+                <input type="text" data-cat-new-name placeholder="Ej: Wraps">
+              </label>
+              <label class="ma-field">
+                <span>Emoji</span>
+                <input type="text" data-cat-new-emoji maxlength="4" placeholder="🌯">
+              </label>
+              <label class="ma-field">
+                <span>Orden</span>
+                <input type="number" data-cat-new-sort step="10" placeholder="Al final">
+              </label>
+              <label class="ma-field">
+                <span>¿Qué opciones abren sus productos?</span>
+                <select data-cat-new-optionset></select>
+              </label>
+            </div>
+            <label class="ma-avail"><input type="checkbox" data-cat-new-available checked> Visible en la carta</label>
+            <p class="ma-hint">El identificador interno se arma solo con el nombre y no cambia después: podés renombrar la categoría cuando quieras sin mover los productos.</p>
+            <div class="ma-new-actions">
+              <button type="button" class="ma-save" data-cat-new-save>Crear categoría</button>
+              <button type="button" class="ma-cancel" data-cat-new-cancel>Cancelar</button>
+            </div>
+            <p class="cat-status" data-cat-new-status></p>
+          </div>
+        </div>
+
+        <div class="cat-list" data-cat-list></div>
+        <p class="auth-form-status" data-cat-admin-status></p>
+      </div>
+
+      <div class="admin-block">
         <h2>🍔 Menú — productos, precios y disponibilidad</h2>
         <p class="admin-hint-line">💡 Cambiá el precio o sacá de la carta con un clic. Con ✏️ editás el resto (nombre, descripción, categoría, orden). Se ve al instante cuando el cliente entra a pedir.</p>
+        <p class="admin-hint-line">🥤 Las <b>bebidas</b> de acá son también las que se ofrecen en el popup de la hamburguesa ("¿Sumás bebida?"). Cambiar el precio o destildar una la cambia en los dos lados: en el mostrador y al pedir por la web.</p>
+        <p class="admin-warn-line" data-menu-drinks-warn hidden></p>
 
         <div class="ma-toolbar">
           <button type="button" class="ma-new-btn" data-menu-new>➕ Nuevo producto</button>

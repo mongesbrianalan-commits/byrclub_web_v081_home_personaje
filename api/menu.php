@@ -8,22 +8,16 @@
  */
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/menu-options.php';
+require_once __DIR__ . '/menu-categories.php';
 require_once __DIR__ . '/perks/2x1.php';
 
 /* Público: cualquiera puede ver la carta (para pedir como invitado). */
 $pdo = db();
 
-/* Etiquetas lindas por categoría (la tabla guarda el slug de categoría). */
-const BYR_MENU_CATEGORIES = [
-    'promos'       => '🔥 Promos',
-    'entradas'     => '🍗 Entradas',
-    'hamburguesas' => '🍔 Burgers',
-    'papas'        => '🍟 Papas',
-    'postres'      => '🍰 Postres',
-    'bebidas'      => '🥤 Bebidas',
-    'combos'       => '👑 Combos',
-    'otros'        => '🍴 Otros',
-];
+/* Nombre, emoji y orden de cada categoría salen de la tabla menu_categories,
+   que el admin edita desde el panel. Antes estaban escritos acá, así que
+   agregar una categoría pedía tocar este archivo y desplegar. */
+$catalog = byr_menu_categories_visible($pdo);
 
 /* Los productos "solo staff" (ej: bebidas sueltas) se muestran únicamente al
    mostrador: hace falta pedir ?staff=1 Y tener sesión de cajero/admin. El menú
@@ -78,7 +72,7 @@ if ($twoForOne['canOrder']) {
     }
 }
 
-/* Agrupamos respetando el orden de BYR_MENU_CATEGORIES (categorías vacías se omiten). */
+/* Agrupamos respetando el orden de la tabla (categorías vacías se omiten). */
 $byCat = [];
 foreach ($rows as $r) {
     $cat = $r['category'];
@@ -98,21 +92,25 @@ foreach ($rows as $r) {
 }
 
 $categories = [];
-foreach (BYR_MENU_CATEGORIES as $slug => $label) {
+foreach ($catalog as $slug => $cat) {
     if (!empty($byCat[$slug])) {
         $categories[] = [
             'slug'     => $slug,
-            'label'    => $label,
+            'label'    => $cat['label'],
             'products' => $byCat[$slug],
         ];
         unset($byCat[$slug]);
     }
 }
-/* Cualquier categoría rara que no esté en la lista, al final. */
+
+/* Lo que quedó apunta a una categoría que no existe o que está oculta. Un
+   producto disponible no puede desaparecer de la carta sin que nadie se dé
+   cuenta —se dejaría de vender en silencio—, así que va al final bajo
+   "Otros". Para sacarlo de verdad hay que destildarlo. */
 foreach ($byCat as $slug => $products) {
     $categories[] = [
         'slug'     => $slug,
-        'label'    => BYR_MENU_CATEGORIES['otros'],
+        'label'    => byr_category_label($pdo, 'otros'),
         'products' => $products,
     ];
 }

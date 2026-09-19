@@ -12,6 +12,9 @@
  * admin valida desde el panel. El precio y el nivel los pone el servidor
  * (api/perks/catalog.php), no el HTML: cambiar el data-points en el
  * navegador no abarata nada.
+ *
+ * El precio ya no es un numero escrito a mano: se calcula desde la carta,
+ * asi que hay que pedirlo DESPUES de tener la conexion (byr_perk_rewards).
  */
 require_once __DIR__ . '/../helpers.php';
 require_once __DIR__ . '/catalog.php';
@@ -24,11 +27,12 @@ $pdo = db();
 $in       = body_json();
 $rewardId = trim((string) ($in['rewardId'] ?? ''));
 
-if (!isset(BYR_PERK_REWARDS[$rewardId])) {
+$rewards = byr_perk_rewards($pdo);
+if (!isset($rewards[$rewardId])) {
     json_out(['error' => 'Esa recompensa no existe.', 'code' => 'unknown-reward'], 422);
 }
 
-$reward = BYR_PERK_REWARDS[$rewardId];
+$reward = $rewards[$rewardId];
 
 $pdo->beginTransaction();
 

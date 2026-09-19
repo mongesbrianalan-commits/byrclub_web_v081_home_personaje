@@ -495,6 +495,35 @@ function public_user(array $row): array
 }
 
 /**
+ * Un nombre convertido en identificador estable: "Wraps de Pollo" →
+ * "wraps-de-pollo". Lo usan los productos y las categorías del menú.
+ *
+ * Las vocales con tilde y la ñ se pasan a su letra pelada ANTES de bajar a
+ * minúsculas, y el mapa incluye las mayúsculas a propósito: strtolower()
+ * trabaja byte a byte y no toca la "Ñ", así que "Ñoquis" llegaba entero al
+ * preg_replace de abajo y salía como "oquis" — sin la primera letra.
+ *
+ * Devuelve '' si no queda nada utilizable (un nombre de solo emojis). Quien
+ * llama decide qué hacer con eso: no inventamos un identificador acá.
+ */
+function byr_slugify(string $name): string
+{
+    $map = [
+        'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u',
+        'à' => 'a', 'è' => 'e', 'ì' => 'i', 'ò' => 'o', 'ù' => 'u',
+        'ü' => 'u', 'ñ' => 'n', 'ç' => 'c',
+        'Á' => 'a', 'É' => 'e', 'Í' => 'i', 'Ó' => 'o', 'Ú' => 'u',
+        'À' => 'a', 'È' => 'e', 'Ì' => 'i', 'Ò' => 'o', 'Ù' => 'u',
+        'Ü' => 'u', 'Ñ' => 'n', 'Ç' => 'c',
+    ];
+
+    $slug = strtolower(strtr(trim($name), $map));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+
+    return trim((string) $slug, '-');
+}
+
+/**
  * Suma puntos y/o XP a un estado y deja el movimiento en el historial.
  * Es la forma "oficial" de otorgar puntos del lado del servidor (bienvenida,
  * referidos, admin). Modifica $state por referencia.

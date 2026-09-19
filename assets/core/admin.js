@@ -1698,6 +1698,182 @@
   }
 
   /* ---------------------------------------------------------
+     Costo de los cupones
+
+     Las estadísticas de arriba cuentan la plata que ENTRA. Ésta cuenta
+     la que no entra: cada vale que el cajero valida es comida que salió
+     sin cobrarse, y hasta ahora no figuraba en ningún lado.
+
+     Se muestran los emitidos y los canjeados por separado a propósito.
+     Los emitidos dicen cuánto promete el sistema; los canjeados, cuánto
+     costó de verdad. Bajar una probabilidad mueve el primero, y el
+     segundo solo en la proporción que la gente efectivamente use.
+  --------------------------------------------------------- */
+
+  const cupGrid   = document.querySelector("[data-cup-grid]");
+  const cupDetail = document.querySelector("[data-cup-detail]");
+  const cupPeriod = document.querySelector("[data-cup-period]");
+  const cupStatus = document.querySelector("[data-cup-status]");
+  let cupData  = null;
+  let cupRange = "today";
+
+  async function loadCouponStats() {
+    if (!cupGrid) return;
+    // La cocina no ve plata, igual que en las estadísticas de pedidos.
+    if (currentRole === "cocina") {
+      const block = cupGrid.closest(".admin-block");
+      if (block) block.hidden = true;
+      return;
+    }
+    setStatus(cupStatus, "Cargando…", "");
+    try {
+      cupData = await api("admin/coupon-stats.php", {});
+      renderCouponStats();
+      setStatus(cupStatus, "", "");
+    } catch (error) {
+      setStatus(cupStatus, error.message, "error");
+    }
+  }
+
+  function pct(part, whole) {
+    if (!whole) return null;
+    return Math.round((part / whole) * 100);
+  }
+
+  function renderCouponStats() {
+    if (!cupGrid || !cupData) return;
+    const p = (cupData.periods || {})[cupRange] || {};
+    const orders = p.orders || { total: 0, withCoupon: 0 };
+
+    // Cuántos de los emitidos terminaron usándose. Es el dato que dice si
+    // conviene tocar la emisión o el canje.
+    const useRate = pct(p.redeemed, p.issued);
+    const share   = pct(orders.withCoupon, orders.total);
+
+    const tiles = [
+      {
+        label: "🎟️ Emitidos",
+        n: fmt(p.issued),
+        sub: "vales que repartieron los juegos",
+        share: useRate === null ? "" : `${useRate}% terminó canjeándose`,
+      },
+      {
+        label: "✅ Canjeados",
+        n: fmt(p.redeemed),
+        sub: p.expired ? `${fmt(p.expired)} vencieron sin usarse` : "comida que salió sin cobrarse",
+      },
+      {
+        label: "💸 Precio de carta",
+        n: money(p.cost),
+        sub: "lo que se dejó de facturar",
+        cost: true,
+      },
+      {
+        label: "🥩 Costo estimado",
+        n: money(p.foodCost),
+        sub: `mercadería, al ${cupData.foodCostPct}% del precio`,
+        cost: true,
+      },
+      {
+        label: "🧾 Pedidos con cupón",
+        n: fmt(orders.withCoupon),
+        sub: `de ${fmt(orders.total)} pedidos`,
+        share: share === null ? "" : `${share}% de los pedidos`,
+      },
+    ];
+
+    cupGrid.innerHTML = "";
+    tiles.forEach((t) => {
+      const el = document.createElement("div");
+      el.className = "stat-tile"
+        + (t.cost ? " is-cost" : "")
+        + (Number(String(t.n).replace(/\D/g, "")) === 0 ? " is-empty" : "");
+      el.innerHTML = `
+        <div class="st-label">${t.label}</div>
+        <div class="st-n">${t.n}</div>
+        <div class="st-sub">${t.sub}</div>
+        ${t.share ? `<div class="st-share">${t.share}</div>` : ""}
+      `;
+      cupGrid.append(el);
+    });
+
+    renderCouponDetail(p);
+  }
+
+  function renderCouponDetail(p) {
+    if (!cupDetail) return;
+    const byPrize  = p.byPrize  || [];
+    const bySource = p.bySource || [];
+    const em       = cupData.emission || {};
+
+    // Cada cuánto sale un cupón en cada juego. Sale de los catálogos que
+    // sortean de verdad, así que es la probabilidad que está corriendo.
+    // Con coma decimal, como el resto de los números del panel.
+    const dec = (v, d) => Number(v || 0).toLocaleString("es-AR", {
+      minimumFractionDigits: d, maximumFractionDigits: d,
+    });
+    const rate = (v) => `${dec(Number(v || 0) * 100, 1)}%`;
+
+    const prizeRows = byPrize.map((r) => `
+      <tr class="${r.redeemed === 0 ? "is-zero" : ""}">
+        <td>${r.label}</td>
+        <td class="num">${fmt(r.issued)}</td>
+        <td class="num">${fmt(r.redeemed)}</td>
+        <td class="num">${r.price === null ? "—" : money(r.price)}</td>
+        <td class="num cost">${money(r.cost)}</td>
+      </tr>`).join("");
+
+    const sourceRows = bySource.map((r) => `
+      <tr class="${r.redeemed === 0 ? "is-zero" : ""}">
+        <td>${r.source}</td>
+        <td class="num">${fmt(r.issued)}</td>
+        <td class="num">${fmt(r.redeemed)}</td>
+        <td class="num cost">${money(r.cost)}</td>
+      </tr>`).join("");
+
+    cupDetail.innerHTML = `
+      <h3 class="cup-h3">Por premio</h3>
+      <table class="cup-table">
+        <thead><tr>
+          <th>Premio</th><th class="num">Emitidos</th><th class="num">Canjeados</th>
+          <th class="num">Precio</th><th class="num">Costo</th>
+        </tr></thead>
+        <tbody>${prizeRows || `<tr><td colspan="5">Ningún cupón en este período.</td></tr>`}</tbody>
+      </table>
+
+      <h3 class="cup-h3">Por origen</h3>
+      <table class="cup-table">
+        <thead><tr>
+          <th>De dónde salió</th><th class="num">Emitidos</th><th class="num">Canjeados</th><th class="num">Costo</th>
+        </tr></thead>
+        <tbody>${sourceRows || `<tr><td colspan="4">Ningún cupón en este período.</td></tr>`}</tbody>
+      </table>
+
+      <h3 class="cup-h3">Cada cuánto sale un cupón</h3>
+      <p class="cup-note">
+        Raspadita: <span class="cup-rate">${rate(em.scratch && em.scratch.coupon_rate)}</span> de las jugadas ·
+        Ruleta: <span class="cup-rate">${rate(em.wheel && em.wheel.coupon_rate)}</span> de los giros ·
+        un socio que juega a todos los días genera
+        <span class="cup-rate">${dec(em.per_active_day, 2)}</span> cupones por día.
+      </p>
+      ${p.unpriced ? `<p class="cup-warn">⚠️ ${fmt(p.unpriced)} cupones canjeados no tienen precio cargado: el costo real es mayor que el que se muestra.</p>` : ""}
+      ${cupData.hasExpiry === false ? `<p class="cup-warn">⚠️ Falta correr 2026-08-coupon-expiry.sql: no se puede saber cuáles vencieron sin usarse.</p>` : ""}
+    `;
+  }
+
+  if (cupPeriod) {
+    cupPeriod.querySelectorAll("[data-cup-range]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        cupRange = btn.getAttribute("data-cup-range");
+        cupPeriod.querySelectorAll("[data-cup-range]").forEach((b) => {
+          b.classList.toggle("is-active", b === btn);
+        });
+        renderCouponStats();
+      });
+    });
+  }
+
+  /* ---------------------------------------------------------
      Editar un pedido pendiente (agregar/cambiar/quitar ítems)
   --------------------------------------------------------- */
 
@@ -2195,6 +2371,7 @@
     loadEditableProducts(); // productos para el editor de pedidos pendientes
     loadOrders();
     loadOrderStats();
+    loadCouponStats();
     loadDeliveryDay();
   }
 
@@ -2205,13 +2382,13 @@
   const menuAdminList = document.querySelector("[data-menu-admin-list]");
   const menuAdminStatus = document.querySelector("[data-menu-admin-status]");
 
-  /* Las ocho categorias que acepta api/admin/product-save.php. Antes faltaban
-     promos, entradas y postres: esos productos mostraban el slug crudo. */
-  const CAT_LABEL = {
-    promos: "Promos", entradas: "Entradas", hamburguesas: "Hamburguesas",
-    combos: "Combos", papas: "Papas", postres: "Postres",
-    bebidas: "Bebidas", otros: "Otros"
-  };
+  /* Las categorías las manda el servidor (tabla menu_categories): el panel ya
+     no tiene una lista propia que se desactualice. Antes estaban escritas acá
+     y en otros tres lugares, así que agregar una era imposible desde el panel.
+     CAT_LABEL se rellena en cada carga con lo que llega. */
+  let CAT_LABEL = {};
+  let CATEGORIES = [];
+  let CATEGORIES_READY = false;
 
   /* Juegos de opciones disponibles, tal como los manda el servidor. */
   let OPTION_SETS = {};
@@ -2230,6 +2407,13 @@
          desplegable ni se muestra. */
       OPTION_SETS = data.optionSets || {};
       OPTION_SET_READY = Boolean(data.optionSetReady);
+
+      CATEGORIES = Array.isArray(data.categories) ? data.categories : [];
+      CATEGORIES_READY = Boolean(data.categoriesReady);
+      CAT_LABEL = {};
+      CATEGORIES.forEach((c) => { CAT_LABEL[c.slug] = c.name; });
+
+      renderCategories();
       renderMenuAdmin(data.products || []);
       setStatus(menuAdminStatus, "", "");
     } catch (error) {
@@ -2255,6 +2439,21 @@
 
   function renderMenuAdmin(products) {
     menuAdminList.innerHTML = "";
+
+    /* Sin bebidas cargadas, el popup de la hamburguesa cae en la lista que
+       trae el código y no hay forma de tocar esos precios desde acá. Conviene
+       decirlo, porque desde el panel no se nota: simplemente no aparecen. */
+    const drinksWarn = document.querySelector("[data-menu-drinks-warn]");
+    if (drinksWarn) {
+      const drinks = products.filter((p) => p.category === "bebidas").length;
+      drinksWarn.hidden = drinks > 0;
+      if (!drinks) {
+        drinksWarn.textContent = "⚠️ No hay ninguna bebida cargada, así que el popup"
+          + " de la hamburguesa está usando los precios que trae el código y no se"
+          + " pueden editar desde acá. Se arregla corriendo 2026-08-menu-bebidas.sql.";
+      }
+    }
+
     if (menuCount) {
       const enCarta = products.filter((p) => p.available).length;
       menuCount.textContent = products.length + " productos · " + enCarta + " en la carta";
@@ -2264,6 +2463,268 @@
       return;
     }
     products.forEach((p) => menuAdminList.append(productAdminRow(p)));
+  }
+
+  /* ---------------------------------------------------------
+     Categorías de la carta
+
+     Son las secciones que ve el cliente al pedir. Antes vivían en el ENUM de
+     products.category y en tres listas escritas a mano, así que agregar una
+     pedía un ALTER TABLE y un deploy. Ahora son una tabla y esto la edita.
+
+     El SLUG se arma una sola vez con el nombre y no vuelve a cambiar: es lo
+     que guardan los productos. Renombrar "Burgers" a "Hamburguesas" cambia
+     lo que ve el cliente y no mueve nada.
+  --------------------------------------------------------- */
+
+  const catList      = document.querySelector("[data-cat-list]");
+  const catCount     = document.querySelector("[data-cat-count]");
+  const catWarn      = document.querySelector("[data-cat-warn]");
+  const catStatus    = document.querySelector("[data-cat-admin-status]");
+  const catNewBtn    = document.querySelector("[data-cat-new]");
+  const catNewForm   = document.querySelector("[data-cat-new-form]");
+  const catNewName   = document.querySelector("[data-cat-new-name]");
+  const catNewEmoji  = document.querySelector("[data-cat-new-emoji]");
+  const catNewSort   = document.querySelector("[data-cat-new-sort]");
+  const catNewOptSet = document.querySelector("[data-cat-new-optionset]");
+  const catNewAvail  = document.querySelector("[data-cat-new-available]");
+  const catNewSave   = document.querySelector("[data-cat-new-save]");
+  const catNewCancel = document.querySelector("[data-cat-new-cancel]");
+  const catNewStatus = document.querySelector("[data-cat-new-status]");
+
+  /* Los juegos de opciones que puede abrir una categoría. 'none' no va: para
+     una categoría, "sin opciones" es no elegir nada. */
+  function fillCatOptionSets(select, selected) {
+    if (!select) return;
+    select.innerHTML = "";
+    Object.keys(OPTION_SETS).forEach((key) => {
+      if (key === "none") return;
+      const o = document.createElement("option");
+      o.value = key;
+      o.textContent = key === "" ? "Ninguna (va directo al carrito)" : OPTION_SETS[key];
+      if (key === (selected || "")) o.selected = true;
+      select.append(o);
+    });
+  }
+
+  function renderCategories() {
+    if (!catList) return;
+
+    if (catWarn) {
+      catWarn.hidden = CATEGORIES_READY;
+      if (!CATEGORIES_READY) {
+        catWarn.textContent = "⚠️ Todavía no se pueden editar las categorías:"
+          + " falta correr 2026-09-menu-categories.sql. Mientras tanto se usan"
+          + " las de siempre y la carta funciona igual.";
+      }
+    }
+    if (catNewBtn) catNewBtn.disabled = !CATEGORIES_READY;
+
+    if (catCount) {
+      const visibles = CATEGORIES.filter((c) => c.available).length;
+      catCount.textContent = CATEGORIES.length + " categorías · " + visibles + " en la carta";
+    }
+
+    catList.innerHTML = "";
+    CATEGORIES.forEach((cat) => catList.append(categoryRow(cat)));
+  }
+
+  function categoryRow(cat) {
+    const row = document.createElement("div");
+    row.className = "cat-row" + (cat.available ? "" : " is-off");
+
+    const emoji = document.createElement("span");
+    emoji.className = "cat-row__emoji";
+    emoji.textContent = cat.emoji || "🍴";
+
+    const name = document.createElement("span");
+    name.className = "cat-row__name";
+    name.textContent = cat.name;
+
+    const meta = document.createElement("span");
+    meta.className = "cat-row__meta";
+    meta.textContent = cat.products + (cat.products === 1 ? " producto" : " productos")
+      + (cat.available ? "" : " · oculta");
+
+    const slug = document.createElement("span");
+    slug.className = "cat-row__slug";
+    slug.textContent = cat.slug;
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "cat-btn";
+    editBtn.textContent = "✏️ Editar";
+    editBtn.disabled = !CATEGORIES_READY;
+
+    row.append(emoji, name, meta, slug, editBtn);
+
+    /* El panel de edición, oculto hasta que toquen el lápiz. */
+    const panel = document.createElement("div");
+    panel.className = "cat-edit";
+    panel.hidden = true;
+
+    const fName  = catField("Nombre", "text", cat.name);
+    const fEmoji = catField("Emoji", "text", cat.emoji || "");
+    const fSort  = catField("Orden", "number", String(cat.sort));
+    fEmoji.input.maxLength = 4;
+    fSort.input.step = "10";
+
+    const fSet = document.createElement("label");
+    fSet.className = "ma-field";
+    const fSetSpan = document.createElement("span");
+    fSetSpan.textContent = "¿Qué opciones abren sus productos?";
+    const fSetSel = document.createElement("select");
+    fillCatOptionSets(fSetSel, cat.option_set || "");
+    fSet.append(fSetSpan, fSetSel);
+
+    panel.append(fName.field, fEmoji.field, fSort.field, fSet);
+
+    const actions = document.createElement("div");
+    actions.className = "cat-actions";
+
+    const avail = document.createElement("label");
+    avail.className = "ma-avail";
+    const availBox = document.createElement("input");
+    availBox.type = "checkbox";
+    availBox.checked = Boolean(cat.available);
+    avail.append(availBox, document.createTextNode(" Visible en la carta"));
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "ma-save";
+    saveBtn.textContent = "Guardar";
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "cat-btn danger";
+    delBtn.textContent = "🗑 Borrar";
+    /* "Otros" es el cajón de los productos huérfanos y no se borra. Una con
+       productos tampoco: primero hay que moverlos. El servidor lo vuelve a
+       comprobar; esto es para que el botón no prometa algo que va a fallar. */
+    delBtn.disabled = cat.slug === "otros" || cat.products > 0;
+    delBtn.title = cat.slug === "otros"
+      ? "\"Otros\" no se puede borrar: es donde caen los productos sin categoría."
+      : (cat.products > 0 ? "Movés sus productos a otra categoría y recién ahí se puede borrar." : "");
+
+    const status = document.createElement("p");
+    status.className = "cat-status";
+
+    actions.append(avail, saveBtn, delBtn);
+    panel.append(actions, status);
+    row.append(panel);
+
+    editBtn.addEventListener("click", () => {
+      panel.hidden = !panel.hidden;
+      editBtn.textContent = panel.hidden ? "✏️ Editar" : "✕ Cerrar";
+    });
+
+    saveBtn.addEventListener("click", async () => {
+      saveBtn.disabled = true;
+      status.className = "cat-status";
+      status.textContent = "Guardando…";
+      try {
+        await api("admin/category-save.php", {
+          slug: cat.slug,
+          name: fName.input.value.trim(),
+          emoji: fEmoji.input.value.trim(),
+          sort: Number(fSort.input.value) || 0,
+          optionSet: fSetSel.value,
+          available: availBox.checked,
+        });
+        await loadMenuAdmin();
+      } catch (error) {
+        status.className = "cat-status error";
+        status.textContent = error.message;
+        saveBtn.disabled = false;
+      }
+    });
+
+    delBtn.addEventListener("click", async () => {
+      if (!window.confirm(`¿Borrar la categoría "${cat.name}"? No se puede deshacer.`)) return;
+      delBtn.disabled = true;
+      status.className = "cat-status";
+      status.textContent = "Borrando…";
+      try {
+        await api("admin/category-delete.php", { slug: cat.slug });
+        await loadMenuAdmin();
+      } catch (error) {
+        status.className = "cat-status error";
+        status.textContent = error.message;
+        delBtn.disabled = false;
+      }
+    });
+
+    return row;
+  }
+
+  /* Un campo del panel de edición, con la misma pinta que los del menú. */
+  function catField(label, type, value) {
+    const field = document.createElement("label");
+    field.className = "ma-field";
+    const span = document.createElement("span");
+    span.textContent = label;
+    const input = document.createElement("input");
+    input.type = type;
+    input.value = value;
+    field.append(span, input);
+    return { field, input };
+  }
+
+  function toggleCatForm(open) {
+    if (!catNewForm) return;
+    fillCatOptionSets(catNewOptSet, "");
+    catNewForm.hidden = !open;
+    catNewBtn.textContent = open ? "✕ Cerrar" : "➕ Nueva categoría";
+    if (open) {
+      catNewName.focus();
+    } else {
+      catNewName.value = "";
+      catNewEmoji.value = "";
+      catNewSort.value = "";
+      catNewAvail.checked = true;
+      catNewStatus.textContent = "";
+      catNewStatus.className = "cat-status";
+    }
+  }
+
+  if (catNewBtn) {
+    catNewBtn.addEventListener("click", () => toggleCatForm(catNewForm.hidden));
+  }
+  if (catNewCancel) {
+    catNewCancel.addEventListener("click", () => toggleCatForm(false));
+  }
+  if (catNewSave) {
+    catNewSave.addEventListener("click", async () => {
+      const name = catNewName.value.trim();
+      if (!name) {
+        catNewStatus.className = "cat-status error";
+        catNewStatus.textContent = "Poné un nombre.";
+        return;
+      }
+      catNewSave.disabled = true;
+      catNewStatus.className = "cat-status";
+      catNewStatus.textContent = "Creando…";
+
+      const body = {
+        name,
+        emoji: catNewEmoji.value.trim(),
+        optionSet: catNewOptSet ? catNewOptSet.value : "",
+        available: catNewAvail.checked,
+      };
+      /* Sin orden, el servidor la manda al final de la carta. */
+      if (catNewSort.value !== "") body.sort = Number(catNewSort.value) || 0;
+
+      try {
+        await api("admin/category-save.php", body);
+        toggleCatForm(false);
+        await loadMenuAdmin();
+      } catch (error) {
+        catNewStatus.className = "cat-status error";
+        catNewStatus.textContent = error.message;
+      } finally {
+        catNewSave.disabled = false;
+      }
+    });
   }
 
   /* =========================================================
@@ -2288,14 +2749,21 @@
       });
     }
 
-    if (!newCategory || newCategory.options.length) return;
-    Object.keys(CAT_LABEL).forEach((slug) => {
+    /* Se rearma cada vez: si acaban de crear una categoría, tiene que estar
+       en la lista sin recargar la página. */
+    if (!newCategory) return;
+    newCategory.innerHTML = "";
+    CATEGORIES.forEach((c) => {
       const o = document.createElement("option");
-      o.value = slug;
-      o.textContent = CAT_LABEL[slug];
+      o.value = c.slug;
+      /* Se marca la oculta igual que en el select de edición: si no, se
+         puede crear un producto ahí adentro y no entender por qué no
+         aparece en la carta. */
+      o.textContent = (c.emoji ? c.emoji + " " : "") + c.name
+        + (c.available ? "" : " (oculta)");
       newCategory.append(o);
     });
-    newCategory.value = "hamburguesas";
+    newCategory.value = CAT_LABEL.hamburguesas ? "hamburguesas" : (CATEGORIES[0]?.slug || "otros");
   }
 
   function clearNewForm() {
@@ -2306,7 +2774,7 @@
     newSort.value = "";
     newDesc.value = "";
     newAvailable.checked = true;
-    newCategory.value = "hamburguesas";
+    fillCategorySelect();   // deja el desplegable al día y elige el default
     newStatus.textContent = "";
   }
 
@@ -2402,13 +2870,26 @@
 
   function categorySelect(selected) {
     const sel = document.createElement("select");
-    Object.keys(CAT_LABEL).forEach((slug) => {
+    CATEGORIES.forEach((c) => {
       const o = document.createElement("option");
-      o.value = slug;
-      o.textContent = CAT_LABEL[slug];
-      if (slug === selected) o.selected = true;
+      o.value = c.slug;
+      o.textContent = (c.emoji ? c.emoji + " " : "") + c.name
+        + (c.available ? "" : " (oculta)");
+      if (c.slug === selected) o.selected = true;
       sel.append(o);
     });
+
+    /* El producto puede estar en una categoría que ya no existe (la
+       borraron). Si no la agregáramos, el select mostraría la primera de la
+       lista y guardar lo movería sin que nadie lo pidiera. */
+    if (selected && !CATEGORIES.some((c) => c.slug === selected)) {
+      const o = document.createElement("option");
+      o.value = selected;
+      o.textContent = selected + " (categoría borrada)";
+      o.selected = true;
+      sel.prepend(o);
+    }
+
     return sel;
   }
 

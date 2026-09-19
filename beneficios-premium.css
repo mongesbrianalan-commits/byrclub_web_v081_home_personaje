@@ -164,3 +164,34 @@ body.byr-guest .member-guest-cta > span {
 @media (max-width: 560px) {
   .perks-grid { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   Aviso de precios (transición)
+   ---------------------------------------------------------
+   Se muestra arriba de la vitrina cuando hay algo que avisar: el texto
+   lo manda api/perks/rewards.php y lo pinta beneficios.js. Sin aviso, el
+   <aside> queda con [hidden] y no ocupa lugar.
+
+   Tiene que leerse como una nota del local, no como un error: por eso va
+   en el amarillo de la marca y no en rojo. Nadie hizo nada mal.
+========================================================= */
+.price-notice {
+  max-width: 1320px;
+  margin: 0 auto 30px;
+  padding: 18px 22px;
+  border-radius: 20px;
+  background: rgba(255, 213, 31, .09);
+  border: 2px solid rgba(255, 213, 31, .35);
+  color: #fff6d9;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.price-notice strong { color: var(--yellow); }
+
+.price-notice p { margin: 0; }
+.price-notice p + p { margin-top: 8px; opacity: .85; font-weight: 700; font-size: .94rem; }
+
+@media (max-width: 720px) {
+  .price-notice { margin-left: 16px; margin-right: 16px; padding: 15px 17px; font-size: .95rem; }
+}

@@ -1,9 +1,31 @@
 # Desde dónde arrancar
 
-Última sesión: **27 de agosto de 2026**, desde la PC de casa.
+Última sesión: **19 de septiembre de 2026**, desde la PC de casa.
 Todo lo de abajo ya está en GitHub y desplegado en byrclub.com.
 
 Antes que nada, al cambiar de máquina: **`git pull`**.
+
+---
+
+## ⚠️ Migración pendiente: categorías del menú editables
+
+Hasta que no se corra, la pestaña Menú muestra las categorías pero **no deja
+crear ni editar ninguna** (te avisa con un cartel). La carta sigue
+funcionando igual que siempre con las ocho de toda la vida.
+
+Está en `api/migrations/2026-09-menu-categories.sql`. Se pega entera en
+phpMyAdmin → base `u932188446_byrclub` → pestaña SQL.
+
+Hace tres cosas: crea la tabla `menu_categories`, la siembra con las ocho
+categorías actuales (mismos nombres, emojis y orden que tenía
+`api/menu.php`) y convierte `products.category` de ENUM a VARCHAR.
+
+**Ese último paso es el que importa**: el ENUM rechazaba cualquier valor que
+no estuviera en su lista, así que guardar un producto en una categoría nueva
+fallaba en la base. Los productos que ya existen no se tocan.
+
+**Correrla no cambia nada de lo que se ve.** Lo único que habilita es poder
+crear categorías desde el panel.
 
 ---
 
@@ -95,6 +117,337 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 > El trabajo del estado en el servidor no necesitó migración: lo que agregó
 > (`missions`, `progress`) vive dentro del JSON de `users.state`.
+
+---
+
+## Sesión del 19 de septiembre de 2026 (desde casa) — parte 4
+
+### Las categorías de la carta se crean desde el panel
+
+Agregar una categoría nueva (unos Wraps, una sección de veggie) era
+imposible sin tocar código. Estaban escritas en **cuatro lugares**:
+
+- el **ENUM** de `products.category` en la base,
+- la lista de nombres y orden de `api/menu.php`,
+- el whitelist de `api/admin/product-save.php`,
+- y el desplegable del panel.
+
+Y el ENUM era el muro: rechazaba cualquier valor que no conociera, así que
+ni siquiera alcanzaba con tocar los otros tres.
+
+Ahora son una tabla. En la pestaña **Menú** hay un bloque nuevo,
+**🗂️ Categorías de la carta**, arriba del de productos:
+
+- **➕ Nueva categoría** — nombre, emoji, orden y qué opciones abren sus
+  productos. Sin orden indicado va al final de la carta.
+- **✏️ Editar** en cada una — renombrar, cambiar el emoji, reordenar,
+  ocultarla de la carta o borrarla.
+- Cada fila muestra **cuántos productos tiene**.
+
+Una vez creada, aparece sola en el desplegable de categoría del alta y la
+edición de productos.
+
+**Renombrar no mueve nada.** El identificador interno se arma una sola vez
+con el nombre y no vuelve a cambiar: podés pasar "Burgers" a "Hamburguesas
+Premium" cuando quieras y los productos se quedan donde están.
+
+**Dos cosas no se pueden borrar, a propósito:**
+
+- Una categoría **con productos**. Primero los movés a otra (o los sacás de
+  la carta). Si no, quedarían apuntando a algo que no existe.
+- **"Otros"**. Es el cajón donde caen los productos cuya categoría
+  desapareció. Sin ese cajón, un producto huérfano no tendría dónde
+  mostrarse — y un producto disponible que se deja de vender en silencio es
+  peor que uno mal clasificado.
+
+**Ocultar una categoría** la saca de la carta con sus productos, sin
+borrar nada. Sirve para una sección de temporada.
+
+**Lo que ve el cliente ya era dinámico**: `pedir.html` y el mostrador
+dibujan las categorías que les manda la API, así que no hubo que tocarlos.
+
+### Un bug que apareció probando
+
+`byr_slugify()` (el que arma el identificador desde el nombre) se comía la
+primera letra de cualquier nombre que empezara con mayúscula acentuada:
+**"Ñoquis" quedaba como `oquis`**. `strtolower()` de PHP trabaja byte a
+byte y no baja la "Ñ", así que no entraba en el mapa de acentos y el filtro
+de después la borraba.
+
+Estaba **también en los productos** (`product-save.php` tenía su propia
+copia de esa lógica). Ahora hay una sola función en `helpers.php` que usan
+los dos, y el mapa incluye las mayúsculas.
+
+### Por dentro
+
+- `api/migrations/2026-09-menu-categories.sql` (nueva) — la tabla, las ocho
+  de siempre sembradas, y el ENUM a VARCHAR.
+- `api/menu-categories.php` (nuevo) — lo único que lee las categorías. Trae
+  de respaldo las ocho escritas, para el rato entre desplegar el código y
+  correr la migración: sin eso la carta se quedaría sin secciones.
+- `api/admin/category-save.php` y `category-delete.php` (nuevos).
+- `api/menu.php` — nombre y orden salen de la tabla.
+- `api/admin/product-save.php` — valida contra la tabla, no contra una lista.
+- `api/menu-options.php` — qué opciones abre cada categoría también sale de
+  la tabla (antes estaba escrito que solo 'hamburguesas' abría el popup, así
+  que una categoría nueva nacía sin opciones y no había cómo dárselas).
+- `api/helpers.php` — `byr_slugify()`, compartida.
+- `admin.html` + `assets/core/admin.js` — el bloque nuevo. El panel ya no
+  tiene su propia lista de categorías: usa la que manda el servidor.
+
+---
+
+## Sesión del 19 de septiembre de 2026 (desde casa) — parte 3
+
+### Las bebidas del popup ahora se editan desde el panel
+
+Había **dos listas de bebidas** con los mismos precios anotados dos veces:
+
+| | Dónde vivía | ¿Editable desde admin? |
+|---|---|---|
+| Bebidas sueltas del mostrador | tabla `products` (`beb-coca`…) | ✅ sí |
+| Bebidas del popup de la hamburguesa | `api/menu-options.php`, a mano | ❌ **no** |
+
+Cambiar la Coca en la pestaña Menú corregía el mostrador y **dejaba el popup
+como estaba**: la misma bebida se cobraba distinto según cómo la pidieras, y
+la única forma de emparejarlas era tocar código y desplegar.
+
+**Ahora el popup lee la carta.** Cambiás la Coca en la pestaña Menú y cambia
+en todos lados:
+
+- el **mostrador** (venta suelta),
+- el **popup de la hamburguesa** ("¿Sumás bebida?"),
+- y el **precio en puntos** del premio Coca-Cola en Beneficios, que desde la
+  parte 2 sale de la carta.
+
+**Destildar una bebida la saca del popup.** Si se acabó la Pepsi, la
+destildás en el panel y deja de ofrecerse, en vez de venderla y tener que
+avisar después. El orden también lo manda el `sort` de la carta.
+
+**Una bebida nueva aparece sola**: la cargás en el panel con categoría
+Bebidas y ya se ofrece en el popup, sin tocar nada más.
+
+**Papas y adicionales siguen en `menu-options.php`**, a mano, porque no son
+productos de la carta sino modificaciones de la hamburguesa. La lista de
+bebidas escrita en el archivo quedó como **respaldo**: se usa solo si no hay
+ninguna bebida cargada, para que el popup no salga vacío.
+
+En la pestaña Menú hay ahora dos avisos: uno que recuerda que las bebidas
+mandan en los dos lados, y otro que salta **solo si no hay bebidas
+cargadas** — porque desde el panel eso no se nota, simplemente no aparecen.
+Si lo ves, falta correr `2026-08-menu-bebidas.sql`.
+
+**No necesita migración** (salvo esa, si nunca se corrió).
+
+### Por dentro
+
+- `api/menu-options.php` — `byr_drink_options()` arma el grupo de bebida
+  desde `products`. Los ids de opción (`coca`, `agua-sin-gas`…) se mapean a
+  mano contra el slug, porque los manda el navegador al pedir y no pueden
+  cambiar de un día para el otro; dos no siguen el patrón (`beb-agua` es
+  `agua-sin-gas`, `beb-imperial` es `imperial-golden`).
+- `admin.html` + `assets/core/admin.js` — los dos avisos.
+
+---
+
+## Sesión del 19 de septiembre de 2026 (desde casa) — parte 2
+
+### Los premios ahora cuestan lo que valen en la carta
+
+El catálogo de Beneficios era la puerta grande por donde salían
+hamburguesas, y los precios no tenían relación entre sí. Dividiendo puntos
+por precio de carta:
+
+| Premio | Puntos | Carta | Puntos por peso |
+|---|---|---|---|
+| Doble Cheese | 2.500 | $16.000 | **0,16** ← lo más barato |
+| Cheese Burger | 1.800 | $11.000 | **0,16** |
+| Papas | 900 | $4.000 | 0,23 |
+| Combo Toddy | 8.000 | $14.000 | 0,57 |
+
+Una hamburguesa salía **más barata que una porción de papas** por peso de
+comida regalada.
+
+**Ahora el precio se calcula: 0,5 puntos por cada peso de la carta.** Mismo
+esfuerzo por peso de comida para todos los premios.
+
+| Premio | Carta | Antes | Ahora |
+|---|---|---|---|
+| Coca-Cola 500cc | $2.800 | 500 | **1.400** |
+| Porción de papas | $4.000 | 900 | **2.000** |
+| Cheese Burger | $11.000 | 1.800 | **5.500** |
+| Doble Cheese | $16.000 | 2.500 | **8.000** |
+| Cuarto de BYR | $16.500 | 3.000 | **8.300** |
+| Americana | $18.000 | 3.800 | **9.000** |
+| Cannons | $19.500 | 4.500 | **9.800** |
+| La Triple | $21.500 | 5.200 | **10.800** |
+| Combo Toddy | $14.000 | 8.000 | **14.000** |
+
+El **Combo Toddy vale el doble** de lo que dice la carta a propósito: es el
+premio máximo del que vive toda la página, no una compra más. Los
+**niveles requeridos no se tocaron**.
+
+Una Cheese Burger pasó de **4,7 a 14,5 días** de juego diario.
+
+**Lo importante: cuando subas el menú, los puntos suben solos.** El precio
+ya no está escrito en ningún lado — sale del producto de la carta. Antes
+el mismo número vivía en cuatro lugares (el servidor, el `data-points`, el
+"1.800 pts" de la tarjeta y el texto del botón) y el día que se cambiaba
+uno y se olvidaba otro, el socio veía un precio y se le cobraba otro.
+
+Para mover **todo el catálogo de una**, en `api/config.php` del servidor:
+
+```php
+'perk_points_per_amount' => 0.5,   // 0.6 encarece todo un 20%
+```
+
+Sin desplegar, efecto al instante.
+
+### El aviso de transición
+
+El socio que venía juntando para una Cheese Burger pasó de necesitar 1.800
+a 5.500. Arriba de la vitrina aparece ahora un recuadro que lo explica:
+
+> 📣 **Cambiaron los precios de los premios**
+> Ahora cada premio cuesta según lo que vale en la carta, así que la comida
+> más cara es la que más puntos pide. Los puntos que tenías siguen siendo
+> tuyos: no se venció ni se perdió ninguno.
+
+**Se apaga solo el 27 de septiembre**, no hay que acordarse de sacarlo.
+Para cortarlo antes o estirarlo, en `api/config.php`:
+
+```php
+'perk_price_notice_until' => '',          // lo saca al instante
+'perk_price_notice_until' => '2026-10-05', // lo estira
+```
+
+### Por dentro
+
+- `api/perks/catalog.php` — los precios se calculan desde `products`. Se
+  escriben a mano solo el nivel, de qué producto sale cada premio y el
+  `factor` del Combo Toddy. Hay precios de respaldo por si la carta no
+  está cargada: sin ellos un premio quedaría en 0 puntos y se canjearía
+  gratis.
+- `api/perks/rewards.php` (nuevo) — la lista de precios para la página.
+- `beneficios.js` — pide los precios al servidor y los pinta. Si la
+  consulta falla se queda con los del HTML (que son los mismos), porque
+  vale más un precio de hace un rato que una tarjeta vacía. El que cobra
+  sigue siendo el servidor.
+- `beneficios.html` — los precios que trae de fábrica, actualizados.
+- `api/coupon-cost.php` — el mapa premio→producto ya no está duplicado:
+  los premios de Beneficios los toma del catálogo.
+
+### Lo que sigue sin tocarse
+
+Subir el catálogo **alarga el camino para todos por igual, incluido el que
+compra**. La causa de fondo sigue siendo el otro lado del mostrador:
+
+- **Se ganan ~380 puntos por día jugando gratis** (raspadita, ruleta,
+  memotest y tres misiones) contra **80 por un pedido de $8.000**. El 95%
+  de los puntos no viene de comprar. Con los precios nuevos, una Cheese
+  Burger son 14 días de juego o **$550.000 de compra**: la brecha no se
+  cerró, se agrandó.
+- La **ruleta** sigue con 33% de cupones.
+- **Conseguir un cupón paga puntos** (misión de 75, logros de 100 y 500).
+- No hay **tope diario** de hamburguesas gratis.
+
+Con el bloque "Qué cuestan los cupones" ya se puede ver, después de una
+semana, si esto alcanzó o si hay que ir por el lado de los juegos.
+
+---
+
+## Sesión del 19 de septiembre de 2026 (desde casa)
+
+### Los cupones ya se pueden medir (y la hamburguesa de la raspadita salía 5 veces más seguido de lo que convenía)
+
+El disparador: **uno de cada cinco pedidos venía con cupón**. La sensación era
+que se estaban regalando demasiadas hamburguesas, pero no había con qué
+confirmarlo: el bloque "Delivery vs. retiro" cuenta la plata que **entra**, y
+un pedido con "Cheese Burger gratis" figuraba igual que uno pago. Nadie
+llevaba la cuenta de lo que sale por la puerta sin cobrarse.
+
+**Primero medir.** En el panel, pestaña **Pedidos**, hay ahora un bloque
+**🎟️ Qué cuestan los cupones**, con los mismos tres períodos que las
+estadísticas de arriba (hoy / 7 días / desde siempre):
+
+```
+🎟️ Emitidos        42     vales que repartieron los juegos
+                          31% terminó canjeándose
+✅ Canjeados        13     4 vencieron sin usarse
+💸 Precio de carta  $74.300   lo que se dejó de facturar
+🥩 Costo estimado   $26.005   mercadería, al 35% del precio
+🧾 Pedidos c/cupón   9     de 46 pedidos — 20% de los pedidos
+```
+
+Abajo, el detalle **por premio** (emitidos, canjeados, precio y costo) y **por
+origen** (Raspadita, Ruleta, Canje de puntos, Miércoles de socio, Cumpleaños),
+ordenados por lo que más cuesta.
+
+**Emitidos y canjeados se cuentan por separado a propósito.** Los emitidos
+dicen cuánto *promete* el sistema; los canjeados, cuánto *costó*. Muchos vales
+vencen a las 24hs sin usarse, así que bajar una probabilidad a la mitad **no**
+baja el costo a la mitad. Sin esa diferencia a la vista es fácil tocar de más.
+
+Los precios **no están escritos en ningún lado**: salen del producto real de la
+carta (`papas-individual`, `simple-cheddar`, etc.). Si mañana sube la
+hamburguesa en el panel de Menú, sube sola acá también. El costo de mercadería
+sí es una estimación —35% del precio de carta— y se corrige en `api/config.php`
+del servidor cuando tengas el número propio:
+
+```php
+'coupon_food_cost_pct' => 35,   // qué % del precio de carta es mercadería
+'coupon_costs' => [             // opcional: precio a mano de un premio suelto
+    'surprise' => 5000,
+],
+```
+
+Un premio sin precio cargado no rompe nada: se cuenta igual y el bloque avisa
+con **"⚠️ N cupones canjeados no tienen precio cargado"**, así se nota que
+falta mapearlo en vez de mostrar un costo más bajo del real.
+
+**Después, el primer ajuste.** La **Cheese Burger gratis de la raspadita**
+pesaba 5 sobre 105: **una hamburguesa entera cada 21 raspaditas**, por cara,
+sin gastar un punto. Era el premio más caro de largo —$11.000 contra los
+$4.000 de las papas y los $2.800 de la bebida—. Ahora **pesa 1: una cada 105**.
+
+El golpe de suerte sigue existiendo, que es lo que engancha, pero cuesta cinco
+veces menos. Los 4 de peso que se le sacaron fueron a **"50 puntos"**, no a los
+otros cupones: papas, bebida y sorpresa quedaron **exactamente igual que
+antes**. Donde antes salía una hamburguesa, ahora salen puntos.
+
+| | antes | ahora |
+|---|---|---|
+| Cheese Burger gratis | 4,76% (1 cada 21) | **0,95% (1 cada 105)** |
+| Papas / bebida / sorpresa | 33,3% | 33,3% (igual) |
+| Cupones sobre el total | 38,1% | **34,3%** |
+
+**No necesita migración ni tocar config.php**: con el deploy ya queda.
+
+**Lo que todavía no se tocó**, y conviene mirar con el bloque nuevo después de
+una semana de datos:
+
+- La **ruleta** sigue con 4 de 12 casilleros en cupones (**33%**). Entre las
+  dos, un socio que juega todos los días genera **0,71 cupones por día** —
+  casi 5 por semana.
+- Los **puntos se imprimen mucho más rápido de lo que se venden**: comprando se
+  gana 1 punto cada $100 (un pedido de $8.000 = 80 puntos), y jugando gratis se
+  sacan ~380 por día entre raspadita, ruleta, memotest y las tres misiones. Un
+  día de jugar rinde como $38.000 de compra.
+- **Conseguir un cupón paga puntos**: la misión "Cazador de premios" da 75 por
+  sacar un premio, y los logros "Premio desbloqueado" y "Coleccionista" otros
+  100 y 500. Los puntos que se ganan sacando cupones compran el próximo.
+- No hay **tope diario** de hamburguesas gratis para todo el local.
+
+### Por dentro
+
+- `api/coupon-cost.php` (nuevo) — qué vale cada premio y cada cuánto sale.
+  Los precios salen de la tabla `products`; las probabilidades, de los
+  catálogos que sortean de verdad.
+- `api/admin/coupon-stats.php` (nuevo) — el endpoint del bloque.
+- `api/roulette/catalog.php` (nuevo) — la rueda y sus pesos, que estaban
+  sueltos dentro de `spin.php`. Se sacaron para que el reporte los lea de la
+  misma fuente que el juego, en vez de copiarlos y que queden desfasados.
+- `api/scratch/catalog.php` — el peso de la Cheese Burger.
 
 ---
 
