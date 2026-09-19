@@ -29,6 +29,7 @@
  *   options  [ { id, name, price(delta en $) } ]
  */
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/menu-categories.php';
 
 /**
  * Qué id de opción le corresponde a cada bebida de la carta.
@@ -243,11 +244,22 @@ function byr_option_set_select(PDO $pdo): string
     return byr_product_option_set_ready($pdo) ? 'option_set' : 'NULL AS option_set';
 }
 
-/** Qué set usa cada categoría, cuando el producto no tiene uno propio. */
+/**
+ * Qué set usa cada categoría, cuando el producto no tiene uno propio.
+ *
+ * Lo decide la categoría en el panel. Antes estaba escrito acá
+ * ('hamburguesas' abría el popup y nada más), así que una categoría nueva
+ * nacía sin opciones y no había forma de dárselas sin tocar código.
+ *
+ * Una categoría que no exista, o un set inventado, no abren nada: es el
+ * comportamiento de siempre para todo lo que no sea hamburguesa.
+ */
 function byr_option_set_for_category(string $category): ?string
 {
-    // Las burgers individuales abren el popup. Las promos ya vienen armadas.
-    return $category === 'hamburguesas' ? 'burger' : null;
+    $cat = byr_menu_categories(db())[$category] ?? null;
+    $set = $cat['option_set'] ?? null;
+
+    return ($set !== null && isset(byr_option_sets()[$set])) ? $set : null;
 }
 
 /**

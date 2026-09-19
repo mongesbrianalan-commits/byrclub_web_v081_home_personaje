@@ -7,6 +7,28 @@ Antes que nada, al cambiar de máquina: **`git pull`**.
 
 ---
 
+## ⚠️ Migración pendiente: categorías del menú editables
+
+Hasta que no se corra, la pestaña Menú muestra las categorías pero **no deja
+crear ni editar ninguna** (te avisa con un cartel). La carta sigue
+funcionando igual que siempre con las ocho de toda la vida.
+
+Está en `api/migrations/2026-09-menu-categories.sql`. Se pega entera en
+phpMyAdmin → base `u932188446_byrclub` → pestaña SQL.
+
+Hace tres cosas: crea la tabla `menu_categories`, la siembra con las ocho
+categorías actuales (mismos nombres, emojis y orden que tenía
+`api/menu.php`) y convierte `products.category` de ENUM a VARCHAR.
+
+**Ese último paso es el que importa**: el ENUM rechazaba cualquier valor que
+no estuviera en su lista, así que guardar un producto en una categoría nueva
+fallaba en la base. Los productos que ya existen no se tocan.
+
+**Correrla no cambia nada de lo que se ve.** Lo único que habilita es poder
+crear categorías desde el panel.
+
+---
+
 ## ⚠️ Migración pendiente: opciones por producto
 
 Hasta que no se corra, la pestaña Menú **no muestra** el desplegable de
@@ -95,6 +117,83 @@ Y las de la sesión del local ya estaban: `2026-08-print-jobs.sql` y
 
 > El trabajo del estado en el servidor no necesitó migración: lo que agregó
 > (`missions`, `progress`) vive dentro del JSON de `users.state`.
+
+---
+
+## Sesión del 19 de septiembre de 2026 (desde casa) — parte 4
+
+### Las categorías de la carta se crean desde el panel
+
+Agregar una categoría nueva (unos Wraps, una sección de veggie) era
+imposible sin tocar código. Estaban escritas en **cuatro lugares**:
+
+- el **ENUM** de `products.category` en la base,
+- la lista de nombres y orden de `api/menu.php`,
+- el whitelist de `api/admin/product-save.php`,
+- y el desplegable del panel.
+
+Y el ENUM era el muro: rechazaba cualquier valor que no conociera, así que
+ni siquiera alcanzaba con tocar los otros tres.
+
+Ahora son una tabla. En la pestaña **Menú** hay un bloque nuevo,
+**🗂️ Categorías de la carta**, arriba del de productos:
+
+- **➕ Nueva categoría** — nombre, emoji, orden y qué opciones abren sus
+  productos. Sin orden indicado va al final de la carta.
+- **✏️ Editar** en cada una — renombrar, cambiar el emoji, reordenar,
+  ocultarla de la carta o borrarla.
+- Cada fila muestra **cuántos productos tiene**.
+
+Una vez creada, aparece sola en el desplegable de categoría del alta y la
+edición de productos.
+
+**Renombrar no mueve nada.** El identificador interno se arma una sola vez
+con el nombre y no vuelve a cambiar: podés pasar "Burgers" a "Hamburguesas
+Premium" cuando quieras y los productos se quedan donde están.
+
+**Dos cosas no se pueden borrar, a propósito:**
+
+- Una categoría **con productos**. Primero los movés a otra (o los sacás de
+  la carta). Si no, quedarían apuntando a algo que no existe.
+- **"Otros"**. Es el cajón donde caen los productos cuya categoría
+  desapareció. Sin ese cajón, un producto huérfano no tendría dónde
+  mostrarse — y un producto disponible que se deja de vender en silencio es
+  peor que uno mal clasificado.
+
+**Ocultar una categoría** la saca de la carta con sus productos, sin
+borrar nada. Sirve para una sección de temporada.
+
+**Lo que ve el cliente ya era dinámico**: `pedir.html` y el mostrador
+dibujan las categorías que les manda la API, así que no hubo que tocarlos.
+
+### Un bug que apareció probando
+
+`byr_slugify()` (el que arma el identificador desde el nombre) se comía la
+primera letra de cualquier nombre que empezara con mayúscula acentuada:
+**"Ñoquis" quedaba como `oquis`**. `strtolower()` de PHP trabaja byte a
+byte y no baja la "Ñ", así que no entraba en el mapa de acentos y el filtro
+de después la borraba.
+
+Estaba **también en los productos** (`product-save.php` tenía su propia
+copia de esa lógica). Ahora hay una sola función en `helpers.php` que usan
+los dos, y el mapa incluye las mayúsculas.
+
+### Por dentro
+
+- `api/migrations/2026-09-menu-categories.sql` (nueva) — la tabla, las ocho
+  de siempre sembradas, y el ENUM a VARCHAR.
+- `api/menu-categories.php` (nuevo) — lo único que lee las categorías. Trae
+  de respaldo las ocho escritas, para el rato entre desplegar el código y
+  correr la migración: sin eso la carta se quedaría sin secciones.
+- `api/admin/category-save.php` y `category-delete.php` (nuevos).
+- `api/menu.php` — nombre y orden salen de la tabla.
+- `api/admin/product-save.php` — valida contra la tabla, no contra una lista.
+- `api/menu-options.php` — qué opciones abre cada categoría también sale de
+  la tabla (antes estaba escrito que solo 'hamburguesas' abría el popup, así
+  que una categoría nueva nacía sin opciones y no había cómo dárselas).
+- `api/helpers.php` — `byr_slugify()`, compartida.
+- `admin.html` + `assets/core/admin.js` — el bloque nuevo. El panel ya no
+  tiene su propia lista de categorías: usa la que manda el servidor.
 
 ---
 
