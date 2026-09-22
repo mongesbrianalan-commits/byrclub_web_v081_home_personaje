@@ -57,12 +57,21 @@ if ($cashHint !== null && ($cashHint < 0 || $cashHint > 10000000)) {
    se cierra es enviar. El horario se calcula en hora de Argentina. */
 $ventana = byr_orders_window();
 if (!$ventana['isOpen']) {
+    /* Cerrado todo el día (lunes, o un cierre puntual) explica el motivo;
+       fuera de hora, el horario. Decir "se puede pedir de 19:40 a 23:30" un
+       lunes sería mentirle al cliente. */
+    $msg = !empty($ventana['closedAllDay'])
+        ? 'Hoy no estamos tomando pedidos ' . $ventana['reason'] . '.'
+        : 'Ahora no estamos tomando pedidos. Se puede pedir de '
+          . $ventana['open'] . ' a ' . $ventana['close'] . '.';
+
     json_out([
-        'error' => 'Ahora no estamos tomando pedidos. Se puede pedir de '
-                 . $ventana['open'] . ' a ' . $ventana['close'] . '.',
-        'code'  => 'closed',
-        'open'  => $ventana['open'],
-        'close' => $ventana['close'],
+        'error'        => $msg,
+        'code'         => 'closed',
+        'closedAllDay' => !empty($ventana['closedAllDay']),
+        'reason'       => $ventana['reason'],
+        'open'         => $ventana['open'],
+        'close'        => $ventana['close'],
     ], 422);
 }
 

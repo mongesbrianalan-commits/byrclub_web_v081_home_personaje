@@ -36,6 +36,38 @@
     <a class="header-cta" href="perfil.html">Mi perfil</a>
   </header>
 
+  <!-- AVISO DEL DÍA (temporal: cierre por el gas del 22/9/2026) -------------
+       Va fuera de <main>, que arranca oculto hasta que corre initGate: un
+       aviso de "hoy no abrimos" tiene que verse apenas entran, no después.
+
+       Se muestra SOLO el día que dice data-day-alert, calculado en hora de
+       Argentina. Pasada esa fecha desaparece solo, así que si nos olvidamos
+       de sacarlo no queda un cartel mintiendo. Para borrarlo del todo: este
+       bloque, el <script> de abajo y .day-alert en assets/core/order.css. -->
+  <aside class="day-alert" data-day-alert="2026-09-22" hidden>
+    <span class="day-alert__icon" aria-hidden="true">🔧</span>
+    <div class="day-alert__copy">
+      <strong>Hoy martes 22/9 no abrimos</strong>
+      <p>Por un desperfecto en el gas del local no vamos a poder trabajar, así que hoy no estamos tomando pedidos.</p>
+      <p class="day-alert__ok">Mañana miércoles 23/9 abrimos normalmente. ¡Te esperamos!</p>
+    </div>
+  </aside>
+  <script>
+    /* Muestra el aviso únicamente en la fecha que declara el bloque, con el
+       día de Argentina (el navegador del cliente puede estar en otra zona). */
+    (function () {
+      var el = document.querySelector('[data-day-alert]');
+      if (!el) { return; }
+      var hoy;
+      try {
+        hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+      } catch (e) {
+        hoy = new Date().toISOString().slice(0, 10);
+      }
+      if (hoy === el.getAttribute('data-day-alert')) { el.hidden = false; }
+    })();
+  </script>
+
   <!-- Arranca escondido para evitar el "flash"; order.js (initGate) lo muestra a
        todos: socios (suman puntos) e invitados (cuenta exprés por teléfono). -->
   <main class="order-main" data-order-main hidden>

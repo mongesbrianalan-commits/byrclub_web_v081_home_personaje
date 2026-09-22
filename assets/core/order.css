@@ -443,3 +443,25 @@ body.order-light .order-closed.is-soon b { color: #14532d; }
 body.order-light .wa-alert { background: #e8f9ed; border-color: #b6e7c4; }
 body.order-light .wa-alert__copy strong { color: #14532d; }
 body.order-light .wa-alert__copy p { color: #1d6b39; }
+
+/* --- Aviso del día (temporal) ----------------------------------------------
+   Cartel de "hoy no abrimos" para pedir.html. Sigue el molde de .order-closed
+   (mismo alto, mismo radio) pero en rojo, que es lo que separa "cerrado por
+   horario" de "hoy no trabajamos". Lo muestra el <script> de pedir.html solo
+   el día que declara data-day-alert.
+   Para sacarlo: borrar este bloque y el <aside> + <script> de pedir.html. */
+.day-alert { display: flex; align-items: flex-start; gap: 14px; max-width: 1160px; margin: 0 auto 18px; padding: 16px 20px; border-radius: 16px; background: rgba(255,90,90,.14); border: 1px solid rgba(255,90,90,.45); }
+.day-alert__icon { font-size: 1.7rem; line-height: 1.1; flex: 0 0 auto; }
+.day-alert__copy { flex: 1; min-width: 0; }
+.day-alert__copy strong { display: block; font-family: "Lilita One"; font-size: 1.25rem; text-transform: uppercase; letter-spacing: .3px; color: #ffb0b0; }
+.day-alert__copy p { margin: 4px 0 0; font-weight: 800; font-size: .95rem; line-height: 1.35; color: #ffd9d9; }
+.day-alert__ok { color: #b8ffcb !important; }
+
+/* Variante clara, que es como se ve pedir.html (body.order-light). */
+body.order-light .day-alert { background: #ffeded; border-color: #ffc2c2; }
+body.order-light .day-alert__copy strong { color: #8a1c1c; }
+body.order-light .day-alert__copy p { color: #7a2222; }
+body.order-light .day-alert__ok { color: #1d6b39 !important; }
+
+/* En mobile el cartel es lo primero que se ve: que respire. */
+@media (max-width: 560px) { .day-alert { margin-left: 16px; margin-right: 16px; padding: 14px 16px; } }

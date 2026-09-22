@@ -228,6 +228,61 @@ function byr_order_hours(): ?array
     return ['open' => $open, 'close' => $close];
 }
 
+/**
+ * ¿Hoy el local NO toma pedidos, sea la hora que sea?
+ *
+ * Dos listas, las dos se cambian en api/config.php sin desplegar:
+ *
+ *   'order_closed_weekdays' => [1],   // 1 = lunes, 2 = martes … 7 = domingo
+ *   'order_closed_dates'    => ['2026-09-22' => 'por un desperfecto en el gas del local'],
+ *
+ * La primera es la regla fija (los lunes está cerrado). La segunda son los
+ * cierres de un día puntual, con el motivo para poder contarlo. Una fecha que
+ * ya pasó no molesta, así que se pueden dejar acumuladas.
+ *
+ * Devuelve null si hoy se trabaja, o el MOTIVO si está cerrado. El motivo se
+ * le muestra al cliente dentro de una frase ("Hoy no estamos tomando pedidos
+ * <motivo>."), así que se escribe en minúscula y sin punto final.
+ */
+function byr_closed_today(): ?string
+{
+    $hoy = new DateTime('now', new DateTimeZone(BYR_TZ));
+
+    /* Primero la fecha puntual: pisa al día de la semana y, sobre todo, tiene
+       un motivo real que contar en vez de "los lunes no abrimos". */
+    $fechas = byr_setting('order_closed_dates', [
+        '2026-09-22' => 'por un desperfecto en el gas del local',
+    ]);
+    if (is_array($fechas)) {
+        $clave = $hoy->format('Y-m-d');
+        foreach ($fechas as $fecha => $motivo) {
+            /* Admite las dos formas: ['2026-09-22' => 'motivo'] y ['2026-09-22'] */
+            if (is_int($fecha)) {
+                $fecha  = $motivo;
+                $motivo = '';
+            }
+            if (trim((string) $fecha) === $clave) {
+                $motivo = trim((string) $motivo);
+                return $motivo !== '' ? $motivo : 'porque hoy el local está cerrado';
+            }
+        }
+    }
+
+    $dias = byr_setting('order_closed_weekdays', [1]);
+    if (is_array($dias)) {
+        $n = (int) $hoy->format('N');
+        foreach ($dias as $d) {
+            if ((int) $d === $n) {
+                $nombres = [1 => 'lunes', 2 => 'martes', 3 => 'miércoles', 4 => 'jueves',
+                            5 => 'viernes', 6 => 'sábados', 7 => 'domingos'];
+                return 'porque los ' . ($nombres[$n] ?? 'días como hoy') . ' no abrimos';
+            }
+        }
+    }
+
+    return null;
+}
+
 /** "19:40" -> 1180 (minutos desde medianoche). */
 function byr_minutes_of_day(string $hhmm): int
 {
@@ -249,13 +304,31 @@ function byr_orders_window(): array
     $hora = $now->format('H:i');
     $h    = byr_order_hours();
 
+    /* Días cerrados: mandan sobre el horario. Va antes que todo porque un
+       lunes no importa que sean las 21:00, y porque el motivo que devuelve
+       es más útil que repetir de qué hora a qué hora se pide. */
+    $cerrado = byr_closed_today();
+    if ($cerrado !== null) {
+        return [
+            'limited'      => true,
+            'isOpen'       => false,
+            'closedAllDay' => true,
+            'reason'       => $cerrado,
+            'open'         => $h['open']  ?? null,
+            'close'        => $h['close'] ?? null,
+            'now'          => $hora,
+        ];
+    }
+
     if (!$h) {
         return [
-            'limited' => false,
-            'isOpen'  => true,
-            'open'    => null,
-            'close'   => null,
-            'now'     => $hora,
+            'limited'      => false,
+            'isOpen'       => true,
+            'closedAllDay' => false,
+            'reason'       => null,
+            'open'         => null,
+            'close'        => null,
+            'now'          => $hora,
         ];
     }
 
@@ -267,11 +340,13 @@ function byr_orders_window(): array
     $abierto = ($o <= $c) ? ($n >= $o && $n < $c) : ($n >= $o || $n < $c);
 
     return [
-        'limited' => true,
-        'isOpen'  => $abierto,
-        'open'    => $h['open'],
-        'close'   => $h['close'],
-        'now'     => $hora,
+        'limited'      => true,
+        'isOpen'       => $abierto,
+        'closedAllDay' => false,
+        'reason'       => null,
+        'open'         => $h['open'],
+        'close'        => $h['close'],
+        'now'          => $hora,
     ];
 }
 

@@ -96,6 +96,18 @@
 
     if (!orderHours.isOpen) {
       hoursEl.classList.remove("is-soon");
+
+      /* Cerrado todo el día (lunes, o un cierre puntual): el horario no sirve
+         de nada, lo que hay que decir es por qué. */
+      if (orderHours.closedAllDay) {
+        hoursEl.innerHTML =
+          "🔒 Hoy no estamos tomando pedidos <b>" +
+          escapeHtml(orderHours.reason || "porque el local está cerrado") +
+          "</b>. Podés mirar la carta igual.";
+        show(hoursEl, true);
+        return;
+      }
+
       hoursEl.innerHTML =
         "🕗 Ahora no estamos tomando pedidos. Se puede pedir de <b>" +
         escapeHtml(orderHours.open) + "</b> a <b>" + escapeHtml(orderHours.close) +
@@ -122,7 +134,11 @@
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = "Cerrado — abrimos " + (orderHours.open || "más tarde");
+    /* Cerrado todo el día no tiene un "abrimos 19:40" que ofrecer: el horario
+       es de otro día, y ponerlo haría pensar que más tarde se puede. */
+    submitBtn.textContent = orderHours.closedAllDay
+      ? "Hoy no tomamos pedidos"
+      : "Cerrado — abrimos " + (orderHours.open || "más tarde");
   }
   function hasOptions(p) {
     return p.optionSet && Array.isArray(optionSets[p.optionSet]) && optionSets[p.optionSet].length;
@@ -927,7 +943,11 @@
            mal). El servidor nos dice el horario: lo mostramos arriba y
            dejamos el botón bloqueado. */
         if (data.code === "closed") {
-          orderHours = { limited: true, isOpen: false, open: data.open, close: data.close };
+          orderHours = {
+            limited: true, isOpen: false,
+            closedAllDay: !!data.closedAllDay, reason: data.reason,
+            open: data.open, close: data.close,
+          };
           renderHours();
           if (hoursEl) hoursEl.scrollIntoView({ behavior: "smooth", block: "center" });
         }

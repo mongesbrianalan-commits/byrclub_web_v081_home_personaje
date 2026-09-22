@@ -115,6 +115,25 @@ return [
     'order_hours' => ['19:40', '23:30'],
 
     /*
+     * Días en que el local NO toma pedidos, sea la hora que sea. Mandan por
+     * encima de 'order_hours': un lunes no importa que sean las 21:00.
+     *
+     * Regla fija de la semana (1 = lunes, 2 = martes … 7 = domingo):
+     */
+    'order_closed_weekdays' => [1],
+
+    /*
+     * Cierres de un día puntual, con el motivo. El motivo se le muestra al
+     * cliente dentro de la frase "Hoy no estamos tomando pedidos <motivo>.",
+     * así que va en minúscula y sin punto final.
+     *
+     * Las fechas que ya pasaron no molestan: se pueden dejar acumuladas.
+     */
+    'order_closed_dates' => [
+        '2026-09-22' => 'por un desperfecto en el gas del local',
+    ],
+
+    /*
      * 2x1 de socio de los MIÉRCOLES: ¿se puede sumar a un pedido web?
      *
      * false (por defecto) = como siempre: el socio reclama el código y lo
