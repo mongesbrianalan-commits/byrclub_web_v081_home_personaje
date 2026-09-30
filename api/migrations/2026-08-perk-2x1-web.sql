@@ -20,7 +20,8 @@
 --     aceptarlo, así que aunque se filtrara en la carta, no se
 --     podría pedir.
 --
--- Precio: $16.000, el de UNA "Doble con Cheddar". El socio se
+-- Precio: $16.500 (antes $16.000). Se cambia desde el panel.
+-- Agrandar las dos papas (+$4.000) sale de menu-options.php. El socio se
 -- lleva dos, más dos porciones de papas. Es la misma lógica que
 -- el 3x2 Doble Cheese ($32.000 = dos burgers, se lleva tres con
 -- sus papas).
@@ -33,7 +34,7 @@ VALUES (
   '2x1 Doble Cheese con papas',
   'Dos Doble con Cheddar y dos porciones de papas, al precio de una. Beneficio de socio, solo los miércoles.',
   '🍔',
-  16000,
+  16500,
   5,
   0
 )
