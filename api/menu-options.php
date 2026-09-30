@@ -195,22 +195,23 @@ function byr_option_sets(): array
         static fn(array $g): bool => $g['id'] === 'bebida'
     ));
 
-    /* El 2x1 de socio trae DOS porciones de papas simples incluidas. Lo único
-       que se ofrece es agrandarlas, las dos juntas, por un precio fijo. No
-       lleva bebida ni adicionales: es una promo, no una burger armada. Se lo
-       asigna byr_option_set_for_product() por el slug, no el panel. */
-    $sets['2x1'] = [
-        [
-            'id'       => 'papas',
-            'title'    => '¿Agrandás las dos papas?',
-            'type'     => 'single',
-            'required' => true,
-            'options'  => [
-                ['id' => 'simples',    'name' => 'Papas simples (las dos)',    'price' => 0],
-                ['id' => 'agrandadas', 'name' => 'Papas agrandadas (las dos)', 'price' => 4000],
-            ],
+    /* Las promos (2x1 de socio, 3x2) traen sus porciones de papas simples
+       incluidas. Lo único que se ofrece es agrandarlas, todas juntas, por un
+       precio fijo. No llevan bebida ni adicionales: son promos, no burgers
+       armadas. Se las asigna byr_option_set_for_product() por el slug, no el
+       panel. */
+    $promoFries = static fn(string $count, int $price): array => [[
+        'id'       => 'papas',
+        'title'    => '¿Agrandás las ' . $count . ' papas?',
+        'type'     => 'single',
+        'required' => true,
+        'options'  => [
+            ['id' => 'simples',    'name' => 'Papas simples (las ' . $count . ')',    'price' => 0],
+            ['id' => 'agrandadas', 'name' => 'Papas agrandadas (las ' . $count . ')', 'price' => $price],
         ],
-    ];
+    ]];
+    $sets['2x1'] = $promoFries('dos', 4000);
+    $sets['3x2'] = $promoFries('tres', 6000);
 
     $sets['staff'] = array_map(static function (array $g): array {
         $g['required'] = false;
@@ -293,8 +294,14 @@ function byr_option_set_for_product(array $product): ?string
     /* El 2x1 de socio tiene su propio popup (agrandar las papas), pase lo que
        pase en el panel: si se le borrara, el socio no podría elegir y el
        servidor tampoco sabría cobrar el agrandado. */
-    if (($product['slug'] ?? null) === 'promo-2x1-doble-cheese') {   // BYR_2X1_PRODUCT_SLUG
+    $slug = (string) ($product['slug'] ?? '');
+    if ($slug === 'promo-2x1-doble-cheese') {   // BYR_2X1_PRODUCT_SLUG
         return '2x1';
+    }
+    /* Los 3x2 (promo-3x2-doble-cheese, -cuarto-byr, -crispy-onion y los que
+       se carguen con "3x2" en el slug): mismo popup, tres porciones. */
+    if (preg_match('/(^|-)3x2-/', $slug)) {
+        return '3x2';
     }
 
     $own = $product['option_set'] ?? null;
