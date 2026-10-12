@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a42d8">
+  <title>BYR DT — BYR Club</title>
+  <script src="assets/core/auth-guard.js?v=DEV"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=DEV">
+  <link rel="stylesheet" href="assets/core/hud.css?v=DEV">
+  <link rel="stylesheet" href="assets/core/app-shell.css?v=DEV">
+  <link rel="stylesheet" href="dt.css?v=DEV">
+</head>
+
+<body class="dt-page home-v08" data-root="./">
+  <div class="page-noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Ir al inicio">
+      <img src="assets/logo-byr.png" alt="Logo BYR" />
+      <span>CLUB</span>
+    </a>
+    <button class="menu-toggle" aria-label="Abrir menú"
+      aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="index.html">Inicio</a>
+      <a href="beneficios.html">Beneficios</a>
+      <a href="pedir.html">Pedir</a>
+      <a href="prodes.html">Prodes</a>
+      <a class="active" href="dt.html">BYR DT</a>
+      <a href="juegos.html">Juegos</a>
+      <a href="puntos.html">Puntos</a>
+      <a href="ranking.html">Ranking</a>
+      <a href="perfil.html">Mi perfil</a>
+    </nav>
+  </header>
+
+  <main class="dt-main" id="dt-app" aria-live="polite">
+    <p class="dt-loading">Cargando BYR DT…</p>
+  </main>
+
+  <div class="dt-sheet-backdrop" data-dt-sheet hidden>
+    <div class="dt-sheet" role="dialog" aria-modal="true" aria-labelledby="dt-sheet-title">
+      <div class="dt-sheet__head">
+        <h2 id="dt-sheet-title" data-dt-sheet-title></h2>
+        <button type="button" class="dt-icon-btn" data-dt-sheet-close aria-label="Cerrar">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15"/></svg>
+        </button>
+      </div>
+      <div class="dt-sheet__body" data-dt-sheet-body></div>
+    </div>
+  </div>
+
+  <div class="dt-toast" data-dt-toast hidden role="status"></div>
+
+  <footer>
+    <a class="footer-brand" href="index.html"><img src="assets/logo-byr.png" alt="BYR" /><span>Hamburguesería</span></a>
+    <div class="footer-links"><a href="https://www.instagram.com/byr.docksud/" target="_blank"
+        rel="noreferrer">Instagram</a><a href="index.html">BYR Club</a><span>Dock Sud, Avellaneda</span>
+    </div>
+    <p>© 2026 BYR Club</p>
+  </footer>
+  <script src="script.js?v=DEV"></script>
+  <script src="assets/core/storage.js?v=DEV"></script>
+  <script src="assets/core/prizes.js?v=DEV"></script>
+  <script src="assets/core/user.js?v=DEV"></script>
+  <script src="assets/core/hud.js?v=DEV"></script>
+  <script src="assets/core/app-shell.js?v=DEV"></script>
+  <script src="assets/core/auth.js?v=DEV"></script>
+  <script src="assets/core/session-ui.js?v=DEV"></script>
+  <script src="assets/core/state-sync.js?v=DEV"></script>
+  <script src="assets/core/dt.js?v=DEV"></script>
+</body>
+
+</html>

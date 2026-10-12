@@ -1,0 +1,191 @@
+@charset "UTF-8";
+/* =========================================================
+   BYR DT — armá tu equipo
+   Mismo lenguaje que el resto del club: azules, amarillo,
+   Lilita One para títulos y Baloo 2 para el texto.
+========================================================= */
+
+.dt-main { max-width: 560px; margin: 0 auto; padding: 14px 14px 60px; color: #fff; }
+.dt-loading { text-align: center; font-weight: 800; color: #b7cff4; padding: 60px 0; }
+.dt-main [hidden] { display: none !important; }
+.dt-h1 { font-family: "Lilita One"; font-weight: 400; font-size: clamp(2rem, 8vw, 2.6rem); line-height: .95; text-transform: uppercase; margin: 4px 0 6px; }
+.dt-h2 { font-family: "Lilita One"; font-weight: 400; font-size: 1.35rem; text-transform: uppercase; margin: 20px 4px 8px; }
+.dt-muted { color: #9fb7e8; font-weight: 700; font-size: .9rem; }
+.dt-label { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #8ed0ff; }
+
+/* ---- Botones ---- */
+.dt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 0 18px; border-radius: 16px; border: 0; font-family: "Lilita One"; font-size: 1.15rem; letter-spacing: .02em; cursor: pointer; text-decoration: none; transition: transform .1s; }
+.dt-btn:active { transform: translateY(2px); }
+.dt-btn:disabled { opacity: .5; cursor: default; transform: none; }
+.dt-btn--yellow { background: #ffd51f; color: #071342; box-shadow: 0 6px 0 #9d7300; }
+.dt-btn--green { background: #4ee66d; color: #062a12; box-shadow: 0 5px 0 #169329; font-family: inherit; font-weight: 900; font-size: 1rem; }
+.dt-btn--ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.28); font-family: inherit; font-weight: 800; font-size: 1rem; }
+.dt-btn--danger { background: rgba(255,120,120,.12); color: #ffb0b0; border: 1px solid rgba(255,120,120,.45); font-family: inherit; font-weight: 800; font-size: 1rem; }
+.dt-btn--block { width: 100%; }
+.dt-icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); background: #061b70; display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; }
+.dt-icon-btn svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- Escudo ---- */
+.dt-crest { border-radius: 50%; background: #0a42d8; border: 3px solid #ffd51f; display: grid; place-items: center; overflow: hidden; flex: 0 0 auto; color: #ffd51f; font-family: "Lilita One"; line-height: 1; }
+.dt-crest img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---- Cabecera del equipo ---- */
+.dt-teamhead { display: flex; align-items: center; gap: 12px; padding: 6px 2px 10px; }
+.dt-teamhead .dt-crest { width: 60px; height: 60px; font-size: 1.5rem; box-shadow: 0 4px 0 #9d7300; cursor: pointer; padding: 0; }
+.dt-teamhead__name { font-family: "Lilita One"; font-size: 1.5rem; line-height: 1; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-teamhead__dt { font-weight: 800; font-size: .85rem; color: #ffd51f; }
+.dt-teamhead__round { font-weight: 700; font-size: .8rem; color: #8ed0ff; }
+
+.dt-alert { margin: 2px 0 10px; padding: 10px 12px; border-radius: 14px; background: #ffd51f; color: #071342; display: flex; gap: 10px; align-items: center; font-weight: 800; font-size: .92rem; line-height: 1.25; box-shadow: 0 4px 0 #9d7300; }
+.dt-alert--info { background: #061b70; color: #cfe4ff; border: 1px solid rgba(255,255,255,.16); box-shadow: none; }
+.dt-alert svg { width: 22px; height: 22px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+
+.dt-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
+.dt-stat { background: #061b70; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 9px 11px; min-width: 0; }
+.dt-stat strong { display: block; font-family: "Lilita One"; font-weight: 400; font-size: 1.35rem; line-height: 1.1; white-space: nowrap; }
+.dt-stat strong.is-yellow { color: #ffd51f; }
+.dt-stat strong.is-red { color: #ff9d9d; }
+
+/* ---- Pestañas ---- */
+.dt-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0 0 14px; padding: 5px; border-radius: 999px; background: #061b70; border: 1px solid rgba(255,255,255,.12); position: sticky; top: calc(var(--byr-app-shell-height, 0px) + 6px); z-index: 20; }
+.dt-tab { min-height: 42px; border: 0; border-radius: 999px; background: transparent; color: #cfe4ff; font-family: inherit; font-weight: 800; font-size: .92rem; cursor: pointer; }
+.dt-tab[aria-selected="true"] { background: #ffd51f; color: #071342; }
+
+.dt-pills { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+.dt-pill { flex: 1 1 auto; min-height: 42px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #cfe4ff; font-family: inherit; font-weight: 800; font-size: .95rem; cursor: pointer; }
+.dt-pill[aria-pressed="true"] { background: #ffd51f; color: #071342; border-color: #ffd51f; box-shadow: 0 4px 0 #9d7300; }
+.dt-pill:disabled { opacity: .5; cursor: default; }
+
+/* ---- Cancha ---- */
+.dt-pitch { position: relative; border-radius: 22px; overflow: hidden; min-height: 470px; background: repeating-linear-gradient(180deg, #1f9a45 0 56px, #23a84c 56px 112px); box-shadow: inset 0 0 0 3px rgba(255,255,255,.35); display: flex; flex-direction: column; justify-content: space-around; padding: 14px 4px; }
+.dt-pitch::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 3px; background: rgba(255,255,255,.3); }
+.dt-pitch::after { content: ""; position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; margin: -46px 0 0 -46px; border-radius: 50%; border: 3px solid rgba(255,255,255,.3); }
+.dt-row { position: relative; z-index: 1; display: flex; justify-content: space-evenly; align-items: flex-start; gap: 2px; }
+.dt-slot { width: 78px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.dt-slot:disabled { cursor: default; }
+.dt-shirt { width: 44px; height: 44px; }
+.dt-shirt path:first-child { stroke: #03124a; stroke-width: 2; stroke-linejoin: round; }
+.dt-slot__name { background: #fff; color: #07164d; font-weight: 800; font-size: .74rem; line-height: 1; padding: 4px 6px; border-radius: 7px; max-width: 76px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-slot__meta { background: #03124a; color: #ffd51f; font-weight: 800; font-size: .68rem; line-height: 1; padding: 3px 5px; border-radius: 6px; white-space: nowrap; }
+.dt-slot__cap { position: absolute; top: -4px; right: 12px; width: 22px; height: 22px; border-radius: 50%; background: #ffd51f; color: #071342; font-family: "Lilita One"; font-size: .8rem; display: grid; place-items: center; box-shadow: 0 2px 0 #9d7300; }
+.dt-slot__pts { position: absolute; top: -6px; left: 8px; min-width: 24px; padding: 2px 5px; border-radius: 999px; background: #03124a; border: 2px solid #4ee66d; color: #4ee66d; font-weight: 800; font-size: .72rem; line-height: 1.1; }
+.dt-slot__pts.is-neg { border-color: #ff9d9d; color: #ff9d9d; }
+.dt-slot--empty .dt-empty { width: 44px; height: 44px; border-radius: 50%; border: 3px dashed #fff; display: grid; place-items: center; background: rgba(3,18,74,.25); }
+.dt-slot--empty .dt-empty svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 3; stroke-linecap: round; }
+.dt-slot--empty .dt-slot__name { background: rgba(3,18,74,.7); color: #fff; }
+.dt-slot.is-out { opacity: .55; }
+
+.dt-bench { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.dt-benchcard { background: #061b70; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 1px; color: #fff; font: inherit; cursor: pointer; min-width: 0; }
+.dt-benchcard:disabled { cursor: default; }
+.dt-benchcard b { font-size: .8rem; line-height: 1.1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-benchcard small { font-size: .68rem; font-weight: 800; color: #8ed0ff; }
+.dt-benchcard em { font-style: normal; font-size: .7rem; font-weight: 700; color: #ffd51f; }
+
+.dt-actions { display: flex; gap: 10px; margin-top: 16px; }
+.dt-actions .dt-btn--yellow { flex: 1; }
+.dt-error { margin: 10px 2px 0; color: #ffb0b0; font-weight: 800; font-size: .92rem; }
+.dt-ok { margin: 10px 2px 0; color: #b8ffcb; font-weight: 800; font-size: .92rem; }
+
+/* ---- Lista de jugadores (mercado) ---- */
+.dt-search { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 14px; padding: 0 14px; min-height: 48px; margin: 0 0 10px; }
+.dt-search svg { width: 18px; height: 18px; fill: none; stroke: #5b6b99; stroke-width: 2.2; stroke-linecap: round; flex: 0 0 auto; }
+.dt-search input { flex: 1; min-width: 0; border: 0; outline: 0; font: inherit; font-weight: 700; font-size: 16px; color: #07164d; background: transparent; }
+.dt-budgetbar { padding: 10px 12px; border-radius: 14px; background: #061b70; border: 1px solid rgba(255,255,255,.12); margin: 0 0 10px; }
+.dt-budgetbar__top { display: flex; justify-content: space-between; align-items: baseline; }
+.dt-budgetbar__top strong { font-family: "Lilita One"; font-weight: 400; font-size: 1.25rem; color: #ffd51f; }
+.dt-budgetbar__track { height: 9px; border-radius: 999px; background: rgba(255,255,255,.12); margin-top: 6px; overflow: hidden; }
+.dt-budgetbar__fill { height: 100%; background: #ffd51f; border-radius: 999px; }
+.dt-sort { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 2px 8px; }
+.dt-sort select { min-height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: #061b70; color: #fff; font: inherit; font-weight: 800; padding: 0 10px; }
+.dt-list { display: flex; flex-direction: column; gap: 7px; }
+.dt-prow { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 14px; background: #061b70; border: 1px solid rgba(255,255,255,.12); }
+.dt-prow .dt-shirt { width: 36px; height: 36px; flex: 0 0 auto; }
+.dt-prow__info { flex: 1; min-width: 0; line-height: 1.15; }
+.dt-prow__info b { display: block; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-prow__info small { font-weight: 700; font-size: .76rem; color: #8ed0ff; }
+.dt-prow__num { text-align: right; line-height: 1.1; flex: 0 0 auto; }
+.dt-prow__num small { display: block; font-weight: 800; font-size: .74rem; color: #cfe4ff; }
+.dt-prow__num strong { font-family: "Lilita One"; font-weight: 400; font-size: 1.05rem; color: #ffd51f; }
+.dt-prow__act { width: 44px; height: 44px; border-radius: 12px; border: 0; display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; }
+.dt-prow__act svg { width: 18px; height: 18px; stroke-width: 3; stroke-linecap: round; fill: none; }
+.dt-prow__act--buy { background: #4ee66d; box-shadow: 0 4px 0 #169329; }
+.dt-prow__act--buy svg { stroke: #062a12; }
+.dt-prow__act--sell { background: rgba(255,120,120,.14); border: 1px solid rgba(255,120,120,.45); }
+.dt-prow__act--sell svg { stroke: #ffb0b0; }
+.dt-prow__why { width: 54px; text-align: center; font-size: .66rem; font-weight: 800; line-height: 1.1; color: #ffb0b0; flex: 0 0 auto; }
+.dt-more { margin: 10px auto 0; display: block; }
+
+/* ---- Puntos y ranking ---- */
+.dt-scorecard { padding: 16px 18px; border-radius: 20px; background: #ffd51f; color: #071342; box-shadow: 0 6px 0 #9d7300; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.dt-scorecard .dt-label { color: #6b4a00; }
+.dt-scorecard__pts { font-family: "Lilita One"; font-size: 3rem; line-height: .95; }
+.dt-scorecard__pos { font-family: "Lilita One"; font-size: 2rem; line-height: 1; text-align: right; }
+.dt-rowcard { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 14px; background: #061b70; border: 1px solid rgba(255,255,255,.12); }
+.dt-rowcard.is-me { background: #0a42d8; border: 2px solid #ffd51f; }
+.dt-rowcard__pos { width: 30px; font-family: "Lilita One"; font-size: 1.1rem; color: #8ed0ff; flex: 0 0 auto; }
+.dt-rowcard.is-me .dt-rowcard__pos { color: #ffd51f; }
+.dt-rowcard .dt-crest { width: 34px; height: 34px; font-size: .8rem; border-width: 2px; }
+.dt-rowcard__main { flex: 1; min-width: 0; line-height: 1.15; }
+.dt-rowcard__main b { display: block; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-rowcard__main small { font-weight: 700; font-size: .76rem; color: #9fb7e8; }
+.dt-rowcard__pts { font-family: "Lilita One"; font-size: 1.15rem; flex: 0 0 auto; }
+.dt-rowcard__pts.is-plus { color: #4ee66d; }
+.dt-rowcard__pts.is-neg { color: #ff9d9d; }
+.dt-rowcard button, button.dt-rowcard { font: inherit; color: inherit; cursor: pointer; text-align: left; width: 100%; }
+.dt-captag { margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: #ffd51f; color: #071342; font-size: .7rem; font-weight: 800; }
+.dt-subtag { margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: #3aa5ff; color: #03124a; font-size: .7rem; font-weight: 800; }
+.dt-banner { margin: 14px 0 0; padding: 14px 16px; border-radius: 16px; display: flex; gap: 12px; align-items: center; background: rgba(78,230,109,.12); border: 1px solid rgba(78,230,109,.45); color: #d6ffe0; font-weight: 700; line-height: 1.3; }
+.dt-banner svg { width: 30px; height: 30px; flex: 0 0 auto; fill: none; stroke: #4ee66d; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.dt-empty-state { text-align: center; padding: 26px 10px; color: #b7cff4; font-weight: 800; }
+
+/* ---- Crear equipo ---- */
+.dt-create-card { margin: 14px 0 0; padding: 22px 18px; border-radius: 22px; background: #0a42d8; box-shadow: 0 8px 0 #061b70; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.dt-create-card .dt-crest { width: 128px; height: 128px; font-size: 3rem; border-width: 5px; box-shadow: 0 6px 0 #9d7300; background: #03124a; }
+.dt-create-card__name { font-family: "Lilita One"; font-size: 1.7rem; line-height: 1; text-transform: uppercase; word-break: break-word; }
+.dt-create-card__dt { padding: 4px 12px; border-radius: 999px; background: #03124a; font-weight: 800; font-size: .9rem; color: #ffd51f; }
+.dt-field { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 0; font-weight: 800; font-size: .9rem; color: #cfe4ff; }
+.dt-field input[type="text"] { min-height: 52px; box-sizing: border-box; padding: 0 14px; border-radius: 14px; border: 0; background: #fff; color: #07164d; font: inherit; font-weight: 800; font-size: 18px; }
+.dt-field small { font-weight: 700; font-size: .78rem; color: #8ed0ff; }
+.dt-upload { position: relative; min-height: 56px; border-radius: 14px; border: 2px dashed rgba(255,255,255,.4); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-weight: 800; font-size: 1rem; color: #fff; }
+.dt-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.dt-upload svg { width: 24px; height: 24px; fill: none; stroke: #ffd51f; stroke-width: 2; stroke-linejoin: round; }
+
+/* ---- Reglas ---- */
+.dt-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dt-steps li { display: flex; gap: 12px; align-items: flex-start; background: #061b70; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 10px 12px; font-weight: 700; line-height: 1.3; }
+.dt-steps li span { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: #ffd51f; color: #071342; font-family: "Lilita One"; display: grid; place-items: center; }
+.dt-table { border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); }
+.dt-table div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 14px; background: #061b70; border-bottom: 1px solid rgba(255,255,255,.08); font-weight: 700; font-size: .92rem; }
+.dt-table div b { font-family: "Lilita One"; font-weight: 400; color: #4ee66d; white-space: nowrap; }
+.dt-table div b.is-neg { color: #ff9d9d; }
+.dt-prizes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.dt-prizes div { padding: 12px; border-radius: 14px; background: #061b70; border: 1px solid rgba(255,255,255,.14); }
+.dt-prizes div.is-gold { background: #ffd51f; color: #071342; }
+.dt-prizes div.is-gold .dt-label { color: #6b4a00; }
+.dt-prizes strong { display: block; font-family: "Lilita One"; font-weight: 400; font-size: 1.1rem; line-height: 1.1; margin-top: 2px; }
+
+/* ---- Hoja inferior (acciones, mercado, ganador) ---- */
+.dt-sheet-backdrop { position: fixed; inset: 0; z-index: 10050; background: rgba(1,8,40,.72); display: flex; align-items: flex-end; justify-content: center; }
+.dt-sheet { width: 100%; max-width: 560px; max-height: 92vh; display: flex; flex-direction: column; background: #03124a; color: #fff; border-radius: 22px 22px 0 0; border: 1px solid rgba(255,255,255,.14); box-shadow: 0 -10px 40px rgba(0,0,0,.4); }
+.dt-sheet__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 8px; }
+.dt-sheet__head h2 { margin: 0; font-family: "Lilita One"; font-weight: 400; font-size: 1.35rem; text-transform: uppercase; }
+.dt-sheet__body { overflow-y: auto; padding: 4px 16px 22px; -webkit-overflow-scrolling: touch; }
+.dt-sheet__menu { display: flex; flex-direction: column; gap: 8px; }
+.dt-sheet__menu .dt-btn { width: 100%; }
+@media (min-width: 700px) { .dt-sheet-backdrop { align-items: center; } .dt-sheet { border-radius: 22px; } }
+
+/* ---- Popup del ganador ---- */
+.dt-winpop { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 0 4px; }
+.dt-winpop .dt-crest { width: 96px; height: 96px; font-size: 2.3rem; border: 4px solid #fff; }
+.dt-winpop__team { font-family: "Lilita One"; font-size: 1.6rem; line-height: 1; text-transform: uppercase; }
+.dt-code { padding: 8px 18px; border-radius: 12px; background: #ffd51f; color: #071342; font-family: "Lilita One"; font-size: 1.6rem; letter-spacing: .08em; }
+
+.dt-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 10060; background: #071342; color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 14px; padding: 12px 16px; font-weight: 800; box-shadow: 0 10px 30px rgba(0,0,0,.4); max-width: calc(100% - 32px); }
+.dt-toast.is-error { background: #5a0f18; border-color: #ff9d9d; }
+
+@media (prefers-reduced-motion: reduce) { .dt-btn { transition: none; } }
+.dt-pills--grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.dt-pills--grid .dt-pill { padding: 0 4px; font-size: .88rem; line-height: 1.05; }
+.dt-pills--grid .dt-pill small { display: block; font-size: .7rem; opacity: .85; }
+.dt-pills--form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }

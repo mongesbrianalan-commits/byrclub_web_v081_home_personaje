@@ -246,6 +246,27 @@
     .cat-status.error { color: #ffb0b0; }
     .cat-status.ok { color: #b8ffcb; }
 
+    /* BYR DT (pestaña del panel) */
+    .dtx-status { padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); font-weight: 800; line-height: 1.35; }
+    .dtx-status small { display: block; font-weight: 700; color: #9bd1ff; }
+    .dtx-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .8rem; margin-right: 6px; }
+    .dtx-badge.open { background: rgba(78,230,109,.16); color: #b8ffcb; border: 1px solid rgba(78,230,109,.5); }
+    .dtx-badge.live { background: rgba(255,213,31,.16); color: #ffe79a; border: 1px solid rgba(255,213,31,.5); }
+    .dtx-badge.closed { background: rgba(255,255,255,.08); color: #cfe4ff; border: 1px solid rgba(255,255,255,.2); }
+    .dtx-fixtures { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; margin-top: 10px; }
+    .dtx-fx { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-weight: 700; font-size: .85rem; }
+    .dtx-fx span:last-child { flex: 0 0 auto; font-weight: 800; font-size: .78rem; }
+    .dtx-fx .ok { color: #b8ffcb; } .dtx-fx .wait { color: #9bd1ff; } .dtx-fx .void { color: #ffb0b0; } .dtx-fx .todo { color: #ffe79a; }
+    .dtx-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .dtx-log { white-space: pre-wrap; margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,.25); color: #cfe4ff; font-size: .8rem; max-height: 220px; overflow: auto; }
+    .dtx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    .dtx-results, .dtx-teams, .dtx-rounds { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .dtx-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 12px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); font-weight: 700; }
+    .dtx-item b { flex: 1 1 160px; min-width: 0; }
+    .dtx-item small { color: #9bd1ff; font-weight: 700; }
+    .dtx-crest { width: 40px; height: 40px; border-radius: 50%; background: #0a42d8; border: 3px solid #ffd51f; display: grid; place-items: center; overflow: hidden; font-family: "Lilita One"; color: #ffd51f; flex: 0 0 auto; }
+    .dtx-crest img { width: 100%; height: 100%; object-fit: cover; }
+
     /* Días y horarios (pestaña Menú). Una fila por día: interruptor de
        abierto/cerrado y, si abre, desde/hasta. */
     .hr-now { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; margin: 0 0 14px; font-weight: 800; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); }
@@ -371,6 +392,7 @@
         <button type="button" class="admin-tab-btn" data-tab-btn="canjes">🎟️ Canjes</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="cumples">🎂 Cumpleaños</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="prode">⚽ Prode</button>
+        <button type="button" class="admin-tab-btn" data-tab-btn="dt">🧢 BYR DT</button>
       </nav>
 
       <div class="admin-tab" data-tab="clientes">
@@ -788,6 +810,77 @@
         <div data-pmatch-list></div>
       </div>
       </div><!-- /tab prode -->
+
+      <div class="admin-tab" data-tab="dt" hidden data-dt-admin>
+      <p class="admin-warn-line" data-dtx-warn hidden></p>
+
+      <div class="admin-block">
+        <h2>1 · Fecha en juego</h2>
+        <div class="dtx-status" data-dtx-status>Cargando…</div>
+        <div class="dtx-fixtures" data-dtx-fixtures></div>
+        <div class="dtx-actions">
+          <button type="button" class="ma-save" data-dtx-sync>Sincronizar puntajes</button>
+          <button type="button" class="cat-btn danger" data-dtx-close>Cerrar fecha y premiar</button>
+        </div>
+        <p class="admin-hint-line">💡 "Sincronizar" trae horarios, resultados y puntajes de los partidos terminados. Con la fecha abierta, también corrige el horario de cierre si la AFA movió el primer partido.</p>
+        <p class="auth-form-status" data-dtx-sync-msg></p>
+      </div>
+
+      <div class="admin-block" data-dtx-open-block hidden>
+        <h2>2 · Abrir la próxima fecha</h2>
+        <div class="admin-row">
+          <label class="ma-field" style="flex:1"><span>Fecha de la API</span><select data-dtx-round-select></select></label>
+          <button type="button" class="admin-btn-inline" data-dtx-open style="align-self:flex-end;min-height:44px">Abrir fecha</button>
+        </div>
+        <p class="admin-hint-line">💡 Se cierra sola cuando arranca el primer partido. Abrila apenas termina la anterior, así los socios tienen tiempo de hacer cambios.</p>
+        <p class="auth-form-status" data-dtx-open-msg></p>
+      </div>
+
+      <div class="admin-block">
+        <h2>3 · Jugadores y precios</h2>
+        <p class="admin-hint-line" data-dtx-players-info></p>
+        <button type="button" class="ma-new-btn" data-dtx-players>Actualizar jugadores y precios</button>
+        <p class="admin-hint-line">💡 Trae los planteles de los 30 clubes y sus estadísticas (unas 90 consultas, tarda 1 o 2 minutos). Antes de la primera fecha recalcula todos los precios; después solo les pone precio a los refuerzos nuevos (los demás se mueven solos al cerrar cada fecha).</p>
+        <pre class="dtx-log" data-dtx-log hidden></pre>
+      </div>
+
+      <div class="admin-block">
+        <h2>4 · Corregir un puntaje a mano</h2>
+        <div class="admin-row">
+          <label class="ma-field" style="flex:1"><span>Buscar jugador</span><input type="search" data-dtx-q placeholder="Ej: Paredes"></label>
+        </div>
+        <div class="dtx-results" data-dtx-results></div>
+        <div data-dtx-edit hidden>
+          <p class="admin-hint-line" data-dtx-edit-title></p>
+          <div class="dtx-grid">
+            <label class="ma-field"><span>Minutos</span><input type="number" min="0" max="130" data-f="minutes"></label>
+            <label class="ma-field"><span>Goles</span><input type="number" min="0" max="10" data-f="goals"></label>
+            <label class="ma-field"><span>Asist.</span><input type="number" min="0" max="10" data-f="assists"></label>
+            <label class="ma-field"><span>Amarillas</span><input type="number" min="0" max="2" data-f="yellow"></label>
+            <label class="ma-field"><span>Roja</span><input type="number" min="0" max="1" data-f="red"></label>
+            <label class="ma-field"><span>Nota</span><input type="text" inputmode="decimal" data-f="rating" placeholder="7,5"></label>
+            <label class="ma-field"><span>Gol en contra</span><input type="number" min="0" max="5" data-f="own_goals"></label>
+            <label class="ma-field"><span>Penal errado</span><input type="number" min="0" max="5" data-f="pen_missed"></label>
+            <label class="ma-field"><span>Penal atajado</span><input type="number" min="0" max="5" data-f="pen_saved"></label>
+          </div>
+          <label class="ma-avail" style="margin-top:8px"><input type="checkbox" data-f="clean_sheet"> Valla invicta (su equipo no recibió goles)</label>
+          <div style="margin-top:10px"><button type="button" class="ma-save" data-dtx-save-score>Guardar corrección</button></div>
+          <p class="auth-form-status" data-dtx-score-msg></p>
+        </div>
+      </div>
+
+      <div class="admin-block">
+        <h2>5 · Nombres y escudos</h2>
+        <label class="ma-field"><span>Buscar equipo o DT</span><input type="search" data-dtx-tq placeholder="Ej: Cheddar"></label>
+        <div class="dtx-teams" data-dtx-teams></div>
+        <p class="admin-hint-line">💡 "Quitar escudo" vuelve a las iniciales. "Resetear nombre" lo deja como "Equipo de [nombre]" y al socio le aparece un aviso para elegir otro.</p>
+      </div>
+
+      <div class="admin-block">
+        <h2>6 · Fechas jugadas y premios</h2>
+        <div class="dtx-rounds" data-dtx-rounds></div>
+      </div>
+      </div><!-- /tab dt -->
     </section>
   </main>
 
@@ -797,6 +890,7 @@
   <script src="assets/core/session-ui.js?v=DEV"></script>
   <script src="assets/core/print-ticket.js?v=DEV"></script>
   <script src="assets/core/admin.js?v=DEV"></script>
+  <script src="assets/core/dt-admin.js?v=DEV"></script>
   <script>
     /* Navegación por pestañas del panel admin (solo UI). */
     (function () {
