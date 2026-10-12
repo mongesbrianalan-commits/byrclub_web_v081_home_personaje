@@ -63,6 +63,7 @@ jobs:
             tools/**
             .github/**
             api/config.php
+            uploads/**
             **/.ftp-deploy-sync-state.json
 
       # Hostinger a veces corta la conexion FTP ("Timeout control socket").
@@ -92,6 +93,7 @@ jobs:
             tools/**
             .github/**
             api/config.php
+            uploads/**
             **/.ftp-deploy-sync-state.json
 
       # --- Intento 3 (tras esperar 90s). Si este falla, el deploy queda en rojo. ---
@@ -116,4 +118,5 @@ jobs:
             tools/**
             .github/**
             api/config.php
+            uploads/**
             **/.ftp-deploy-sync-state.json
