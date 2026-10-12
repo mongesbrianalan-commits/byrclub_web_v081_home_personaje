@@ -3317,6 +3317,264 @@
     loadCaja();
   }
 
+  /* ---------------------------------------------------------
+     Días y horarios para pedir por la web (pestaña Menú)
+
+     Antes vivían en api/config.php y cambiarlos pedía entrar al hosting.
+     Ahora se guardan en la base (store_settings) y la carta y el alta del
+     pedido leen eso. Una fila por día: abre o no, y de qué hora a qué hora.
+     Más una lista de cierres puntuales (feriados, vacaciones, imprevistos).
+  --------------------------------------------------------- */
+
+  const hoursSection  = document.querySelector("[data-hours-section]");
+  const hoursWeekEl   = document.querySelector("[data-hours-week]");
+  const hoursNowEl    = document.querySelector("[data-hours-now]");
+  const hoursWarn     = document.querySelector("[data-hours-warn]");
+  const hoursClosEl   = document.querySelector("[data-hours-closures]");
+  const hoursAddClos  = document.querySelector("[data-hours-add-closure]");
+  const hoursSaveBtn  = document.querySelector("[data-hours-save]");
+  const hoursSource   = document.querySelector("[data-hours-source]");
+  const hoursStatus   = document.querySelector("[data-hours-status]");
+
+  const HR_DAYS = [
+    [1, "Lunes"], [2, "Martes"], [3, "Miércoles"], [4, "Jueves"],
+    [5, "Viernes"], [6, "Sábado"], [7, "Domingo"],
+  ];
+  const HR_DEFAULT = { open: "19:40", close: "23:30" };
+
+  /* Las filas dibujadas, para leerlas al guardar. */
+  let hrRows = {};
+  let hrToday = "";
+
+  function hrMinutes(hhmm) {
+    const p = String(hhmm || "").split(":");
+    return Number(p[0]) * 60 + Number(p[1] || 0);
+  }
+
+  function renderHoursNow(now) {
+    if (!hoursNowEl || !now) return;
+    hoursNowEl.hidden = false;
+    hoursNowEl.classList.toggle("is-open", Boolean(now.isOpen));
+    hoursNowEl.classList.toggle("is-closed", !now.isOpen);
+    if (now.isOpen) {
+      hoursNowEl.textContent = `🟢 Ahora mismo se puede pedir (hasta las ${now.close}).`;
+    } else if (now.closedAllDay) {
+      hoursNowEl.textContent = `🔒 Ahora el cliente ve: "Hoy no estamos tomando pedidos ${now.reason}."`;
+    } else {
+      hoursNowEl.textContent = `🕗 Ahora está cerrado. Hoy se puede pedir de ${now.open} a ${now.close}.`;
+    }
+  }
+
+  function hoursDayRow(num, label, shift) {
+    const row = document.createElement("div");
+    row.className = "hr-day";
+
+    const name = document.createElement("span");
+    name.className = "hr-day__name";
+    name.textContent = label;
+
+    const sw = document.createElement("label");
+    sw.className = "hr-switch";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = Boolean(shift);
+    sw.append(box, document.createTextNode(" Abre"));
+
+    const times = document.createElement("div");
+    times.className = "hr-day__times";
+    const open = document.createElement("input");
+    open.type = "time";
+    open.value = (shift || HR_DEFAULT).open;
+    open.setAttribute("aria-label", `${label}: apertura`);
+    const close = document.createElement("input");
+    close.type = "time";
+    close.value = (shift || HR_DEFAULT).close;
+    close.setAttribute("aria-label", `${label}: cierre`);
+    const night = document.createElement("span");
+    night.className = "hr-day__night";
+
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "hr-copy";
+    copy.textContent = "Copiar a todos";
+    copy.title = "Pone este mismo horario en todos los días que abren";
+
+    times.append("de", open, "a", close, night, copy);
+
+    const closed = document.createElement("span");
+    closed.className = "hr-day__closed";
+    closed.textContent = "Cerrado: no se toman pedidos";
+
+    function sync() {
+      row.classList.toggle("is-off", !box.checked);
+      times.hidden = !box.checked;
+      closed.hidden = box.checked;
+      const cruza = open.value && close.value && hrMinutes(close.value) < hrMinutes(open.value);
+      night.textContent = cruza ? "🌙 del día siguiente" : "";
+    }
+    box.addEventListener("change", sync);
+    open.addEventListener("input", sync);
+    close.addEventListener("input", sync);
+    copy.addEventListener("click", () => {
+      Object.values(hrRows).forEach((r) => {
+        if (!r.box.checked) return;
+        r.open.value = open.value;
+        r.close.value = close.value;
+        r.sync();
+      });
+    });
+
+    row.append(name, sw, times, closed);
+    sync();
+    hrRows[num] = { box, open, close, sync };
+    return row;
+  }
+
+  function hoursClosureRow(c) {
+    const row = document.createElement("div");
+    row.className = "hr-closure";
+
+    const date = document.createElement("input");
+    date.type = "date";
+    date.value = (c && c.date) || "";
+    if (hrToday) date.min = hrToday;
+    date.setAttribute("data-hr-date", "");
+    date.setAttribute("aria-label", "Fecha del cierre");
+
+    const reason = document.createElement("input");
+    reason.type = "text";
+    reason.maxLength = 140;
+    reason.placeholder = "por vacaciones";
+    reason.value = (c && c.reason) || "";
+    reason.setAttribute("data-hr-reason", "");
+    reason.setAttribute("aria-label", "Motivo del cierre");
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "cat-btn danger";
+    del.textContent = "🗑";
+    del.title = "Quitar este cierre";
+    del.addEventListener("click", () => {
+      row.remove();
+      hoursEmptyClosures();
+    });
+
+    row.append(date, reason, del);
+    return row;
+  }
+
+  function hoursEmptyClosures() {
+    if (!hoursClosEl) return;
+    const empty = hoursClosEl.querySelector(".hr-empty");
+    const hasRows = hoursClosEl.querySelector(".hr-closure");
+    if (!hasRows && !empty) {
+      const p = document.createElement("p");
+      p.className = "hr-empty";
+      p.textContent = "No hay cierres cargados.";
+      hoursClosEl.append(p);
+    } else if (hasRows && empty) {
+      empty.remove();
+    }
+  }
+
+  function renderHours(data) {
+    hrToday = data.today || "";
+    hrRows = {};
+    hoursWeekEl.innerHTML = "";
+    HR_DAYS.forEach(([num, label]) => {
+      const shift = data.week ? data.week[num] || data.week[String(num)] : null;
+      hoursWeekEl.append(hoursDayRow(num, label, shift));
+    });
+
+    hoursClosEl.innerHTML = "";
+    (data.closures || []).forEach((c) => hoursClosEl.append(hoursClosureRow(c)));
+    hoursEmptyClosures();
+
+    renderHoursNow(data.now);
+
+    if (hoursWarn) {
+      hoursWarn.hidden = Boolean(data.ready);
+      if (!data.ready) {
+        hoursWarn.textContent = "⚠️ Todavía no se puede guardar desde acá: falta correr"
+          + " 2026-10-store-hours.sql. Mientras tanto ves (y se usa) el horario de config.php.";
+      }
+    }
+    if (hoursSaveBtn) hoursSaveBtn.disabled = !data.ready;
+    if (hoursSource) {
+      hoursSource.textContent = data.source === "panel"
+        ? (data.updatedAt ? "Último cambio: " + String(data.updatedAt).slice(0, 16).replace("T", " ") : "")
+        : "Ahora se usa el horario de config.php. Al guardar pasa a mandar este.";
+    }
+  }
+
+  async function loadHours() {
+    if (!hoursSection) return;
+    setStatus(hoursStatus, "Cargando horarios…", "");
+    try {
+      const res = await fetch(`${API}admin/hours-get.php`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudieron cargar los horarios.");
+      renderHours(data);
+      setStatus(hoursStatus, "", "");
+    } catch (error) {
+      setStatus(hoursStatus, error.message, "error");
+    }
+  }
+
+  function initHours() {
+    if (!hoursSection) return;
+
+    if (hoursAddClos) {
+      hoursAddClos.addEventListener("click", () => {
+        const row = hoursClosureRow(null);
+        hoursClosEl.append(row);
+        hoursEmptyClosures();
+        row.querySelector("input").focus();
+      });
+    }
+
+    if (hoursSaveBtn) {
+      hoursSaveBtn.addEventListener("click", async () => {
+        const week = {};
+        for (const [num, label] of HR_DAYS) {
+          const r = hrRows[num];
+          if (!r || !r.box.checked) { week[num] = null; continue; }
+          if (!r.open.value || !r.close.value) {
+            setStatus(hoursStatus, `${label}: completá la hora de apertura y la de cierre.`, "error");
+            return;
+          }
+          week[num] = { open: r.open.value, close: r.close.value };
+        }
+
+        const closures = [];
+        hoursClosEl.querySelectorAll(".hr-closure").forEach((row) => {
+          const date = row.querySelector("[data-hr-date]").value;
+          const reason = row.querySelector("[data-hr-reason]").value.trim();
+          if (date) closures.push({ date, reason });
+        });
+
+        if (!Object.values(week).some(Boolean)
+            && !window.confirm("Marcaste todos los días como cerrados: nadie va a poder pedir por la web. ¿Guardar igual?")) {
+          return;
+        }
+
+        hoursSaveBtn.disabled = true;
+        setStatus(hoursStatus, "Guardando…", "");
+        try {
+          const data = await api("admin/hours-save.php", { week, closures });
+          renderHours(data);
+          setStatus(hoursStatus, "✅ Horarios guardados. Ya rigen para los pedidos por la web.", "ok");
+        } catch (error) {
+          setStatus(hoursStatus, error.message, "error");
+        } finally {
+          hoursSaveBtn.disabled = false;
+        }
+      });
+    }
+
+    loadHours();
+  }
+
   checkStaff().then((role) => {
     if (!role) return; // no es staff: quedó el gate
     initOrders();                                     // todo el staff ve pedidos
@@ -3325,6 +3583,7 @@
       initBirthdays();
       loadProdeTeamsDatalist();
       loadMenuAdmin();
+      initHours();
       initRoleMgmt();
     }
   });

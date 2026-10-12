@@ -116,6 +116,13 @@
       return;
     }
 
+    /* Mismo horario de apertura y cierre = abierto todo el día: no hay un
+       "hasta las" que decir. */
+    if (orderHours.open && orderHours.open === orderHours.close) {
+      show(hoursEl, false);
+      return;
+    }
+
     hoursEl.classList.add("is-soon");
     hoursEl.innerHTML =
       "🟢 Estamos tomando pedidos hasta las <b>" + escapeHtml(orderHours.close) + "</b>.";
