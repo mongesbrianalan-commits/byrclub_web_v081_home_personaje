@@ -103,6 +103,11 @@ return [
     /*
      * Horario en que se puede PEDIR POR LA WEB (hora de Argentina).
      *
+     * OJO: desde que se guarda un horario en el panel (Menú → Días y
+     * horarios), este y los dos de abajo ('order_closed_weekdays',
+     * 'order_closed_dates') dejan de usarse. Quedan como respaldo para
+     * cuando todavía no se guardó nada o falta 2026-10-store-hours.sql.
+     *
      *   ['19:40', '23:30']  -> abierto de 19:40 a 23:30
      *   ['20:00', '01:30']  -> también vale cruzar la medianoche
      *   null                -> sin límite, se puede pedir siempre

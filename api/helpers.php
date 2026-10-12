@@ -198,90 +198,41 @@ function byr_delivery_fee(): int
 }
 
 /**
- * Horario en que se puede pedir POR LA WEB.
+ * ---------------------------------------------------------------------------
+ * DÍAS Y HORARIOS PARA PEDIR POR LA WEB
+ * ---------------------------------------------------------------------------
  *
- * Se configura en api/config.php, sin desplegar:
+ * Se editan desde el panel (Menú → Días y horarios) y se guardan en la tabla
+ * store_settings, clave 'opening_hours'. Forma del valor:
  *
- *   'order_hours' => ['19:40', '23:30'],
+ *   {
+ *     "week": {                       1 = lunes … 7 = domingo
+ *       "1": null,                    null = ese día no se toman pedidos
+ *       "2": {"open": "19:40", "close": "23:30"},
+ *       …
+ *       "6": {"open": "19:40", "close": "01:00"}   cruza la medianoche
+ *     },
+ *     "closures": [                   cierres de un día puntual
+ *       {"date": "2026-09-22", "reason": "por un desperfecto en el gas del local"}
+ *     ]
+ *   }
  *
- * Poner null (o un valor inválido) deja el pedido abierto las 24hs, que es
- * como venía funcionando. Soporta cruzar la medianoche: ['20:00','01:30'].
+ * Mientras nadie guarde nada desde el panel (o si falta la migración
+ * 2026-10-store-hours.sql) se arma lo mismo con lo que hay en api/config.php
+ * ('order_hours', 'order_closed_weekdays', 'order_closed_dates'), así que
+ * desplegar esto no cambia el horario que ya estaba andando.
  *
- * No afecta al mostrador: el cajero vende cuando el local está abierto,
- * tenga el horario web abierto o no.
+ * Un turno que cruza la medianoche le pertenece al día en que ARRANCA: el
+ * sábado de 19:40 a 01:00 sigue abierto el domingo a las 00:30, aunque el
+ * domingo esté cerrado. Un cierre puntual del sábado corta también ese rato.
+ *
+ * No afecta al mostrador: el cajero vende cuando el local está abierto.
  */
-function byr_order_hours(): ?array
-{
-    $h = byr_setting('order_hours', ['19:40', '23:30']);
 
-    if (!is_array($h) || count($h) < 2) {
-        return null;
-    }
-
-    $open  = trim((string) $h[0]);
-    $close = trim((string) $h[1]);
-
-    if (!preg_match('/^\d{1,2}:\d{2}$/', $open) || !preg_match('/^\d{1,2}:\d{2}$/', $close)) {
-        return null;
-    }
-
-    return ['open' => $open, 'close' => $close];
-}
-
-/**
- * ¿Hoy el local NO toma pedidos, sea la hora que sea?
- *
- * Dos listas, las dos se cambian en api/config.php sin desplegar:
- *
- *   'order_closed_weekdays' => [1],   // 1 = lunes, 2 = martes … 7 = domingo
- *   'order_closed_dates'    => ['2026-09-22' => 'por un desperfecto en el gas del local'],
- *
- * La primera es la regla fija (los lunes está cerrado). La segunda son los
- * cierres de un día puntual, con el motivo para poder contarlo. Una fecha que
- * ya pasó no molesta, así que se pueden dejar acumuladas.
- *
- * Devuelve null si hoy se trabaja, o el MOTIVO si está cerrado. El motivo se
- * le muestra al cliente dentro de una frase ("Hoy no estamos tomando pedidos
- * <motivo>."), así que se escribe en minúscula y sin punto final.
- */
-function byr_closed_today(): ?string
-{
-    $hoy = new DateTime('now', new DateTimeZone(BYR_TZ));
-
-    /* Primero la fecha puntual: pisa al día de la semana y, sobre todo, tiene
-       un motivo real que contar en vez de "los lunes no abrimos". */
-    $fechas = byr_setting('order_closed_dates', [
-        '2026-09-22' => 'por un desperfecto en el gas del local',
-    ]);
-    if (is_array($fechas)) {
-        $clave = $hoy->format('Y-m-d');
-        foreach ($fechas as $fecha => $motivo) {
-            /* Admite las dos formas: ['2026-09-22' => 'motivo'] y ['2026-09-22'] */
-            if (is_int($fecha)) {
-                $fecha  = $motivo;
-                $motivo = '';
-            }
-            if (trim((string) $fecha) === $clave) {
-                $motivo = trim((string) $motivo);
-                return $motivo !== '' ? $motivo : 'porque hoy el local está cerrado';
-            }
-        }
-    }
-
-    $dias = byr_setting('order_closed_weekdays', [1]);
-    if (is_array($dias)) {
-        $n = (int) $hoy->format('N');
-        foreach ($dias as $d) {
-            if ((int) $d === $n) {
-                $nombres = [1 => 'lunes', 2 => 'martes', 3 => 'miércoles', 4 => 'jueves',
-                            5 => 'viernes', 6 => 'sábados', 7 => 'domingos'];
-                return 'porque los ' . ($nombres[$n] ?? 'días como hoy') . ' no abrimos';
-            }
-        }
-    }
-
-    return null;
-}
+const BYR_WEEKDAY_NAMES = [
+    1 => 'lunes', 2 => 'martes', 3 => 'miércoles', 4 => 'jueves',
+    5 => 'viernes', 6 => 'sábado', 7 => 'domingo',
+];
 
 /** "19:40" -> 1180 (minutos desde medianoche). */
 function byr_minutes_of_day(string $hhmm): int
@@ -290,64 +241,256 @@ function byr_minutes_of_day(string $hhmm): int
     return ((int) $p[0]) * 60 + ((int) ($p[1] ?? 0));
 }
 
+/** "9:05" -> "09:05". null si no es una hora válida. */
+function byr_clean_hhmm($v): ?string
+{
+    $v = trim((string) $v);
+    if (!preg_match('/^(\d{1,2}):(\d{2})$/', $v, $m)) {
+        return null;
+    }
+    $h = (int) $m[1];
+    $i = (int) $m[2];
+    if ($h > 23 || $i > 59) {
+        return null;
+    }
+    return sprintf('%02d:%02d', $h, $i);
+}
+
+/**
+ * Deja prolijo un horario (venga del panel o de la base). Lo que no se
+ * entiende se descarta en vez de romper: un día con una hora inválida queda
+ * cerrado, una fecha inválida se ignora.
+ */
+function byr_hours_normalize(array $raw): array
+{
+    $week = [];
+    $in   = is_array($raw['week'] ?? null) ? $raw['week'] : [];
+    for ($d = 1; $d <= 7; $d++) {
+        $day = $in[$d] ?? $in[(string) $d] ?? null;
+        $open  = is_array($day) ? byr_clean_hhmm($day['open'] ?? '')  : null;
+        $close = is_array($day) ? byr_clean_hhmm($day['close'] ?? '') : null;
+        $week[$d] = ($open !== null && $close !== null) ? ['open' => $open, 'close' => $close] : null;
+    }
+
+    $closures = [];
+    $seen     = [];
+    foreach ((is_array($raw['closures'] ?? null) ? $raw['closures'] : []) as $c) {
+        if (!is_array($c)) {
+            continue;
+        }
+        $date = trim((string) ($c['date'] ?? ''));
+        $dt   = DateTime::createFromFormat('!Y-m-d', $date);
+        if (!$dt || $dt->format('Y-m-d') !== $date || isset($seen[$date])) {
+            continue;
+        }
+        $seen[$date] = true;
+        /* El motivo va dentro de "Hoy no estamos tomando pedidos <motivo>.",
+           así que sin punto final. */
+        $reason = rtrim(trim((string) ($c['reason'] ?? '')), '. ');
+        $closures[] = ['date' => $date, 'reason' => mb_substr($reason, 0, 140)];
+    }
+    usort($closures, fn($a, $b) => strcmp($a['date'], $b['date']));
+
+    return ['week' => $week, 'closures' => $closures];
+}
+
+/**
+ * El horario que había en api/config.php, pasado a la forma nueva. Es el
+ * respaldo mientras no se guarde nada desde el panel.
+ */
+function byr_hours_from_config(): array
+{
+    $h = byr_setting('order_hours', ['19:40', '23:30']);
+    $shift = null;
+    if (is_array($h) && count($h) >= 2) {
+        $o = byr_clean_hhmm($h[0]);
+        $c = byr_clean_hhmm($h[1]);
+        if ($o !== null && $c !== null) {
+            $shift = ['open' => $o, 'close' => $c];
+        }
+    }
+    /* order_hours = null quería decir "sin límite": abierto las 24 hs.
+       Mismo horario de apertura y cierre = todo el día. */
+    if ($shift === null) {
+        $shift = ['open' => '00:00', 'close' => '00:00'];
+    }
+
+    $closedDays = byr_setting('order_closed_weekdays', [1]);
+    $closedDays = is_array($closedDays) ? array_map('intval', $closedDays) : [];
+
+    $week = [];
+    for ($d = 1; $d <= 7; $d++) {
+        $week[$d] = in_array($d, $closedDays, true) ? null : $shift;
+    }
+
+    $closures = [];
+    $fechas = byr_setting('order_closed_dates', []);
+    if (is_array($fechas)) {
+        foreach ($fechas as $fecha => $motivo) {
+            /* Admite las dos formas: ['2026-09-22' => 'motivo'] y ['2026-09-22'] */
+            if (is_int($fecha)) {
+                $fecha  = $motivo;
+                $motivo = '';
+            }
+            $closures[] = ['date' => (string) $fecha, 'reason' => (string) $motivo];
+        }
+    }
+
+    return byr_hours_normalize(['week' => $week, 'closures' => $closures]);
+}
+
+/**
+ * ¿Está corrida la migración 2026-10-store-hours.sql? Cachea el resultado.
+ */
+function byr_store_settings_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $pdo->query('SELECT 1 FROM store_settings LIMIT 1');
+            $ready = true;
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
+/**
+ * El horario vigente: el que se guardó desde el panel o, si no hay, el de
+ * config.php. Trae además 'source' ('panel' | 'config') y, si vino del panel,
+ * 'updatedAt'.
+ */
+function byr_opening_hours(?PDO $pdo = null, bool $fresh = false): array
+{
+    static $cache = null;
+    if ($cache !== null && !$fresh) {
+        return $cache;
+    }
+
+    try {
+        $pdo = $pdo ?: db();
+        if (byr_store_settings_ready($pdo)) {
+            $stmt = $pdo->prepare('SELECT svalue, updated_at FROM store_settings WHERE skey = ?');
+            $stmt->execute(['opening_hours']);
+            $row = $stmt->fetch();
+            $val = $row ? json_decode((string) $row['svalue'], true) : null;
+            if (is_array($val)) {
+                return $cache = byr_hours_normalize($val) + [
+                    'source'    => 'panel',
+                    'updatedAt' => $row['updated_at'],
+                ];
+            }
+        }
+    } catch (Throwable $e) {
+        /* Sin base, o la tabla no se puede leer: se usa config.php. Mejor un
+           horario viejo que dejar la carta sin poder pedir. */
+    }
+
+    return $cache = byr_hours_from_config() + ['source' => 'config', 'updatedAt' => null];
+}
+
+/** El cierre puntual de una fecha ('Y-m-d'), o null si ese día se trabaja normal. */
+function byr_closure_on(array $hours, string $ymd): ?array
+{
+    foreach ($hours['closures'] as $c) {
+        if ($c['date'] === $ymd) {
+            return $c;
+        }
+    }
+    return null;
+}
+
+/**
+ * ¿Se puede pedir en el momento $now con el horario $hours?
+ * Función pura (no lee ni la base ni el reloj) para poder probarla.
+ */
+function byr_window_at(array $hours, DateTimeImmutable $now): array
+{
+    $hora = $now->format('H:i');
+    $n    = byr_minutes_of_day($hora);
+    $dow  = (int) $now->format('N');
+
+    $base = [
+        'limited'      => true,
+        'isOpen'       => false,
+        'closedAllDay' => false,
+        'reason'       => null,
+        'open'         => null,
+        'close'        => null,
+        'now'          => $hora,
+    ];
+
+    /* 1) La cola del turno de AYER, si cruzaba la medianoche. Va primero: el
+          domingo a las 00:30 todavía es el turno del sábado, aunque el
+          domingo esté cerrado. */
+    $ayer    = $now->modify('-1 day');
+    $ayerDow = (int) $ayer->format('N');
+    $ayerT   = $hours['week'][$ayerDow] ?? null;
+    if ($ayerT && !byr_closure_on($hours, $ayer->format('Y-m-d'))) {
+        $o = byr_minutes_of_day($ayerT['open']);
+        $c = byr_minutes_of_day($ayerT['close']);
+        if ($o > $c && $n < $c) {
+            return array_merge($base, ['isOpen' => true, 'open' => $ayerT['open'], 'close' => $ayerT['close']]);
+        }
+    }
+
+    $hoyT = $hours['week'][$dow] ?? null;
+
+    /* 2) Cierre puntual de hoy: manda sobre el día de la semana y tiene un
+          motivo real que contar. */
+    $cierre = byr_closure_on($hours, $now->format('Y-m-d'));
+    if ($cierre) {
+        return array_merge($base, [
+            'closedAllDay' => true,
+            'reason'       => $cierre['reason'] !== '' ? $cierre['reason'] : 'porque hoy el local está cerrado',
+            'open'         => $hoyT['open']  ?? null,
+            'close'        => $hoyT['close'] ?? null,
+        ]);
+    }
+
+    /* 3) Hoy no se abre (la regla de la semana). */
+    if (!$hoyT) {
+        $plural = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados', 'domingos'][$dow - 1];
+        return array_merge($base, [
+            'closedAllDay' => true,
+            'reason'       => 'porque los ' . $plural . ' no abrimos',
+        ]);
+    }
+
+    /* 4) El turno de hoy. Mismo horario de apertura y cierre = todo el día. */
+    $o = byr_minutes_of_day($hoyT['open']);
+    $c = byr_minutes_of_day($hoyT['close']);
+    if ($o === $c) {
+        $abierto = true;
+    } elseif ($o < $c) {
+        $abierto = $n >= $o && $n < $c;
+    } else {
+        /* Cruza la medianoche: lo de después de las 00:00 es de mañana (paso 1). */
+        $abierto = $n >= $o;
+    }
+
+    return array_merge($base, [
+        'isOpen' => $abierto,
+        'open'   => $hoyT['open'],
+        'close'  => $hoyT['close'],
+    ]);
+}
+
 /**
  * ¿Se puede pedir AHORA por la web? La hora se calcula SIEMPRE en Argentina,
  * no en la del servidor: el hosting está en UTC y a las 21:00 de acá serían
  * las 00:00 de allá, que dejaría la web cerrada justo en el pico de venta.
  *
- * Devuelve el detalle para que la carta pueda explicar hasta qué hora, en vez
- * de sólo decir que no.
+ * Devuelve el detalle para que la carta pueda explicar hasta qué hora, o por
+ * qué hoy no, en vez de sólo decir que no.
  */
 function byr_orders_window(): array
 {
-    $now  = new DateTime('now', new DateTimeZone(BYR_TZ));
-    $hora = $now->format('H:i');
-    $h    = byr_order_hours();
-
-    /* Días cerrados: mandan sobre el horario. Va antes que todo porque un
-       lunes no importa que sean las 21:00, y porque el motivo que devuelve
-       es más útil que repetir de qué hora a qué hora se pide. */
-    $cerrado = byr_closed_today();
-    if ($cerrado !== null) {
-        return [
-            'limited'      => true,
-            'isOpen'       => false,
-            'closedAllDay' => true,
-            'reason'       => $cerrado,
-            'open'         => $h['open']  ?? null,
-            'close'        => $h['close'] ?? null,
-            'now'          => $hora,
-        ];
-    }
-
-    if (!$h) {
-        return [
-            'limited'      => false,
-            'isOpen'       => true,
-            'closedAllDay' => false,
-            'reason'       => null,
-            'open'         => null,
-            'close'        => null,
-            'now'          => $hora,
-        ];
-    }
-
-    $o = byr_minutes_of_day($h['open']);
-    $c = byr_minutes_of_day($h['close']);
-    $n = byr_minutes_of_day($hora);
-
-    /* Si el cierre es menor que la apertura, el turno cruza la medianoche. */
-    $abierto = ($o <= $c) ? ($n >= $o && $n < $c) : ($n >= $o || $n < $c);
-
-    return [
-        'limited'      => true,
-        'isOpen'       => $abierto,
-        'closedAllDay' => false,
-        'reason'       => null,
-        'open'         => $h['open'],
-        'close'        => $h['close'],
-        'now'          => $hora,
-    ];
+    return byr_window_at(
+        byr_opening_hours(),
+        new DateTimeImmutable('now', new DateTimeZone(BYR_TZ))
+    );
 }
 
 /**
