@@ -67,6 +67,10 @@ let shellResizeObserver = null;
           Prodes
         </a>
 
+        <a href="${rootPath}dt.html">
+          BYR DT
+        </a>
+
         <a href="${rootPath}juegos.html">
           Juegos
         </a>

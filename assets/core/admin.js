@@ -93,6 +93,7 @@
     canjes:   ["admin", "cajero"],
     cumples:  ["admin"],
     prode:    ["admin"],
+    dt:       ["admin"],
   };
 
   function applyRoleTabs(role) {
