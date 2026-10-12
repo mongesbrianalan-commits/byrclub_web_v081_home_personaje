@@ -23,6 +23,7 @@ const BYR_PRIZE_ICONS = [
     'cheese-burger' => '🧀',
     '2x1-wed'       => '🍔',
     'prode-winner'  => '🏆',
+    'dt-winner'     => '⚽',
 ];
 
 /* secondsLeft lo calcula el SERVER (NOW() de la base), así el contador del
