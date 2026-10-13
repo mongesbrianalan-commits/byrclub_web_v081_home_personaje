@@ -189,3 +189,42 @@
 .dt-pills--grid .dt-pill { padding: 0 4px; font-size: .88rem; line-height: 1.05; }
 .dt-pills--grid .dt-pill small { display: block; font-size: .7rem; opacity: .85; }
 .dt-pills--form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* ---- Bienvenida (cómo funciona) ---- */
+.dt-wel { display: flex; flex-direction: column; }
+.dt-wel__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 2px 0 10px; }
+.dt-wel__dots { display: flex; gap: 6px; }
+.dt-wel__dot { width: 10px; height: 10px; padding: 0; border-radius: 999px; border: 0; background: rgba(255,255,255,.28); cursor: pointer; transition: width .2s, background .2s; }
+.dt-wel__dot[aria-selected="true"] { width: 28px; background: #ffd51f; }
+.dt-wel__skip { min-height: 44px; padding: 0 6px; border: 0; background: none; color: #cfe4ff; font-family: inherit; font-weight: 800; font-size: .95rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.dt-wel__slide { flex: 1 1 auto; min-height: 420px; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 4px 4px; }
+.dt-wel__slide.is-in { animation: dtWelIn .28s ease-out; }
+@keyframes dtWelIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dt-wel__slide.is-in { animation: none; } }
+/* El dibujo viene con mucho aire alrededor: lo recortamos con márgenes en % */
+.dt-wel__hero { width: min(62%, 250px); aspect-ratio: 682 / 694; overflow: hidden; margin: 0 auto 10px; }
+.dt-wel__hero img { display: block; width: 145.2%; max-width: none; margin: -45.3% 0 0 -23.9%; }
+.dt-wel__title { font-family: "Lilita One"; font-weight: 400; font-size: clamp(1.9rem, 8.4vw, 2.5rem); line-height: .98; text-transform: uppercase; margin: 6px 0 10px; }
+.dt-wel__title em { font-style: normal; color: #ffd51f; }
+.dt-wel__text { margin: 0; max-width: 430px; font-weight: 700; font-size: 1.08rem; line-height: 1.38; color: #e4efff; }
+.dt-wel__text b { color: #ffd51f; }
+.dt-wel__note { margin: 12px 0 0; color: #9fb7e8; font-weight: 700; font-size: .9rem; }
+.dt-wel__num { width: 64px; height: 64px; border-radius: 50%; background: #ffd51f; color: #071342; font-family: "Lilita One"; font-size: 2.2rem; display: grid; place-items: center; box-shadow: 0 5px 0 #9d7300; margin: 18px 0 8px; }
+.dt-wel__squad { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+.dt-wel__squad div { background: #061b70; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 12px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.dt-wel__squad strong { font-family: "Lilita One"; font-weight: 400; font-size: 2.1rem; line-height: 1; color: #ffd51f; }
+.dt-wel__squad span { font-weight: 800; font-size: .78rem; color: #cfe4ff; }
+.dt-wel__cards { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 18px; text-align: left; }
+.dt-wel__cards div { display: flex; align-items: center; gap: 14px; background: #061b70; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 12px 14px; }
+.dt-wel__cards p { margin: 0; font-weight: 700; line-height: 1.3; }
+.dt-wel__cards b { color: #ffd51f; }
+.dt-wel__badge { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; background: #ffd51f; color: #071342; font-family: "Lilita One"; font-size: 1.5rem; display: grid; place-items: center; }
+.dt-wel__badge--blue { background: #0a42d8; color: #fff; border: 2px solid rgba(255,255,255,.5); }
+.dt-wel__pts { width: 100%; display: flex; flex-direction: column; gap: 6px; margin-top: 16px; text-align: left; }
+.dt-wel__pts div { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #061b70; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 10px 14px; font-weight: 800; }
+.dt-wel__pts b { font-family: "Lilita One"; font-weight: 400; font-size: 1.2rem; color: #4ee66d; white-space: nowrap; }
+.dt-wel__pts b.is-neg { color: #ff9d9d; }
+.dt-wel .dt-prizes { width: 100%; margin-top: 6px; text-align: left; }
+/* Los botones quedan siempre a mano abajo, aunque la pantalla sea chica */
+.dt-wel .dt-actions { position: sticky; bottom: 0; z-index: 5; margin: 18px -14px 0; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--blue-950, #03124a); }
+.dt-wel .dt-actions .dt-btn--ghost { flex: 0 0 auto; min-width: 104px; }
