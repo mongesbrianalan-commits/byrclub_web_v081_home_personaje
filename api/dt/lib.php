@@ -605,9 +605,19 @@ function byr_dt_squad(PDO $pdo, int $teamId): array
  * Devuelve ['rows' => top N, 'me' => fila del equipo o null, 'total' => equipos].
  * Orden: puntos, puntos del capitán, quien confirmó antes.
  */
-function byr_dt_ranking(PDO $pdo, string $scope, ?int $roundId, ?int $myTeamId, int $limit = 50): array
+function byr_dt_ranking(PDO $pdo, string $scope, ?int $roundId, ?int $myTeamId, int $limit = 50, bool $open = false): array
 {
-    if ($scope === 'fecha') {
+    if ($scope === 'fecha' && $open) {
+        /* Fecha que todavía no arrancó: todos los equipos confirmados, con 0
+           puntos. El orden es el del desempate (quien confirmó antes). */
+        $st = $pdo->query(
+            'SELECT t.id AS team_id, 0 AS points, 0 AS captain_points, t.name, t.crest, u.name AS user_name
+               FROM dt_teams t
+               JOIN users u ON u.id = t.user_id
+              WHERE t.saved_at IS NOT NULL
+              ORDER BY t.saved_at ASC, t.id ASC'
+        );
+    } elseif ($scope === 'fecha') {
         $st = $pdo->prepare(
             'SELECT tr.team_id, tr.points, tr.captain_points, t.name, t.crest, u.name AS user_name
                FROM dt_team_rounds tr
@@ -618,14 +628,18 @@ function byr_dt_ranking(PDO $pdo, string $scope, ?int $roundId, ?int $myTeamId, 
         );
         $st->execute([(int) $roundId]);
     } else {
+        /* General: los que ya jugaron alguna fecha y también los que
+           confirmaron su equipo y todavía no sumaron (aparecen con 0). */
         $st = $pdo->query(
-            'SELECT tr.team_id, SUM(tr.points) AS points, SUM(tr.captain_points) AS captain_points,
+            'SELECT t.id AS team_id, COALESCE(SUM(tr.points), 0) AS points,
+                    COALESCE(SUM(tr.captain_points), 0) AS captain_points,
                     t.name, t.crest, u.name AS user_name, t.created_at
-               FROM dt_team_rounds tr
-               JOIN dt_teams t ON t.id = tr.team_id
+               FROM dt_teams t
                JOIN users u ON u.id = t.user_id
-              GROUP BY tr.team_id, t.name, t.crest, u.name, t.created_at
-              ORDER BY points DESC, captain_points DESC, t.created_at ASC, tr.team_id ASC'
+               LEFT JOIN dt_team_rounds tr ON tr.team_id = t.id
+              WHERE t.saved_at IS NOT NULL OR tr.team_id IS NOT NULL
+              GROUP BY t.id, t.name, t.crest, u.name, t.created_at
+              ORDER BY points DESC, captain_points DESC, t.created_at ASC, t.id ASC'
         );
     }
     $all  = $st->fetchAll();

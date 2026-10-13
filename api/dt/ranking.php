@@ -1,6 +1,7 @@
 <?php
 /**
- * BYR DT — ranking. ?scope=fecha (la fecha en juego o la última cerrada,
+ * BYR DT — ranking. ?scope=fecha (la fecha en curso —si todavía no arrancó,
+ * los equipos confirmados con 0 puntos—, o la última cerrada,
  * o ?round=ID) o ?scope=general (suma de todas las fechas).
  */
 require_once __DIR__ . '/lib.php';
@@ -22,13 +23,15 @@ if ($scope === 'fecha') {
         $st->execute([$rid]);
         $round = $st->fetch() ?: null;
     } else {
+        /* La fecha en curso (abierta o en juego); si no hay, la última cerrada. */
         $cur   = byr_dt_current_round($pdo);
-        $round = ($cur && $cur['status'] === 'live') ? $cur : byr_dt_last_closed_round($pdo);
+        $round = $cur ?: byr_dt_last_closed_round($pdo);
     }
     if (!$round) {
         json_out(['ok' => true, 'round' => null, 'rows' => [], 'me' => null, 'total' => 0]);
     }
 }
 
-$r = byr_dt_ranking($pdo, $scope, $round ? (int) $round['id'] : null, $teamId, 50);
+$isOpen = $round && $round['status'] === 'open';
+$r = byr_dt_ranking($pdo, $scope, $round ? (int) $round['id'] : null, $teamId, 50, $isOpen);
 json_out(['ok' => true, 'round' => byr_dt_round_public($round), 'rows' => $r['rows'], 'me' => $r['me'], 'total' => $r['total']]);
