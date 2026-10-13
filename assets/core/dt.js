@@ -215,7 +215,7 @@
       root.innerHTML = `<div class="dt-empty-state">${esc(e.code === "dt-not-ready" ? "BYR DT arranca muy pronto. ¡Volvé en un rato!" : e.message)}</div>`;
       return;
     }
-    if (!S.team) { renderCreate(); return; }
+    if (!S.team) { welcomeDone ? renderCreate() : renderWelcome(); return; }
     draftFromState();
     if (!keepTab) tab = (S.round && S.round.status === "live") || (!S.canEdit && S.myPoints) ? "puntos" : "equipo";
     rankCache = {};
@@ -228,6 +228,135 @@
     const d = await get("players.php");
     players = d.players;
     players.forEach((p) => byId.set(p.id, Object.assign(byId.get(p.id) || {}, p)));
+  }
+
+  /* ---------------- Bienvenida: cómo funciona ----------------
+     Se muestra al entrar por primera vez (todavía sin equipo),
+     antes de fundar el club. También se puede volver a ver
+     desde la pestaña Reglas. */
+
+  let welcomeDone = false;
+
+  function renderWelcome(onDone) {
+    const R = (S && S.rules) || {};
+    const budget = money(R.budget || 1000);
+    const maxClub = R.maxPerClub || 3;
+    const transfers = R.transfers || 3;
+    const prize = R.prize || "Doble Cheese con papas";
+    const first = ((S && S.me && S.me.dt) || "").trim().split(/\s+/)[0] || "";
+    const r = S && S.round;
+    const closeLine = r && r.status === "open"
+      ? `Esta fecha (${esc(r.name)}) se cierra <b>${esc(r.deadlineText)}</b>.`
+      : "Cada fecha se cierra cuando arranca su primer partido.";
+    const hero = `<div class="dt-wel__hero" aria-hidden="true"><img src="assets/personaje-byr-prode.png" alt=""></div>`;
+
+    const slides = [
+      `${hero}
+       <span class="dt-label">BYR Club presenta</span>
+       <h1 class="dt-wel__title">¡Bienvenido al <em>BYR DT</em>${first ? ", " + esc(first) : ""}!</h1>
+       <p class="dt-wel__text">Sos el DT de tu propio equipo con jugadores reales de la Liga Profesional. Cada fecha sumás puntos según cómo juegan en la cancha y competís contra todos los socios.</p>`,
+
+      `<div class="dt-wel__num">1</div>
+       <h2 class="dt-wel__title">Armá tu plantel</h2>
+       <p class="dt-wel__text">Fichá <b>15 jugadores</b> con <b>${budget}</b> de presupuesto. Cada jugador tiene su precio.</p>
+       <div class="dt-wel__squad">
+         <div><strong>2</strong><span>Arqueros</span></div>
+         <div><strong>5</strong><span>Defensores</span></div>
+         <div><strong>5</strong><span>Medios</span></div>
+         <div><strong>3</strong><span>Delanteros</span></div>
+       </div>
+       <p class="dt-wel__note">Máximo ${maxClub} jugadores del mismo club.</p>`,
+
+      `<div class="dt-wel__num">2</div>
+       <h2 class="dt-wel__title">Elegí titulares y capitán</h2>
+       <p class="dt-wel__text">Elegí la formación y tus <b>11 titulares</b>. Los otros 4 quedan en el banco.</p>
+       <div class="dt-wel__cards">
+         <div><span class="dt-wel__badge">C</span><p>Tu <b>capitán</b> suma <b>el doble</b> de puntos.</p></div>
+         <div><span class="dt-wel__badge dt-wel__badge--blue">↺</span><p>Si un titular no juega, <b>entra solo</b> un suplente de su mismo puesto.</p></div>
+       </div>`,
+
+      `<div class="dt-wel__num">3</div>
+       <h2 class="dt-wel__title">Sumá puntos</h2>
+       <p class="dt-wel__text">Tus jugadores suman con lo que hacen en cada partido real:</p>
+       <div class="dt-wel__pts">
+         <div><span>Gol</span><b>+4 a +6</b></div>
+         <div><span>Asistencia</span><b>+3</b></div>
+         <div><span>Valla invicta</span><b>+4</b></div>
+         <div><span>Jugar 60 minutos</span><b>+2</b></div>
+         <div><span>Amarilla / Roja</span><b class="is-neg">−1 / −3</b></div>
+       </div>
+       <p class="dt-wel__note">La tabla completa está en la pestaña Reglas.</p>`,
+
+      `<div class="dt-wel__num">4</div>
+       <h2 class="dt-wel__title">Confirmá a tiempo</h2>
+       <p class="dt-wel__text">${closeLine} Después no se puede tocar hasta la fecha siguiente.</p>
+       <div class="dt-wel__cards">
+         <div><span class="dt-wel__badge">${transfers}</span><p>Desde tu segunda fecha tenés <b>${transfers} cambios</b> por fecha para mejorar el equipo.</p></div>
+         <div><span class="dt-wel__badge dt-wel__badge--blue">$</span><p>Los <b>precios suben o bajan</b> después de cada fecha según cómo jugó cada uno.</p></div>
+       </div>`,
+
+      `${hero}
+       <h2 class="dt-wel__title">Los premios</h2>
+       <div class="dt-prizes">
+         <div><span class="dt-label">Ganador de cada fecha</span><strong style="color:#ffd51f">${esc(prize)}</strong></div>
+         <div class="is-gold"><span class="dt-label">Campeón del torneo</span><strong>$50.000 en consumo</strong></div>
+       </div>
+       <p class="dt-wel__text" style="margin-top:14px">Primero fundá tu club: ponele nombre y escudo. ¡Vos sos el DT!</p>`
+    ];
+
+    let i = 0;
+    root.innerHTML = `
+      <section class="dt-wel" aria-roledescription="carrusel" aria-label="Cómo funciona BYR DT">
+        <div class="dt-wel__top">
+          <div class="dt-wel__dots" role="tablist">${slides.map((_, k) => `<button type="button" role="tab" class="dt-wel__dot" data-dot="${k}" aria-label="Paso ${k + 1} de ${slides.length}"></button>`).join("")}</div>
+          <button type="button" class="dt-wel__skip" data-skip>Saltar</button>
+        </div>
+        <div class="dt-wel__slide" data-slide aria-live="polite"></div>
+        <div class="dt-actions">
+          <button type="button" class="dt-btn dt-btn--ghost" data-prev>Atrás</button>
+          <button type="button" class="dt-btn dt-btn--yellow" data-next>SIGUIENTE</button>
+        </div>
+      </section>`;
+
+    const box = root.querySelector("[data-slide]");
+    const prev = root.querySelector("[data-prev]");
+    const next = root.querySelector("[data-next]");
+    const skip = root.querySelector("[data-skip]");
+    const last = slides.length - 1;
+    const finish = () => {
+      welcomeDone = true;
+      window.scrollTo(0, 0);
+      if (onDone) onDone(); else renderCreate();
+    };
+
+    function show(k) {
+      i = Math.max(0, Math.min(last, k));
+      box.innerHTML = slides[i];
+      box.classList.remove("is-in"); void box.offsetWidth; box.classList.add("is-in");
+      if (k !== undefined && window.scrollY > 0) window.scrollTo({ top: 0, behavior: "smooth" });
+      root.querySelectorAll("[data-dot]").forEach((d, n) => d.setAttribute("aria-selected", n === i ? "true" : "false"));
+      prev.style.visibility = i === 0 ? "hidden" : "visible";
+      next.textContent = i === last ? (onDone ? "VOLVER" : "FUNDAR MI CLUB") : "SIGUIENTE";
+      skip.style.visibility = i === last ? "hidden" : "visible";
+    }
+
+    prev.addEventListener("click", () => show(i - 1));
+    next.addEventListener("click", () => (i === last ? finish() : show(i + 1)));
+    skip.addEventListener("click", finish);
+    root.querySelectorAll("[data-dot]").forEach((d) => d.addEventListener("click", () => show(+d.dataset.dot)));
+
+    // Deslizar con el dedo
+    let x0 = null;
+    box.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    box.addEventListener("touchend", (e) => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      x0 = null;
+      if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1));
+    });
+
+    show(0);
+    window.scrollTo(0, 0);
   }
 
   /* ---------------- Crear el equipo ---------------- */
@@ -660,6 +789,7 @@
       ["Amarilla", "−1"], ["Roja", "−3"], ["Gol en contra o penal errado", "−2"]
     ];
     view.innerHTML = `
+      <button type="button" class="dt-btn dt-btn--ghost dt-btn--block" data-replay style="margin:0 0 12px">Ver la bienvenida de nuevo</button>
       <ol class="dt-steps">
         <li><span>1</span>Elegí 15 jugadores (2 arqueros, 5 defensores, 5 mediocampistas y 3 delanteros) con <b>${money(S.rules.budget)}</b>. Máximo ${S.rules.maxPerClub} por club.</li>
         <li><span>2</span>Elegí la formación, tus 11 titulares y un <b>capitán</b>: sus puntos valen doble.</li>
@@ -680,6 +810,10 @@
         <li>El torneo incluye las fechas que quedan del Clausura y los playoffs. Los jugadores de equipos eliminados suman 0.</li>
         <li>Los precios suben o bajan después de cada fecha según cómo jugó cada uno y cuántos lo ficharon (hasta $0,5 M por fecha).</li>
       </ul>`;
+    view.querySelector("[data-replay]").addEventListener("click", () => {
+      window.scrollTo(0, 0);
+      renderWelcome(() => { tab = "reglas"; render(); });
+    });
   }
 
   /* ---------------- Aviso del ganador ---------------- */
