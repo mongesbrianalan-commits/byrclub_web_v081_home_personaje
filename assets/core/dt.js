@@ -125,6 +125,37 @@
 
   function countPos(list, pos) { return list.filter((p) => p.pos === pos).length; }
 
+  /* Lo que falta para llegar a los 15: [["ARQ",1],["MED",2]…] */
+  function missingByPos() {
+    const list = draftList();
+    return POS_ORDER.map((pos) => [pos, S.rules.squad[pos] - countPos(list, pos)]).filter(([, n]) => n > 0);
+  }
+  function missingText(miss) {
+    return miss.map(([pos, n]) => `${n} ${n === 1 ? POS_NAME[pos].toLowerCase() : POS_PLURAL[pos]}`).join(", ");
+  }
+  /* Lo mínimo que cuesta completar el plantel con los más baratos que se
+     pueden fichar (respetando el máximo por club de forma aproximada).
+     null si todavía no cargó el mercado. */
+  function cheapestToComplete() {
+    if (!players) return null;
+    const miss = missingByPos();
+    if (!miss.length) return 0;
+    const clubCount = {};
+    draftList().forEach((p) => { clubCount[p.clubId] = (clubCount[p.clubId] || 0) + 1; });
+    let total = 0;
+    for (const [pos, n] of miss) {
+      const pool = players.filter((p) => p.pos === pos && !draft.ids.has(p.id)).sort((a, b) => a.price - b.price);
+      let got = 0;
+      for (const p of pool) {
+        if (got >= n) break;
+        if ((clubCount[p.clubId] || 0) >= S.rules.maxPerClub) continue;
+        clubCount[p.clubId] = (clubCount[p.clubId] || 0) + 1;
+        total += p.price; got++;
+      }
+    }
+    return total;
+  }
+
   function bank() {
     const original = new Map(S.squad.map((p) => [p.id, p]));
     let b = S.team.bank;
@@ -155,7 +186,7 @@
   function whyCantBuy(p) {
     const list = draftList();
     if (draft.ids.has(p.id)) return "own";
-    if (countPos(list, p.pos) >= S.rules.squad[p.pos]) return `Ya tenés tus ${S.rules.squad[p.pos]} ${POS_PLURAL[p.pos]}`;
+    if (countPos(list, p.pos) >= S.rules.squad[p.pos]) return `${p.pos} completo`;
     if (list.filter((x) => x.clubId === p.clubId).length >= S.rules.maxPerClub) return `Ya tenés ${S.rules.maxPerClub} de ${p.club}`;
     if (p.price > bank()) return "No te alcanza";
     const t = transfersUsed();
@@ -171,6 +202,17 @@
     if (startersOfPos < shape()[p.pos]) draft.starters.add(p.id);
     if (!draft.captain && draft.starters.has(p.id) && p.pos === "DEL") draft.captain = p.id;
     lastMsg = null;
+    const miss = missingByPos();
+    if (!miss.length) {
+      tab = "equipo";
+      lastMsg = { type: "ok", text: "¡Tenés los 15! Revisá titulares y capitán, y tocá CONFIRMAR EQUIPO." };
+      toast(`${p.name} fichado. ¡Plantel completo!`);
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    // Si se llenó este puesto, el mercado salta solo al próximo que falta.
+    if (market.pos === p.pos && countPos(draftList(), p.pos) >= S.rules.squad[p.pos]) market.pos = miss[0][0];
     toast(`${p.name} fichado. Te quedan ${money(bank())}.`);
     render();
   }
@@ -535,18 +577,31 @@
       return `<div class="dt-row">${slots.join("")}</div>`;
     }).join("");
 
-    const missing = POS_ORDER.map((pos) => [pos, S.rules.squad[pos] - countPos(list, pos)]).filter(([, n]) => n > 0);
+    const missing = missingByPos();
+    // Lugares vacíos del banco: lo que falta y no entra de titular.
+    const emptyBench = [];
+    POS_ORDER.forEach((pos) => {
+      const startersFree = sh[pos] - starters.filter((p) => p.pos === pos).length;
+      const n = Math.max(0, S.rules.squad[pos] - countPos(list, pos) - startersFree);
+      for (let i = 0; i < n; i++) emptyBench.push(pos);
+    });
+    const benchSize = 15 - Object.values(sh).reduce((a, b) => a + b, 0);
     const benchCards = bench.map((p) => `<button type="button" class="dt-benchcard" data-player="${p.id}" ${editable ? "" : "disabled"}>
-        <small>${p.pos}</small><b>${esc(p.name)}</b><em>${esc(p.club)} · ${money(p.price)}</em></button>`).join("");
+        <small>${p.pos}</small><b>${esc(p.name)}</b><em>${esc(p.club)} · ${money(p.price)}</em></button>`).join("")
+      + emptyBench.map((pos) => `<button type="button" class="dt-benchcard dt-benchcard--empty" data-bench-empty="${pos}" ${editable ? "" : "disabled"}>
+        <small>${pos}</small><span class="dt-empty"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg></span><b>Fichar suplente</b></button>`).join("");
+    const need = cheapestToComplete();
+    const shortMoney = need !== null && need > bank();
 
     view.innerHTML = `
       <div class="dt-pills dt-pills--form" role="group" aria-label="Formación">
         ${Object.keys(S.rules.formations).map((f) => `<button type="button" class="dt-pill" aria-pressed="${draft.formation === f}" data-formation="${f}" ${editable ? "" : "disabled"}>${f}</button>`).join("")}
       </div>
       <div class="dt-pitch">${rows}</div>
-      <h2 class="dt-h2" style="margin-top:14px">Suplentes</h2>
-      ${bench.length ? `<div class="dt-bench">${benchCards}</div>` : `<p class="dt-muted" style="margin:0 4px">Todavía no tenés suplentes.</p>`}
-      ${missing.length ? `<p class="dt-muted" style="margin:10px 4px 0">Te faltan: ${missing.map(([pos, n]) => `${n} ${n === 1 ? POS_NAME[pos].toLowerCase() : POS_PLURAL[pos]}`).join(", ")}.</p>` : ""}
+      <h2 class="dt-h2" style="margin-top:14px">Suplentes <small class="dt-muted">(${bench.length}/${benchSize})</small></h2>
+      ${benchCards ? `<div class="dt-bench">${benchCards}</div>` : `<p class="dt-muted" style="margin:0 4px">Todavía no tenés suplentes.</p>`}
+      ${missing.length ? `<p class="dt-muted" style="margin:10px 4px 0">Para llegar a los 15 te faltan: <b style="color:#ffd51f">${missingText(missing)}</b>. Tocá un lugar vacío para ficharlos.</p>` : ""}
+      ${shortMoney ? `<div class="dt-alert" style="margin-top:10px">${icon("alert")}<span>Con ${money(bank())} no te alcanza para completar los 15 (necesitás al menos ${money(need)}). Vendé a algún titular caro y fichá uno más barato.</span></div>` : ""}
       ${editable ? `
       <div class="dt-actions">
         <button type="button" class="dt-btn dt-btn--ghost" data-go-market>Fichar</button>
@@ -559,10 +614,14 @@
     view.querySelectorAll("[data-empty]").forEach((el) => el.addEventListener("click", () => {
       const pos = el.dataset.empty;
       if (countPos(draftList(), pos) >= S.rules.squad[pos]) {
-        toast(`Ya tenés tus ${S.rules.squad[pos]} ${POS_PLURAL[pos]}: tocá un suplente para subirlo.`);
+        toast(`Ya tenés tus ${S.rules.squad[pos]} ${POS_PLURAL[pos]}: tocá uno del banco para ponerlo de titular.`);
         return;
       }
       market.pos = pos; tab = "mercado"; render();
+    }));
+    view.querySelectorAll("[data-bench-empty]").forEach((el) => el.addEventListener("click", () => {
+      market.pos = el.dataset.benchEmpty; market.sort = "cheap"; market.limit = 60; tab = "mercado"; render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }));
     const gm = view.querySelector("[data-go-market]");
     if (gm) gm.addEventListener("click", () => { tab = "mercado"; render(); });
@@ -631,12 +690,20 @@
     const editable = !!S.canEdit || !S.round;
     const b = bank();
     const spent = Math.max(0, S.rules.budget - b);
+    const miss = missingByPos();
+    if (editable && market.pos && miss.length && countPos(draftList(), market.pos) >= S.rules.squad[market.pos]) market.pos = miss[0][0];
+    const need = cheapestToComplete();
+    const hint = !editable ? "" : !miss.length
+      ? `<div class="dt-alert dt-alert--info">${icon("check")}<span>¡Ya tenés los 15! Volvé a Equipo y confirmalo.</span><button type="button" class="dt-btn dt-btn--yellow" data-go-team style="min-height:40px;padding:0 12px;font-size:.95rem;margin-left:auto">EQUIPO</button></div>`
+      : `<div class="dt-alert dt-alert--info">${icon("ball")}<span>Te faltan <b style="color:#ffd51f">${missingText(miss)}</b> (titulares o suplentes, cuentan igual).</span></div>`
+        + (need !== null && need > b ? `<div class="dt-alert">${icon("alert")}<span>No te alcanza para completar: necesitás al menos ${money(need)}. Vendé a alguien caro.</span></div>` : "");
 
     view.innerHTML = `
       <div class="dt-budgetbar">
         <div class="dt-budgetbar__top"><span class="dt-label">Te quedan</span><strong>${money(b)}</strong></div>
         <div class="dt-budgetbar__track"><div class="dt-budgetbar__fill" style="width:${Math.min(100, Math.round(100 * spent / S.rules.budget))}%"></div></div>
       </div>
+      ${hint}
       <label class="dt-search">
         <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>
         <input type="search" placeholder="Buscar jugador o club" value="${esc(market.q)}" data-q aria-label="Buscar jugador o club">
@@ -661,6 +728,8 @@
     q.addEventListener("input", () => { clearTimeout(qTimer); qTimer = setTimeout(() => { market.q = q.value; market.limit = 60; drawList(view, editable); }, 150); });
     view.querySelectorAll("[data-pos]").forEach((el) => el.addEventListener("click", () => { market.pos = el.dataset.pos; market.limit = 60; renderMarket(view); }));
     view.querySelector("[data-sort]").addEventListener("change", (e) => { market.sort = e.target.value; drawList(view, editable); });
+    const gt = view.querySelector("[data-go-team]");
+    if (gt) gt.addEventListener("click", () => { tab = "equipo"; render(); window.scrollTo({ top: 0, behavior: "smooth" }); });
     drawList(view, editable);
   }
 
