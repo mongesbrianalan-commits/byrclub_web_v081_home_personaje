@@ -815,12 +815,25 @@
       if (tab !== "puntos") return;
       let rows = (d.rows || []).slice();
       if (d.me && !rows.some((r) => r.me)) rows.push(d.me);
-      box.innerHTML = rows.length ? rows.map((r) => `
-        <button type="button" class="dt-rowcard ${r.me ? "is-me" : ""}" data-team="${r.teamId}" ${rankScope === "fecha" && d.round ? `data-round="${d.round.id}"` : ""}>
-          <span class="dt-rowcard__pos">${r.pos}</span>${crest(r)}
+      const notStarted = rankScope === "fecha" && d.round && d.round.status === "open";
+      const allZero = rows.length > 0 && rows.every((r) => !r.points);
+      // Antes de que haya puntos, todos están 0: no mostramos puestos.
+      const showPos = !(notStarted || allZero);
+      const clickable = rankScope === "fecha" && d.round && d.round.status !== "open";
+      const head = rankScope === "fecha" && d.round
+        ? `<p class="dt-muted" style="margin:0 4px 8px">${esc(d.round.name)} · ${notStarted
+            ? `arranca ${esc(d.round.deadlineText)}. Los puntos se suman a medida que terminan los partidos.`
+            : d.round.status === "live" ? "en juego: se actualiza a medida que terminan los partidos." : "terminada."}</p>`
+        : rankScope === "general" && allZero
+          ? `<p class="dt-muted" style="margin:0 4px 8px">Todos arrancan en 0. La tabla se mueve con cada fecha que se juega.</p>`
+          : "";
+      box.innerHTML = head + (rows.length ? rows.map((r) => `
+        <${clickable ? "button type=\"button\"" : "div"} class="dt-rowcard ${r.me ? "is-me" : ""}" ${clickable ? `data-team="${r.teamId}" data-round="${d.round.id}"` : ""}>
+          <span class="dt-rowcard__pos">${showPos ? r.pos : "–"}</span>${crest(r)}
           <span class="dt-rowcard__main"><b>${esc(r.team)}</b><small>DT: ${esc(r.me ? "Vos" : r.dt)}</small></span>
-          <span class="dt-rowcard__pts">${r.points}</span></button>`).join("")
-        : `<div class="dt-empty-state">El ranking se arma cuando arranca la primera fecha.</div>`;
+          <span class="dt-rowcard__pts">${r.points}</span></${clickable ? "button" : "div"}>`).join("")
+        : `<div class="dt-empty-state">Todavía no hay equipos confirmados. ¡Sé el primero!</div>`)
+        + (rows.length && d.total > rows.length ? `<p class="dt-muted" style="text-align:center;margin:8px 0 0">Mostrando ${rows.length} de ${d.total} equipos.</p>` : "");
       box.querySelectorAll("[data-round]").forEach((b) => b.addEventListener("click", () => teamSheet(+b.dataset.team, +b.dataset.round)));
     } catch (e) {
       box.innerHTML = `<div class="dt-empty-state">${esc(e.message)}</div>`;
