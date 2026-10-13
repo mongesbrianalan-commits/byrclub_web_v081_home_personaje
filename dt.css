@@ -228,3 +228,10 @@
 /* Los botones quedan siempre a mano abajo, aunque la pantalla sea chica */
 .dt-wel .dt-actions { position: sticky; bottom: 0; z-index: 5; margin: 18px -14px 0; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--blue-950, #03124a); }
 .dt-wel .dt-actions .dt-btn--ghost { flex: 0 0 auto; min-width: 104px; }
+
+/* Lugar vacío del banco */
+.dt-benchcard--empty { border-style: dashed; border-color: rgba(255,213,31,.55); background: rgba(255,213,31,.06); }
+.dt-benchcard--empty .dt-empty { width: 26px; height: 26px; margin: 2px 0; border-radius: 50%; border: 2px dashed #ffd51f; display: grid; place-items: center; }
+.dt-benchcard--empty .dt-empty svg { width: 12px; height: 12px; stroke: #ffd51f; stroke-width: 3; stroke-linecap: round; }
+.dt-benchcard--empty b { color: #ffd51f; font-size: .72rem; }
+.dt-alert .dt-btn { flex: 0 0 auto; }
