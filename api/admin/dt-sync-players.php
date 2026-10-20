@@ -51,8 +51,12 @@ try {
 
         $up = $pdo->prepare(
             'INSERT INTO dt_players (id, name, club_id, position, number, photo, active) VALUES (?, ?, ?, ?, ?, ?, 1)
-             ON DUPLICATE KEY UPDATE name = VALUES(name), club_id = VALUES(club_id), position = VALUES(position),
+             ON DUPLICATE KEY UPDATE name = VALUES(name), club_id = VALUES(club_id),
                                      number = VALUES(number), photo = VALUES(photo), active = 1'
+            /* El puesto NO se pisa: un jugador que ya está cargado conserva su
+               puesto todo el torneo. Si la API lo cambia (pasa seguido entre
+               DEF/MED/DEL), los equipos que lo tienen quedarían con puestos
+               descompensados y huecos en la cancha. */
         );
         $n = 0;
         foreach ($slice as $clubId) {
