@@ -217,6 +217,61 @@
     render();
   }
 
+  /* Antes de fichar, una ficha de cómo viene el jugador (viene de ganar,
+     de una amarilla, sus números) y se reconfirma. Las estadísticas las
+     arma player-info.php con lo que ya está cargado; se guardan por
+     jugador para no volver a pedirlas. */
+  const infoCache = new Map();
+  let buyTicket = 0;
+
+  async function confirmBuy(p) {
+    const why = whyCantBuy(p);
+    if (why) { toast(why === "own" ? "Ya está en tu equipo." : why, true); return; }
+
+    const head = `
+      <div class="dt-prow" style="margin-bottom:12px">${shirt(p)}
+        <div class="dt-prow__info"><b>${esc(p.name)}</b><small>${esc(p.clubName || p.club)} · ${POS_NAME[p.pos]}</small></div>
+        <div class="dt-prow__num"><small>precio</small><strong>${money(p.price)}</strong></div>
+      </div>`;
+    const actions = `
+      <div class="dt-sheet__menu">
+        <button type="button" class="dt-btn dt-btn--green" data-confirm-buy>FICHAR · ${money(p.price)}</button>
+        <button type="button" class="dt-btn dt-btn--ghost" data-dt-sheet-close>Cancelar</button>
+      </div>`;
+    const bind = () => {
+      const ok = sheet.body.querySelector("[data-confirm-buy]");
+      if (ok) ok.addEventListener("click", () => { sheet.close(); buy(p); });
+    };
+
+    const ticket = ++buyTicket;
+    sheet.open("¿Lo fichás?", head + `<p class="dt-loading">Viendo cómo viene…</p>` + actions);
+    bind();
+
+    let info = infoCache.get(p.id);
+    if (!info) {
+      try { info = await get("player-info.php?id=" + p.id); infoCache.set(p.id, info); }
+      catch (e) { info = { stats: [], next: null }; }
+    }
+    // Si mientras cargaba cerró la hoja o abrió otra, no la pisamos.
+    if (ticket !== buyTicket || sheet.wrap.hidden || !sheet.body.querySelector("[data-confirm-buy]")) return;
+
+    const stats = (info.stats || []).slice(0, 3);
+    if (p.avg != null || p.owners) {
+      const bits = [];
+      if (p.avg != null) bits.push(String(p.avg).replace(".", ",") + " pts por fecha" + (p.total ? ` (${p.total} en total)` : ""));
+      if (p.owners) bits.push(`lo tiene el ${p.owners}% de los equipos`);
+      stats.push({ icon: "⭐", tone: "", title: "En BYR DT", text: bits.join(" · ") });
+    }
+    const list = stats.length
+      ? `<div class="dt-stats">${stats.map((s) => `
+          <div class="dt-stat ${s.tone ? "dt-stat--" + esc(s.tone) : ""}"><span class="dt-stat__icon" aria-hidden="true">${esc(s.icon)}</span>
+            <div><b>${esc(s.title)}</b><small>${esc(s.text)}</small></div></div>`).join("")}</div>`
+      : `<p class="dt-muted" style="margin:0 2px 14px">Todavía no tenemos estadísticas de este jugador.</p>`;
+
+    sheet.body.innerHTML = head + (info.next ? `<p class="dt-next">${esc(info.next)}</p>` : "") + list + actions;
+    bind();
+  }
+
   function sell(id) {
     draft.ids.delete(id);
     draft.starters.delete(id);
@@ -761,7 +816,7 @@
     }).join("") + (list.length > shown.length ? `<button type="button" class="dt-btn dt-btn--ghost dt-more" data-more>Ver más (${list.length - shown.length})</button>` : "")
       + (!list.length ? `<div class="dt-empty-state">No encontramos jugadores con esa búsqueda.</div>` : "");
 
-    el.querySelectorAll("[data-buy]").forEach((b) => b.addEventListener("click", () => buy(P(+b.dataset.buy))));
+    el.querySelectorAll("[data-buy]").forEach((b) => b.addEventListener("click", () => confirmBuy(P(+b.dataset.buy))));
     el.querySelectorAll("[data-sell]").forEach((b) => b.addEventListener("click", () => { sell(+b.dataset.sell); }));
     const more = el.querySelector("[data-more]");
     if (more) more.addEventListener("click", () => { market.limit += 60; drawList(view, editable); });
