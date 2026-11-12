@@ -24,8 +24,13 @@ if (!$round) {
     json_out(['round' => null, 'matches' => [], 'you' => null]);
 }
 
+/* Fecha de cruces: además del marcador se elige quién pasa. */
+$cruces   = byr_prode_cruces_ready($pdo);
+$knockout = $cruces && !empty($round['knockout']);
+$extra    = $cruces ? ', p.qualifier_pred, p.qual_points AS pred_qual_points' : '';
+
 $stmt = $pdo->prepare(
-    "SELECT m.*, p.home_pred, p.away_pred, p.points AS pred_points
+    "SELECT m.*, p.home_pred, p.away_pred, p.points AS pred_points" . $extra . "
        FROM prode_matches m
        LEFT JOIN prode_predictions p ON p.match_id = m.id AND p.user_id = ?
       WHERE m.round_id = ?
@@ -53,6 +58,9 @@ foreach ($rows as $r) {
             $hits++;
         }
     }
+    if ($knockout && ($r['pred_qual_points'] ?? null) !== null) {
+        $roundPts += (int) $r['pred_qual_points'];
+    }
 
     $matches[] = [
         'id'          => (int) $r['id'],
@@ -66,10 +74,16 @@ foreach ($rows as $r) {
         'locked'      => $finished || byr_prode_is_locked($kickoffUtc),
         'homeGoals'   => $finished ? (int) $r['home_goals'] : null,
         'awayGoals'   => $finished ? (int) $r['away_goals'] : null,
+        'qualifier'   => ($knockout && $finished) ? ($r['qualifier'] ?? null) : null, // quién pasó
         'prediction'  => $hasPred ? [
-            'home'   => (int) $r['home_pred'],
-            'away'   => (int) $r['away_pred'],
-            'points' => $r['pred_points'] !== null ? (int) $r['pred_points'] : null,
+            'home'       => (int) $r['home_pred'],
+            'away'       => (int) $r['away_pred'],
+            'points'     => $r['pred_points'] !== null ? (int) $r['pred_points'] : null,
+            // Sin elección guardada (cargado antes de ser cruce): pasa el que puso ganador.
+            'qualifier'  => $knockout
+                ? ($r['qualifier_pred'] ?? byr_prode_qualifier_from_score((int) $r['home_pred'], (int) $r['away_pred']))
+                : null,
+            'qualPoints' => ($knockout && ($r['pred_qual_points'] ?? null) !== null) ? (int) $r['pred_qual_points'] : null,
         ] : null,
     ];
 }
@@ -81,6 +95,8 @@ json_out([
         'competition' => $round['competition'],
         'season'      => (int) $round['season'],
         'status'      => $round['status'],
+        'knockout'    => $knockout,              // fecha de cruces
+        'qualPoints'  => BYR_PRODE_QUAL_POINTS,  // lo que suma acertar quién pasa
     ],
     'matches' => $matches,
     'you' => [

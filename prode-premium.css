@@ -107,13 +107,27 @@
 
 .result-miss{color:#ff8f9a}
 
+/* Cruces: aviso de la fecha y selector de "quién pasa" */
+.prode-knockout-note{display:flex;gap:14px;align-items:flex-start;max-width:860px;margin:26px auto 0;padding:16px 20px;border-radius:20px;background:rgba(255,213,31,.1);border:2px solid rgba(255,213,31,.4);color:#dfe9ff;font-weight:700;line-height:1.45}
+.prode-knockout-note>span{font-size:1.8rem;line-height:1}
+.prode-knockout-note strong{display:block;color:var(--prode-gold);margin-bottom:4px}
+.prode-knockout-note[hidden]{display:none}
+.qual-pick{margin:-6px 0 16px}
+.qual-pick>span{display:block;margin-bottom:8px;font-weight:900;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:#8fbcf5}
+.qual-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qual-btn{padding:10px 8px;border-radius:12px;border:2px solid rgba(255,255,255,.2);background:#020a30;color:#dfe9ff;font-weight:900;font-size:.88rem;cursor:pointer;transition:.15s}
+.qual-btn:hover:not(:disabled){border-color:var(--prode-gold)}
+.qual-btn.on{background:var(--prode-gold);border-color:var(--prode-gold);color:#081242}
+.qual-btn:disabled:not(.on){opacity:.4;cursor:not-allowed}
+.qual-hint{display:block;margin-top:7px;font-size:.8rem;font-weight:700;color:#9fb4dc}
+
 /* =========================================
    CÓMO FUNCIONA
 ========================================= */
 
 .prode-how{padding:10px clamp(20px,5vw,90px) 70px;max-width:1100px;margin:auto}
 
-.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:32px}
 
 .how-card{padding:26px 20px;text-align:center;border-radius:24px;background:linear-gradient(150deg,rgba(14,51,151,.85),rgba(3,13,55,.92));border:2px solid rgba(255,255,255,.12);box-shadow:0 12px 0 rgba(0,0,0,.18)}
 

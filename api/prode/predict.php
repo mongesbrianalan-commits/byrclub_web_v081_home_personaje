@@ -24,7 +24,7 @@ if ($home < 0 || $away < 0 || $home > 30 || $away > 30) {
     json_out(['error' => 'Resultado inválido.'], 422);
 }
 
-$stmt = $pdo->prepare('SELECT id, kickoff, status FROM prode_matches WHERE id = ?');
+$stmt = $pdo->prepare('SELECT id, round_id, kickoff, status FROM prode_matches WHERE id = ?');
 $stmt->execute([$matchId]);
 $match = $stmt->fetch();
 if (!$match) {
@@ -32,6 +32,32 @@ if (!$match) {
 }
 if ($match['status'] === 'finished' || byr_prode_is_locked($match['kickoff'])) {
     json_out(['error' => 'Ese partido ya arrancó, no se puede pronosticar.', 'code' => 'locked'], 409);
+}
+
+/* Cruces: también hay que elegir quién pasa. Como el marcador que vale es el
+   de 90' + alargue, si el socio pone un ganador, pasa ese (si no, podría
+   "cubrirse" poniendo un ganador en el marcador y al otro como clasificado).
+   Solo con empate elige libremente (lo definen los penales). */
+if (byr_prode_round_is_knockout($pdo, (int) $match['round_id'])) {
+    $qualifier = byr_prode_clean_side($in['qualifier'] ?? null);
+    $implied   = byr_prode_qualifier_from_score($home, $away);
+    if ($implied !== null) {
+        if ($qualifier !== null && $qualifier !== $implied) {
+            json_out(['error' => 'Si pronosticás un ganador, pasa ese. Para elegir al otro, poné empate (penales).'], 422);
+        }
+        $qualifier = $implied;
+    } elseif ($qualifier === null) {
+        json_out(['error' => 'Pusiste empate: elegí quién pasa por penales.'], 422);
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO prode_predictions (user_id, match_id, home_pred, away_pred, qualifier_pred)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE home_pred = VALUES(home_pred), away_pred = VALUES(away_pred),
+                                 qualifier_pred = VALUES(qualifier_pred)'
+    );
+    $stmt->execute([$id, $matchId, $home, $away, $qualifier]);
+    json_out(['ok' => true, 'prediction' => ['home' => $home, 'away' => $away, 'qualifier' => $qualifier]]);
 }
 
 $stmt = $pdo->prepare(

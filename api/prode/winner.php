@@ -33,7 +33,7 @@ if (!$round) {
 /* Mejor pronosticador de esa fecha (mismo criterio que el premio). */
 $top = $pdo->prepare(
     'SELECT u.name, u.avatar,
-            COALESCE(SUM(p.points), 0) AS pts,
+            ' . byr_prode_total_pts_sql($pdo) . ' AS pts,
             SUM(CASE WHEN p.points = 10 THEN 1 ELSE 0 END) AS exacts
        FROM prode_predictions p
        JOIN prode_matches m ON m.id = p.match_id

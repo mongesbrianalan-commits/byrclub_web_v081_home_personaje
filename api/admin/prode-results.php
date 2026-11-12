@@ -67,6 +67,14 @@ foreach ($fixtures as $f) {
 $finishedShort = ['FT', 'AET', 'PEN'];
 $updMatch = $pdo->prepare('UPDATE prode_matches SET status = "finished", home_goals = ?, away_goals = ? WHERE id = ?');
 
+/* Cruces: `goals` de la API ya incluye el alargue (no los penales), que es el
+   marcador que vale. Quién pasa: el ganador, o si empataron, el de los penales. */
+$knockout = byr_prode_round_is_knockout($pdo, $roundId);
+$updQual  = $knockout
+    ? $pdo->prepare('UPDATE prode_matches SET status = "finished", home_goals = ?, away_goals = ?, qualifier = ? WHERE id = ?')
+    : null;
+$pendingQual = 0; // empates sin penales en la API: se cargan a mano
+
 $matchesFinished = 0;
 $predsScored     = 0;
 
@@ -86,6 +94,26 @@ foreach ($matches as $m) {
 
     $rh = (int) ($f['goals']['home'] ?? 0);
     $ra = (int) ($f['goals']['away'] ?? 0);
+
+    if ($knockout) {
+        $q = byr_prode_qualifier_from_score($rh, $ra);
+        if ($q === null) {
+            $ph = $f['score']['penalty']['home'] ?? null;
+            $pa = $f['score']['penalty']['away'] ?? null;
+            if ($ph !== null && $pa !== null && (int) $ph !== (int) $pa) {
+                $q = ((int) $ph > (int) $pa) ? 'home' : 'away';
+            }
+        }
+        if ($q === null) {
+            $pendingQual++;
+            continue; // no sabemos quién pasó: queda para cargar a mano
+        }
+        $updQual->execute([$rh, $ra, $q, (int) $m['id']]);
+        $matchesFinished++;
+        $predsScored += byr_prode_score_match($pdo, (int) $m['id'], $rh, $ra, $q);
+        continue;
+    }
+
     $updMatch->execute([$rh, $ra, (int) $m['id']]);
     $matchesFinished++;
     $predsScored += byr_prode_score_match($pdo, (int) $m['id'], $rh, $ra);
@@ -99,6 +127,7 @@ json_out([
     'matchesFinished' => $matchesFinished,
     'matchesTotal'    => count($matches),
     'predsScored'     => $predsScored,
+    'pendingQualifier'=> $pendingQual,
     'roundClosed'     => $closed['closed'],
     'winner'          => $closed['winner'],
 ]);

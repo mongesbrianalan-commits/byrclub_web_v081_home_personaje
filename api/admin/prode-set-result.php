@@ -38,15 +38,31 @@ if (!$match) {
     json_out(['error' => 'Ese partido no existe.'], 404);
 }
 
-$pdo->prepare('UPDATE prode_matches SET status = "finished", home_goals = ?, away_goals = ? WHERE id = ?')
-    ->execute([$home, $away, $matchId]);
+/* Cruces: el marcador es el de 90' + alargue. Si hay ganador, pasa ese; si
+   es empate, hay que decir quién pasó por penales. */
+$qualifier = null;
+if (byr_prode_round_is_knockout($pdo, (int) $match['round_id'])) {
+    $qualifier = byr_prode_qualifier_from_score($home, $away);
+    if ($qualifier === null) {
+        $qualifier = byr_prode_clean_side($in['qualifier'] ?? null);
+        if ($qualifier === null) {
+            json_out(['error' => 'Terminó empatado: elegí quién pasó por penales.'], 422);
+        }
+    }
+    $pdo->prepare('UPDATE prode_matches SET status = "finished", home_goals = ?, away_goals = ?, qualifier = ? WHERE id = ?')
+        ->execute([$home, $away, $qualifier, $matchId]);
+} else {
+    $pdo->prepare('UPDATE prode_matches SET status = "finished", home_goals = ?, away_goals = ? WHERE id = ?')
+        ->execute([$home, $away, $matchId]);
+}
 
-$scored = byr_prode_score_match($pdo, $matchId, $home, $away);
+$scored = byr_prode_score_match($pdo, $matchId, $home, $away, $qualifier);
 $closed = byr_prode_close_round_if_complete($pdo, (int) $match['round_id']);
 
 json_out([
     'ok'          => true,
     'scored'      => $scored,
+    'qualifier'   => $qualifier,
     'roundClosed' => $closed['closed'],
     'winner'      => $closed['winner'],
 ]);

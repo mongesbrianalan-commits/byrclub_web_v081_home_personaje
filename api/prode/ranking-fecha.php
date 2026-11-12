@@ -38,7 +38,7 @@ if (!$round) {
 /* Puntos de cada socio SOLO en esta fecha (pronósticos ya puntuados). */
 $stmt = $pdo->prepare(
     "SELECT u.id, u.name, u.avatar,
-            COALESCE(SUM(p.points), 0) AS pts,
+            " . byr_prode_total_pts_sql($pdo) . " AS pts,
             SUM(CASE WHEN p.points = 10 THEN 1 ELSE 0 END) AS exacts
        FROM users u
        JOIN prode_predictions p ON p.user_id = u.id

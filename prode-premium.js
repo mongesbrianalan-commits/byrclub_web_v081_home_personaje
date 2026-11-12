@@ -38,12 +38,84 @@
     winnerRound: $("[data-prode-winner-round]"),
     winnerName: $("[data-prode-winner-name]"),
     winnerAvatar: $("[data-prode-winner-avatar]"),
-    winnerSub: $("[data-prode-winner-sub]")
+    winnerSub: $("[data-prode-winner-sub]"),
+    knockoutNote: $("[data-prode-knockout-note]"),
+    howQual: $("[data-prode-how-qual]")
   };
 
   if (!els.matches) return; // no estamos en la página del prode
 
   let currentMatches = [];
+
+  /* Fecha de cruces: además del resultado se elige quién pasa (+5).
+     El resultado que vale es el de 90' + alargue; los penales solo definen
+     quién pasa. Por eso si el socio pone un ganador, pasa ese. */
+  let knockout = false;
+  let qualPoints = 5;
+
+  function sideFromScore(h, a) {
+    if (h === "" || a === "" || h === null || a === null) return null;
+    const nh = Number(h);
+    const na = Number(a);
+    if (nh === na) return null;
+    return nh > na ? "home" : "away";
+  }
+
+  function teamOf(m, side) {
+    return side === "home" ? m.home : side === "away" ? m.away : "";
+  }
+
+  /* Selector "¿Quién pasa?" de un partido abierto. Sigue al marcador: con un
+     ganador queda marcado ese; con empate (o sin marcador) se elige a mano. */
+  function qualPicker(m, homeInput, awayInput) {
+    const wrap = document.createElement("div");
+    wrap.className = "qual-pick";
+    const title = document.createElement("span");
+    title.textContent = "¿Quién pasa de fase?";
+    const opts = document.createElement("div");
+    opts.className = "qual-options";
+    const hint = document.createElement("small");
+    hint.className = "qual-hint";
+
+    const state = { pick: m.prediction ? m.prediction.qualifier || null : null };
+    const btns = {};
+    ["home", "away"].forEach((side) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "qual-btn";
+      b.textContent = teamOf(m, side);
+      b.addEventListener("click", () => {
+        state.pick = side;
+        sync();
+      });
+      btns[side] = b;
+      opts.append(b);
+    });
+
+    function sync() {
+      const implied = sideFromScore(homeInput.value, awayInput.value);
+      if (implied) state.pick = implied;
+      ["home", "away"].forEach((side) => {
+        btns[side].classList.toggle("on", state.pick === side);
+        btns[side].disabled = !!implied && side !== implied;
+        btns[side].setAttribute("aria-pressed", state.pick === side ? "true" : "false");
+      });
+      if (implied) {
+        hint.textContent = `Pusiste que gana ${teamOf(m, implied)}, así que pasa ${teamOf(m, implied)}.`;
+      } else if (homeInput.value !== "" && awayInput.value !== "") {
+        hint.textContent = "Pusiste empate: elegí quién pasa por penales.";
+      } else {
+        hint.textContent = `Acertar quién pasa suma +${qualPoints} pts.`;
+      }
+    }
+
+    homeInput.addEventListener("input", sync);
+    awayInput.addEventListener("input", sync);
+    sync();
+
+    wrap.append(title, opts, hint);
+    return { el: wrap, get: () => state.pick };
+  }
 
   /* Ranking: cacheamos los dos scopes y mostramos el que esté activo.
      "fecha" = solo la fecha en juego; "general" = acumulado del torneo. */
@@ -142,7 +214,9 @@
     if (finished) {
       art.append(resultEl(m));
     } else if (!locked) {
-      art.append(actionEl(m, homeInput, awayInput));
+      const picker = knockout ? qualPicker(m, homeInput, awayInput) : null;
+      if (picker) art.append(picker.el);
+      art.append(actionEl(m, homeInput, awayInput, picker));
     } else {
       const note = document.createElement("div");
       note.className = "match-result";
@@ -150,9 +224,15 @@
       line.textContent = m.prediction
         ? `Tu pronóstico: ${m.prediction.home} — ${m.prediction.away}`
         : "No cargaste pronóstico para este partido.";
+      note.append(line);
+      if (knockout && m.prediction && m.prediction.qualifier) {
+        const q = document.createElement("span");
+        q.textContent = `Elegiste que pasa ${teamOf(m, m.prediction.qualifier)}`;
+        note.append(q);
+      }
       const strong = document.createElement("strong");
       strong.textContent = "⏳ Partido en juego";
-      note.append(line, strong);
+      note.append(strong);
       art.append(note);
     }
 
@@ -207,10 +287,37 @@
       wrap.append(mine);
     }
     wrap.append(strong);
+
+    /* Cruces: quién pasó y si lo acertó. */
+    if (knockout && m.qualifier) {
+      const passed = document.createElement("span");
+      const byPens = m.homeGoals === m.awayGoals ? " (por penales)" : "";
+      passed.textContent = `Pasó ${teamOf(m, m.qualifier)}${byPens}`;
+      wrap.append(passed);
+
+      const q = document.createElement("strong");
+      const qp = m.prediction ? m.prediction.qualPoints : null;
+      if (m.prediction && m.prediction.qualifier && qp > 0) {
+        q.textContent = `🎟️ Acertaste quién pasa · +${qp} pts`;
+        q.className = "result-hit";
+      } else if (m.prediction && m.prediction.qualifier) {
+        q.textContent = `❌ Elegiste ${teamOf(m, m.prediction.qualifier)} · 0 pts`;
+        q.className = "result-miss";
+      } else {
+        q.textContent = "No elegiste quién pasa · 0 pts";
+        q.className = "result-miss";
+      }
+      wrap.append(q);
+    }
     return wrap;
   }
 
-  function actionEl(m, homeInput, awayInput) {
+  /* Puntos totales de un pronóstico ya jugado (resultado + quién pasa). */
+  function totalPts(p) {
+    return (Number(p.points) || 0) + (Number(p.qualPoints) || 0);
+  }
+
+  function actionEl(m, homeInput, awayInput, picker) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "predict-action";
@@ -223,6 +330,11 @@
         flash(btn, "Cargá ambos resultados");
         return;
       }
+      const qualifier = picker ? picker.get() : null;
+      if (picker && !qualifier) {
+        flash(btn, "Elegí quién pasa");
+        return;
+      }
       btn.disabled = true;
       const original = m.prediction ? "Actualizar pronóstico" : "Confirmar pronóstico";
       btn.textContent = "Guardando…";
@@ -232,7 +344,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
-          body: JSON.stringify({ matchId: m.id, home: Number(h), away: Number(a) })
+          body: JSON.stringify({ matchId: m.id, home: Number(h), away: Number(a), qualifier })
         });
         data = await res.json();
       } catch (e) {
@@ -240,7 +352,7 @@
       }
 
       if (data && data.ok) {
-        m.prediction = { home: Number(h), away: Number(a), points: null };
+        m.prediction = { home: Number(h), away: Number(a), points: null, qualifier, qualPoints: null };
         btn.classList.add("confirmed");
         btn.textContent = "✓ Pronóstico guardado";
         window.setTimeout(() => {
@@ -283,6 +395,11 @@
     if (els.empty) els.empty.hidden = true;
     if (els.roundName) els.roundName.textContent = `${round.name} · ${round.competition}`;
 
+    knockout = !!round.knockout;
+    if (round.qualPoints) qualPoints = round.qualPoints;
+    if (els.knockoutNote) els.knockoutNote.hidden = !knockout;
+    if (els.howQual) els.howQual.hidden = !knockout;
+
     els.matches.innerHTML = "";
     const frag = document.createDocumentFragment();
     matches.forEach((m) => frag.append(matchCard(m)));
@@ -319,9 +436,14 @@
       title.textContent = `${m.home} ${m.homeGoals} — ${m.awayGoals} ${m.away}`;
       const sub = document.createElement("span");
       sub.textContent = `Pronosticaste ${m.prediction.home} — ${m.prediction.away}`;
+      if (knockout && m.qualifier) {
+        const ok = m.prediction.qualPoints > 0;
+        sub.textContent += ` · Pasó ${teamOf(m, m.qualifier)} ${ok ? "🎟️" : "✗"}`;
+      }
       mid.append(title, sub);
       const strong = document.createElement("strong");
-      strong.textContent = pts === 10 ? "+10 pts" : pts === 5 ? "+5 pts" : "0 pts";
+      const tot = totalPts(m.prediction);
+      strong.textContent = tot > 0 ? `+${tot} pts` : "0 pts";
       row.append(i, mid, strong);
       els.history.append(row);
     });

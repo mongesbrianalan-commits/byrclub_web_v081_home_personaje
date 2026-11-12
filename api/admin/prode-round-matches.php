@@ -28,8 +28,11 @@ if ($roundName === false) {
     json_out(['error' => 'Esa fecha no existe.'], 404);
 }
 
+$cruces   = byr_prode_cruces_ready($pdo);
+$knockout = byr_prode_round_is_knockout($pdo, $roundId);
+
 $stmt = $pdo->prepare(
-    'SELECT id, home_team, away_team, kickoff, status, home_goals, away_goals
+    'SELECT id, home_team, away_team, kickoff, status, home_goals, away_goals' . ($cruces ? ', qualifier' : '') . '
        FROM prode_matches WHERE round_id = ? ORDER BY kickoff ASC, id ASC'
 );
 $stmt->execute([$roundId]);
@@ -47,7 +50,14 @@ foreach ($stmt->fetchAll() as $m) {
         'status'       => $m['status'],
         'homeGoals'    => $m['home_goals'] !== null ? (int) $m['home_goals'] : null,
         'awayGoals'    => $m['away_goals'] !== null ? (int) $m['away_goals'] : null,
+        'qualifier'    => $m['qualifier'] ?? null,
     ];
 }
 
-json_out(['round' => $roundName, 'roundId' => $roundId, 'matches' => $matches]);
+json_out([
+    'round'       => $roundName,
+    'roundId'     => $roundId,
+    'matches'     => $matches,
+    'knockout'    => $knockout,
+    'crucesReady' => $cruces, // false = falta correr 2026-11-prode-cruces.sql
+]);

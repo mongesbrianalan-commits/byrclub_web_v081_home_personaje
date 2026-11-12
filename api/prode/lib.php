@@ -106,6 +106,60 @@ function byr_prode_score(int $predH, int $predA, int $realH, int $realA): int
     return ($predSign === $realSign) ? 5 : 0;
 }
 
+/* ---------------------------------------------------------
+   Cruces (octavos, cuartos…): además del marcador, el socio elige QUIÉN PASA.
+   - El marcador que vale es el de los 90' + alargue (si hay). Los penales no
+     cambian el marcador: solo deciden quién pasa.
+   - Acertar quién pasa suma BYR_PRODE_QUAL_POINTS aparte (va en qual_points,
+     no en points, para que "exacto" siga siendo points = 10).
+--------------------------------------------------------- */
+const BYR_PRODE_QUAL_POINTS = 5;
+const BYR_PRODE_XP_QUAL     = 10;
+
+/**
+ * ¿Está corrida la migración de cruces (2026-11-prode-cruces.sql)? Mientras no
+ * lo esté, el prode anda como antes, sin "quién pasa". Cachea el resultado.
+ */
+function byr_prode_cruces_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready === null) {
+        try {
+            $ready = (bool) $pdo->query("SHOW COLUMNS FROM prode_predictions LIKE 'qual_points'")->fetch()
+                  && (bool) $pdo->query("SHOW COLUMNS FROM prode_rounds LIKE 'knockout'")->fetch();
+        } catch (Throwable $e) {
+            $ready = false;
+        }
+    }
+    return $ready;
+}
+
+/** Quién pasa según el marcador: 'home' / 'away', o null si es empate (define otra cosa, ej. penales). */
+function byr_prode_qualifier_from_score(int $h, int $a): ?string
+{
+    if ($h === $a) {
+        return null;
+    }
+    return $h > $a ? 'home' : 'away';
+}
+
+/** Valida 'home' / 'away'; cualquier otra cosa → null. */
+function byr_prode_clean_side($v): ?string
+{
+    return ($v === 'home' || $v === 'away') ? $v : null;
+}
+
+/**
+ * Expresión SQL de los puntos totales de un socio (marcador + quién pasa),
+ * sobre el alias `p` de prode_predictions. Sin la migración, solo el marcador.
+ */
+function byr_prode_total_pts_sql(PDO $pdo): string
+{
+    return byr_prode_cruces_ready($pdo)
+        ? '(COALESCE(SUM(p.points),0) + COALESCE(SUM(p.qual_points),0))'
+        : 'COALESCE(SUM(p.points),0)';
+}
+
 /** "Vie 21:30" en hora de Argentina a partir de un DATETIME UTC. */
 function byr_prode_kickoff_label(string $kickoffUtc): string
 {
@@ -227,12 +281,22 @@ function byr_prode_grant_xp(PDO $pdo, int $userId, int $xp, string $reason): voi
  * suma XP al perfil BYR por cada acierto. El XP se otorga SOLO la primera vez
  * que se puntúa el pronóstico (points estaba NULL), para no duplicarlo si se
  * recarga/actualiza el resultado. Devuelve cuántos pronósticos se puntuaron.
+ *
+ * $qualifier ('home' / 'away') solo viene en partidos de cruces: puntúa además
+ * el "quién pasa" (+5, o 0 si eligió otro o no eligió).
  */
-function byr_prode_score_match(PDO $pdo, int $matchId, int $realH, int $realA): int
+function byr_prode_score_match(PDO $pdo, int $matchId, int $realH, int $realA, ?string $qualifier = null): int
 {
-    $preds = $pdo->prepare('SELECT id, user_id, home_pred, away_pred, points FROM prode_predictions WHERE match_id = ?');
+    $withQual = ($qualifier !== null && byr_prode_cruces_ready($pdo));
+
+    $preds = $pdo->prepare(
+        $withQual
+            ? 'SELECT id, user_id, home_pred, away_pred, points, qualifier_pred, qual_points FROM prode_predictions WHERE match_id = ?'
+            : 'SELECT id, user_id, home_pred, away_pred, points FROM prode_predictions WHERE match_id = ?'
+    );
     $preds->execute([$matchId]);
-    $upd = $pdo->prepare('UPDATE prode_predictions SET points = ? WHERE id = ?');
+    $upd     = $pdo->prepare('UPDATE prode_predictions SET points = ? WHERE id = ?');
+    $updQual = $withQual ? $pdo->prepare('UPDATE prode_predictions SET qual_points = ? WHERE id = ?') : null;
     $n = 0;
     foreach ($preds->fetchAll() as $p) {
         $pts = byr_prode_score((int) $p['home_pred'], (int) $p['away_pred'], $realH, $realA);
@@ -242,9 +306,33 @@ function byr_prode_score_match(PDO $pdo, int $matchId, int $realH, int $realA): 
         if ($wasUnscored) {
             byr_prode_grant_xp($pdo, (int) $p['user_id'], byr_prode_xp_for($pts), 'Prode: pronóstico acertado');
         }
+
+        if ($withQual) {
+            /* Pronósticos cargados antes de marcar la fecha como cruces no
+               tienen elección: si pusieron un ganador, cuenta que pasa ese. */
+            $pick = $p['qualifier_pred']
+                ?? byr_prode_qualifier_from_score((int) $p['home_pred'], (int) $p['away_pred']);
+            $qPts = ($pick === $qualifier) ? BYR_PRODE_QUAL_POINTS : 0;
+            $qWasUnscored = ($p['qual_points'] === null);
+            $updQual->execute([$qPts, (int) $p['id']]);
+            if ($qWasUnscored && $qPts > 0) {
+                byr_prode_grant_xp($pdo, (int) $p['user_id'], BYR_PRODE_XP_QUAL, 'Prode: acertaste quién pasa');
+            }
+        }
         $n++;
     }
     return $n;
+}
+
+/** ¿La fecha es de cruces? (false si la migración no está corrida) */
+function byr_prode_round_is_knockout(PDO $pdo, int $roundId): bool
+{
+    if (!byr_prode_cruces_ready($pdo)) {
+        return false;
+    }
+    $stmt = $pdo->prepare('SELECT knockout FROM prode_rounds WHERE id = ?');
+    $stmt->execute([$roundId]);
+    return (bool) $stmt->fetchColumn();
 }
 
 /**
@@ -277,7 +365,7 @@ function byr_prode_close_round_if_complete(PDO $pdo, int $roundId): array
     }
 
     $top = $pdo->prepare(
-        'SELECT p.user_id, u.name, COALESCE(SUM(p.points),0) AS pts,
+        'SELECT p.user_id, u.name, ' . byr_prode_total_pts_sql($pdo) . ' AS pts,
                 SUM(CASE WHEN p.points = 10 THEN 1 ELSE 0 END) AS exacts
            FROM prode_predictions p
            JOIN prode_matches m ON m.id = p.match_id

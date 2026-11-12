@@ -606,6 +606,9 @@
     try {
       const data = await api("admin/prode-results.php", { roundId });
       let msg = `✅ ${data.matchesFinished}/${data.matchesTotal} partidos jugados · ${data.predsScored} pronósticos puntuados.`;
+      if (data.pendingQualifier) {
+        msg += ` ⚠️ ${data.pendingQualifier} empate${data.pendingQualifier === 1 ? "" : "s"} sin penales en la API: cargá quién pasó a mano en "Partidos de la fecha".`;
+      }
       if (data.roundClosed) {
         msg += data.winner
           ? ` 🏆 Ganador: ${data.winner.name} (${data.winner.points} pts). Cupón: ${data.winner.code}.`
@@ -830,11 +833,64 @@
     pmatchList.innerHTML = "";
     try {
       const d = await api("admin/prode-round-matches.php", { roundId });
+      prodeKnockout = !!d.knockout;
       renderProdeMatches(d.matches || []);
+      renderKnockoutToggle(roundId, d);
       setStatus(pmatchStatus, (d.matches && d.matches.length) ? `Fecha "${d.round}"` : "Esa fecha todavía no tiene partidos.", "");
     } catch (error) {
       setStatus(pmatchStatus, error.message, "error");
     }
+  }
+
+  /* Fecha de cruces: el socio además elige quién pasa (+5). Se prende acá,
+     arriba de la lista de partidos de esa fecha. */
+  let prodeKnockout = false;
+
+  function renderKnockoutToggle(roundId, d) {
+    const box = document.createElement("div");
+    box.style.cssText = "margin-top:12px;padding:12px 14px;border-radius:14px;background:rgba(255,213,31,.08);border:1px solid rgba(255,213,31,.35)";
+
+    if (!d.crucesReady) {
+      box.innerHTML = "⚠️ Para usar <b>cruces (quién pasa)</b> falta correr <code>api/migrations/2026-11-prode-cruces.sql</code> en phpMyAdmin.";
+      pmatchList.prepend(box);
+      return;
+    }
+
+    const label = document.createElement("label");
+    label.style.cssText = "display:flex;align-items:center;gap:10px;font-weight:800;cursor:pointer";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!d.knockout;
+    cb.style.cssText = "width:20px;height:20px";
+    const txt = document.createElement("span");
+    txt.textContent = "Fecha de cruces (octavos, cuartos…): los socios eligen quién pasa (+5)";
+    label.append(cb, txt);
+
+    const note = document.createElement("small");
+    note.style.cssText = "display:block;margin-top:6px;color:#9fb4dc";
+    note.textContent = "El resultado que se carga es el de 90' + alargue (sin penales). Si terminó empatado, elegí quién pasó por penales.";
+
+    const st = document.createElement("small");
+    st.style.cssText = "display:block;margin-top:4px;font-weight:700";
+
+    cb.addEventListener("change", async () => {
+      cb.disabled = true;
+      try {
+        const r = await api("admin/prode-round-knockout.php", { roundId, knockout: cb.checked });
+        st.textContent = r.knockout ? "✅ Marcada como cruces." : "✅ Ya no es de cruces.";
+        st.style.color = "#7bffa0";
+        prodeLoadMatches(); // re-dibuja con o sin el selector de quién pasa
+      } catch (error) {
+        cb.checked = !cb.checked;
+        st.textContent = error.message;
+        st.style.color = "#ff8f9a";
+      } finally {
+        cb.disabled = false;
+      }
+    });
+
+    box.append(label, note, st);
+    pmatchList.prepend(box);
   }
 
   function renderProdeMatches(matches) {
@@ -926,6 +982,22 @@
       ag.style.cssText = "width:56px;text-align:center";
       if (m.awayGoals !== null && m.awayGoals !== undefined) ag.value = m.awayGoals;
 
+      /* Cruces: quién pasó. Si el marcador tiene ganador, pasa ese solo; el
+         selector solo hace falta cuando es empate (penales). */
+      let qualSel = null;
+      if (prodeKnockout) {
+        qualSel = document.createElement("select");
+        qualSel.style.cssText = "padding:7px 8px;border-radius:10px;max-width:190px";
+        [["", "Pasa: según marcador"], ["home", `Pasa ${m.home} (penales)`], ["away", `Pasa ${m.away} (penales)`]]
+          .forEach(([v, t]) => {
+            const o = document.createElement("option");
+            o.value = v; o.textContent = t;
+            qualSel.append(o);
+          });
+        const isDraw = m.homeGoals !== null && m.homeGoals === m.awayGoals;
+        if (isDraw && m.qualifier) qualSel.value = m.qualifier;
+      }
+
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = "admin-btn-inline";
       btn.textContent = m.status === "finished" ? "Actualizar" : "Cargar resultado";
@@ -939,13 +1011,20 @@
           st.style.color = "#ffd35a";
           return;
         }
+        const isDraw = Number(hg.value) === Number(ag.value);
+        if (qualSel && isDraw && !qualSel.value) {
+          st.textContent = "Terminó empatado: elegí quién pasó por penales.";
+          st.style.color = "#ffd35a";
+          return;
+        }
         btn.disabled = true;
         btn.textContent = "Guardando…";
         try {
-          const r = await api("admin/prode-set-result.php", {
-            matchId: m.id, homeGoals: Number(hg.value), awayGoals: Number(ag.value)
-          });
+          const payload = { matchId: m.id, homeGoals: Number(hg.value), awayGoals: Number(ag.value) };
+          if (qualSel && isDraw) payload.qualifier = qualSel.value;
+          const r = await api("admin/prode-set-result.php", payload);
           let msg = `✅ Resultado cargado · ${r.scored} pronósticos puntuados.`;
+          if (r.qualifier) msg += ` Pasa ${r.qualifier === "home" ? m.home : m.away}.`;
           if (r.roundClosed) {
             msg += r.winner
               ? ` 🏆 Ganador: ${r.winner.name} (${r.winner.points} pts) · cupón ${r.winner.code}.`
@@ -999,7 +1078,9 @@
         }
       });
 
-      row.append(info, hg, sep, ag, btn, del, st);
+      row.append(info, hg, sep, ag);
+      if (qualSel) row.append(qualSel);
+      row.append(btn, del, st);
       pmatchList.append(row);
     });
   }

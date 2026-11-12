@@ -73,6 +73,13 @@
         <h2>Elegí tus resultados</h2>
         <p class="prode-subcopy">Tenés hasta el arranque de cada partido para cargar o cambiar tu pronóstico.</p>
       </div>
+      <div class="prode-knockout-note" data-prode-knockout-note hidden>
+        <span aria-hidden="true">🎟️</span>
+        <p><strong>Son cruces: además del resultado, elegí quién pasa.</strong>
+          El resultado que vale es el de los <b>90 minutos + alargue</b> (si hay). Los penales no cuentan para el
+          resultado: solo definen quién pasa. Si ponés un ganador, pasa ese; si ponés empate, elegí quién pasa por
+          penales. Acertar quién pasa suma <b>+5 pts</b> aparte.</p>
+      </div>
 
       <div class="match-grid" data-prode-matches></div>
       <p data-prode-empty hidden style="text-align:center;font-weight:800;color:#b7cff4;padding:20px">
@@ -100,6 +107,11 @@
           <span>❌</span>
           <h3>0 pts</h3>
           <p>No acertaste el pronóstico de ese partido.</p>
+        </div>
+        <div class="how-card" data-prode-how-qual hidden>
+          <span>🎟️</span>
+          <h3>+5 pts · +10 XP</h3>
+          <p>En los cruces: acertaste quién pasa de fase. Se suma a los puntos del resultado (90' + alargue).</p>
         </div>
       </div>
     </section>
