@@ -11,6 +11,7 @@
  * Body JSON: { orderId: int, status: string }
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../push/lib.php';
 require_method('POST');
 
 $pdo   = db();
@@ -68,5 +69,8 @@ try {
     }
     json_out(['error' => 'No se pudo actualizar el estado. Probá de nuevo.'], 500);
 }
+
+/* Aviso al celular del socio (preparando, en camino, listo). */
+byr_push_order_status($pdo, $orderId, $target);
 
 json_out(['ok' => true, 'orderId' => $orderId, 'status' => $target]);

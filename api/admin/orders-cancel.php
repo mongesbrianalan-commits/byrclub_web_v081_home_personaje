@@ -9,6 +9,7 @@
  * Body JSON: { orderId: int }
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../push/lib.php';
 require_once __DIR__ . '/../perks/2x1.php';
 require_method('POST');
 
@@ -38,6 +39,7 @@ if ($upd->rowCount() === 1) {
     /* Va DESPUÉS del UPDATE condicional: así una doble cancelación no le
        devuelve el beneficio dos veces. */
     $released = $userId > 0 && byr_2x1_release_for_order($pdo, $userId, $orderId);
+    byr_push_order_status($pdo, $orderId, "cancelled");
 
     json_out([
         'ok'          => true,

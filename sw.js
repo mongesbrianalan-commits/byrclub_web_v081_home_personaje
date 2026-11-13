@@ -13,7 +13,7 @@
    Para forzar que todos tiren el caché viejo: subir CACHE_VERSION.
 ========================================================= */
 
-const CACHE_VERSION = "byr-v1";
+const CACHE_VERSION = "byr-v2";
 const STATIC_CACHE = CACHE_VERSION + "-static";
 const OFFLINE_URL = "/offline.html";
 
@@ -40,6 +40,47 @@ self.addEventListener("activate", (event) => {
         keys.filter((k) => !k.startsWith(CACHE_VERSION)).map((k) => caches.delete(k))
       ))
       .then(() => self.clients.claim())
+  );
+});
+
+/* ---------------- Avisos (push) ----------------
+   El servidor manda { title, body, url, tag } cifrado. Se muestra la
+   notificación; al tocarla se abre (o enfoca) la página indicada. */
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "BYR Club";
+  const options = {
+    body: data.body || "",
+    icon: "/assets/icons/icon-192.png",
+    badge: "/assets/icons/maskable-192.png",
+    data: { url: data.url || "/index.html" },
+    lang: "es-AR"
+  };
+  if (data.tag) {
+    options.tag = data.tag;     // mismo tag = reemplaza al aviso anterior (ej. estados de un pedido)
+    options.renotify = true;
+  }
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || "/index.html", self.location.origin);
+  if (target.origin !== self.location.origin) return;  // solo páginas del propio sitio
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if (new URL(w.url).origin === self.location.origin && "focus" in w) {
+          return w.navigate(target.href).then((c) => (c || w).focus()).catch(() => w.focus());
+        }
+      }
+      return self.clients.openWindow(target.href);
+    })
   );
 });
 

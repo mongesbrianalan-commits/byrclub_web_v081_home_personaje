@@ -401,6 +401,7 @@
         <button type="button" class="admin-tab-btn" data-tab-btn="cumples">🎂 Cumpleaños</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="prode">⚽ Prode</button>
         <button type="button" class="admin-tab-btn" data-tab-btn="dt">🧢 BYR DT</button>
+        <button type="button" class="admin-tab-btn" data-tab-btn="avisos">📣 Avisos</button>
       </nav>
 
       <div class="admin-tab" data-tab="clientes">
@@ -889,6 +890,34 @@
         <div class="dtx-rounds" data-dtx-rounds></div>
       </div>
       </div><!-- /tab dt -->
+
+      <div class="admin-tab" data-tab="avisos" hidden>
+      <div class="admin-block">
+        <h2>📣 Avisos al celular</h2>
+        <p class="auth-form-status" data-push-stats>Cargando…</p>
+        <label class="auth-field"><span>Título (hasta 60 letras)</span>
+          <input type="text" data-push-title maxlength="60" placeholder="⚽ ¡Salió la fecha de octavos!" autocomplete="off"></label>
+        <label class="auth-field"><span>Mensaje (hasta 180 letras)</span>
+          <textarea data-push-body maxlength="180" rows="3" placeholder="Cargá tus pronósticos antes del primer partido y ganate una hamburguesa."></textarea></label>
+        <label class="auth-field"><span>Al tocarlo abre</span>
+          <select data-push-url>
+            <option value="/index.html">Inicio</option>
+            <option value="/pedir.html">Pedir</option>
+            <option value="/prodes.html">Prode</option>
+            <option value="/dt.html">BYR DT</option>
+            <option value="/juegos.html">Juegos</option>
+            <option value="/beneficios.html">Beneficios</option>
+            <option value="/perfil.html">Mi perfil</option>
+          </select></label>
+        <div class="admin-row">
+          <button type="button" class="admin-btn-inline" data-push-test>Probar (solo a mí)</button>
+          <button type="button" class="admin-btn-inline" data-push-send>Mandar a todos</button>
+        </div>
+        <p class="auth-form-status" data-push-status></p>
+        <p class="admin-note">💡 Los avisos de los pedidos (aceptado, en preparación, en camino, listo, cancelado) salen solos cuando cambiás el estado en la pestaña Pedidos. Esto es para novedades: fecha nueva del Prode, promos, etc. No abuses: si llegan muchos, la gente los desactiva.<br>
+        Para probar, primero activá los avisos en tu celular desde <b>Mi perfil</b>.</p>
+      </div>
+      </div><!-- /tab avisos -->
     </section>
   </main>
 

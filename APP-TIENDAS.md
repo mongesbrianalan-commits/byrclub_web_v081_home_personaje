@@ -46,6 +46,13 @@ Se hace todo desde Windows, sin programar:
    - **Escáner de QR** en el mostrador para canjear cupones.
    Esto se hace antes de mandar a revisión.
 
+## Notificaciones push · HECHO
+
+Avisos al celular con Web Push (sin servicios pagos). Requiere correr
+`api/migrations/2026-11-push.sql` una vez. El socio los activa en *Mi perfil* o al enviar un pedido;
+salen solos con cada cambio de estado del pedido, y el panel tiene la pestaña *📣 Avisos* para novedades.
+En iPhone solo funcionan con la app instalada (iOS 16.4 o más).
+
 ## Borrar la cuenta desde la app · HECHO
 
 Apple (regla 5.1.1(v)) y Google piden que el socio pueda borrar su cuenta solo. Está en

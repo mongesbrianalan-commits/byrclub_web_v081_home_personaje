@@ -1,0 +1,35 @@
+/* Caja de "Activar avisos" (push). La usan Mi perfil y el pedido enviado. */
+.push-box[hidden] { display: none !important; }
+.push-box {
+  margin: 30px 0;
+  padding: 22px 24px;
+  border-radius: 24px;
+  border: 2px solid rgba(255,213,31,.35);
+  background: linear-gradient(150deg, rgba(14,51,151,.9), rgba(3,13,55,.96));
+  color: #dfe9ff;
+}
+.push-box h3 { margin: 0 0 6px; font-family: "Lilita One", sans-serif; font-size: 1.3rem; color: #ffd51f; letter-spacing: .01em; }
+.push-box > p { margin: 0 0 14px; font-weight: 700; line-height: 1.45; color: #cfe0ff; }
+.push-slot { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.push-note, .push-msg { margin: 0; font-weight: 700; line-height: 1.45; color: #cfe0ff; }
+.push-msg { color: #ffd97a; }
+.push-btn {
+  padding: 13px 20px;
+  border: 0;
+  border-radius: 14px;
+  background: #ffd51f;
+  color: #081242;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #b88900;
+  transition: transform .15s;
+}
+.push-btn:hover { transform: translateY(-2px); }
+.push-btn:disabled { opacity: .7; cursor: default; transform: none; }
+.push-btn.is-on { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
+
+/* Dentro del cartel de "pedido enviado": más compacto y centrado. */
+.success-card .push-box { margin: 16px 0 6px; padding: 16px 18px; text-align: left; }
+.success-card .push-box h3 { font-size: 1.1rem; }

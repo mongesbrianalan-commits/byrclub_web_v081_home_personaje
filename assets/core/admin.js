@@ -94,6 +94,7 @@
     cumples:  ["admin"],
     prode:    ["admin"],
     dt:       ["admin"],
+    avisos:   ["admin"],
   };
 
   function applyRoleTabs(role) {
@@ -1127,6 +1128,81 @@
   }
 
   if (teamsSyncBtn) teamsSyncBtn.addEventListener("click", prodeSyncTeams);
+
+  /* ---------------------------------------------------------
+     Avisos al celular (push): mandar una novedad a todos.
+     "Mandar a todos" pide un segundo clic para confirmar.
+  --------------------------------------------------------- */
+  const pushStats = document.querySelector("[data-push-stats]");
+  const pushTitle = document.querySelector("[data-push-title]");
+  const pushBody = document.querySelector("[data-push-body]");
+  const pushUrl = document.querySelector("[data-push-url]");
+  const pushTestBtn = document.querySelector("[data-push-test]");
+  const pushSendBtn = document.querySelector("[data-push-send]");
+  const pushStatus = document.querySelector("[data-push-status]");
+  let pushArmed = false;
+  let pushUsers = 0;
+
+  async function loadPushStats() {
+    if (!pushStats) return;
+    try {
+      const d = await api("admin/push-send.php", { action: "stats" });
+      pushUsers = d.users;
+      setStatus(pushStats,
+        `🔔 ${d.users} socio${d.users === 1 ? "" : "s"} con avisos activados (${d.devices} dispositivo${d.devices === 1 ? "" : "s"}).` +
+        (d.mine ? "" : " Vos todavía no los activaste: entrá a Mi perfil desde tu celular."), "");
+    } catch (error) {
+      setStatus(pushStats, error.message, "error");
+    }
+  }
+
+  function disarmPush() {
+    pushArmed = false;
+    if (pushSendBtn) pushSendBtn.textContent = "Mandar a todos";
+  }
+
+  async function sendPush(test) {
+    const title = String(pushTitle.value || "").trim();
+    const body = String(pushBody.value || "").trim();
+    if (!title || !body) {
+      setStatus(pushStatus, "Completá el título y el mensaje.", "error");
+      return;
+    }
+    if (!test && !pushArmed) {
+      pushArmed = true;
+      pushSendBtn.textContent = `Confirmar: mandar a ${pushUsers} socio${pushUsers === 1 ? "" : "s"}`;
+      setStatus(pushStatus, "⚠️ Revisá el texto: tocá de nuevo para mandarlo a todos.", "");
+      return;
+    }
+    pushTestBtn.disabled = true;
+    pushSendBtn.disabled = true;
+    setStatus(pushStatus, "Mandando…", "");
+    try {
+      const d = await api("admin/push-send.php", { action: "send", title, body, url: pushUrl.value, test });
+      let msg = `✅ Enviado a ${d.sent} dispositivo${d.sent === 1 ? "" : "s"}.`;
+      if (d.failed) msg += ` ${d.failed} fallaron.`;
+      if (d.removed) msg += ` ${d.removed} ya no existían y se borraron.`;
+      if (test && !d.sent) msg = "No te llegó a ningún dispositivo: activá los avisos en tu celular desde Mi perfil.";
+      setStatus(pushStatus, msg, d.sent ? "ok" : "error");
+      if (!test) {
+        pushTitle.value = "";
+        pushBody.value = "";
+      }
+      loadPushStats();
+    } catch (error) {
+      setStatus(pushStatus, error.message, "error");
+    } finally {
+      pushTestBtn.disabled = false;
+      pushSendBtn.disabled = false;
+      disarmPush();
+    }
+  }
+
+  if (pushTestBtn) pushTestBtn.addEventListener("click", () => sendPush(true));
+  if (pushSendBtn) pushSendBtn.addEventListener("click", () => sendPush(false));
+  [pushTitle, pushBody, pushUrl].forEach((el) => el && el.addEventListener("input", disarmPush));
+  const avisosTabBtn = document.querySelector('[data-tab-btn="avisos"]');
+  if (avisosTabBtn) avisosTabBtn.addEventListener("click", loadPushStats);
 
   if (pbReview) pbReview.addEventListener("click", prodeBulkReview);
   if (pbCommit) pbCommit.addEventListener("click", prodeBulkCommit);

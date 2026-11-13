@@ -15,6 +15,7 @@
  * se procesa si está 'pending'. Todo va en una transacción.
  */
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../push/lib.php';
 require_once __DIR__ . '/../progress/engine.php';
 require_once __DIR__ . '/../caja.php';
 require_once __DIR__ . '/../printing.php';
@@ -172,6 +173,9 @@ foreach (byr_print_auto() as $kind) {
         $printed[] = $kind;
     }
 }
+
+/* Aviso al celular del socio (si activó los avisos). Nunca rompe el pedido. */
+byr_push_order_status($pdo, $orderId, 'confirmed');
 
 json_out([
     'ok'            => true,
