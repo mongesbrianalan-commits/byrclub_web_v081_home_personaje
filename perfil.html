@@ -253,6 +253,29 @@
           <p class="auth-form-status" data-cp-status role="status"></p>
         </form>
       </section>
+
+      <section class="security-section delete-account-section" id="borrar-cuenta" data-delete-account>
+        <div class="section-heading section-heading-left">
+          <div><span>TU CUENTA</span><h2>Borrar mi cuenta</h2></div>
+          <p>Se borran tus datos y tu cuenta para siempre. Perdés tus puntos, nivel, cupones y premios sin usar, tus pronósticos del Prode y tu equipo de BYR DT. No se puede deshacer.</p>
+        </div>
+        <button type="button" class="delete-account-open" data-da-open>Quiero borrar mi cuenta</button>
+        <form class="security-form delete-account-form" data-da-form autocomplete="off" hidden>
+          <label class="auth-field">
+            <span>Tu contraseña</span>
+            <input type="password" data-da-password placeholder="Para confirmar que sos vos" autocomplete="current-password">
+          </label>
+          <label class="security-show">
+            <input type="checkbox" data-da-confirm> Entiendo que pierdo todo y que no se puede deshacer
+          </label>
+          <div class="delete-account-actions">
+            <button type="submit" class="delete-account-submit" data-da-submit>Borrar mi cuenta para siempre</button>
+            <button type="button" class="delete-account-cancel" data-da-cancel>Mejor no</button>
+          </div>
+          <p class="auth-form-status" data-da-status role="status"></p>
+          <p class="delete-account-note">¿Algo no anda? También podés pedirlo por WhatsApp. Más info en la <a href="privacidad.html#borrar-cuenta">política de privacidad</a>.</p>
+        </form>
+      </section>
     </section>
   </main>
 
@@ -282,5 +305,6 @@
   <script src="perfil-premium.js?v=DEV"></script>
   <script src="assets/core/perks-profile.js?v=DEV"></script>
   <script src="assets/core/change-password.js?v=DEV"></script>
+  <script src="assets/core/delete-account.js?v=DEV"></script>
 </body>
 </html>

@@ -46,7 +46,12 @@ Se hace todo desde Windows, sin programar:
    - **Escáner de QR** en el mostrador para canjear cupones.
    Esto se hace antes de mandar a revisión.
 
+## Borrar la cuenta desde la app · HECHO
+
+Apple (regla 5.1.1(v)) y Google piden que el socio pueda borrar su cuenta solo. Está en
+*Mi perfil → Borrar mi cuenta* (`perfil.html#borrar-cuenta`, `api/delete-account.php`).
+Para la ficha de Google Play, la URL de borrado es `https://byrclub.com/privacidad.html#borrar-cuenta`.
+
 ## Política de privacidad
 
-Las dos tiendas piden una URL con la política de privacidad (qué datos se guardan:
-nombre, email, teléfono, cumpleaños, pedidos). Hay que tener una página en el sitio antes de publicar.
+HECHA: `https://byrclub.com/privacidad.html` (es la URL que se carga en las dos tiendas).

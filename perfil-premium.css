@@ -198,3 +198,35 @@
 .security-form .auth-form-status { min-height: 20px; margin: 0; font-weight: 800; color: #ffd97a; }
 .security-form .auth-form-status.is-ok { color: var(--green); }
 .security-form .auth-form-status.is-error { color: #ff8fb2; }
+
+/* Borrar mi cuenta: discreto (rojo apagado) y en dos pasos. */
+.delete-account-section .section-heading p { max-width: 620px; }
+.delete-account-open {
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 2px solid rgba(255,120,140,.55);
+  background: transparent;
+  color: #ff9fb0;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: .95rem;
+  cursor: pointer;
+}
+.delete-account-open:hover { background: rgba(255,90,110,.12); }
+.delete-account-open[hidden], .delete-account-form[hidden] { display: none; }
+.delete-account-form { border-color: rgba(255,120,140,.35); }
+.delete-account-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.delete-account-submit, .delete-account-cancel {
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 14px;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: .95rem;
+  cursor: pointer;
+}
+.delete-account-submit { background: #c8203a; color: #fff; box-shadow: 0 6px 0 #7d1022; }
+.delete-account-cancel { background: rgba(255,255,255,.12); color: #fff; }
+.delete-account-submit:disabled, .delete-account-cancel:disabled { opacity: .6; cursor: default; }
+.delete-account-note { margin: 0; font-size: .85rem; font-weight: 700; color: #9fb4dc; }
+.delete-account-note a { color: #7cc4ff; }
