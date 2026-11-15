@@ -10,10 +10,17 @@
          mandar avisos a la app instalada en la pantalla de inicio)
        - si el socio los bloqueó: cómo volver a habilitarlos
      El texto de "para qué sirven" lo pone cada página dentro de la caja.
+
+     También expone window.BYRPush para que otros componentes (el popup
+     de "Instalá la app") sepan el estado y monten su propia caja:
+       BYRPush.ready  → Promise<{ state, loggedIn, configured }>
+       BYRPush.mount(el) → dibuja el botón dentro de el (como [data-push-box])
+     state: "on" | "off" | "denied" | "ios-install" | "hidden"
   ========================================================= */
 
+  if (window.BYRPush) return;
+
   const boxes = Array.from(document.querySelectorAll("[data-push-box]"));
-  if (!boxes.length) return;
 
   const KEY_URL = "/api/push/key.php";
   const SUB_URL = "/api/push/subscribe.php";
@@ -25,6 +32,8 @@
   const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 
   let publicKey = null;
+  let lastState = null;
+  let lastMsg = null;
 
   function urlB64ToUint8Array(b64) {
     const pad = "=".repeat((4 - (b64.length % 4)) % 4);
@@ -89,51 +98,56 @@
     return slot;
   }
 
+  function renderBox(box, state, msg) {
+    const slot = ui(box);
+    slot.textContent = "";
+    slot.className = "push-slot";
+
+    if (state === "hidden" || (state === "on" && !msg && box.hasAttribute("data-push-hide-when-on"))) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+
+    const p = document.createElement("p");
+    p.className = "push-note";
+
+    if (state === "ios-install") {
+      p.innerHTML = "📲 En iPhone, los avisos llegan a la <b>app instalada</b>: tocá <b>Compartir</b> " +
+        "(el cuadrado con la flecha) → <b>Agregar a inicio</b>, abrí BYR Club desde ese ícono y activalos ahí.";
+      slot.append(p);
+      return;
+    }
+    if (state === "denied") {
+      p.textContent = "🔕 Tenés los avisos bloqueados para BYR Club. Para recibirlos, habilitalos en la configuración del navegador (o de la app) y volvé a esta página.";
+      slot.append(p);
+      return;
+    }
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "push-btn" + (state === "on" ? " is-on" : "");
+    btn.textContent = state === "on" ? "Desactivar avisos" : "🔔 Activar avisos";
+    btn.addEventListener("click", () => toggle(state === "on", btn));
+    slot.append(btn);
+
+    if (state === "on") {
+      p.textContent = "✅ Los avisos están activados en este dispositivo.";
+      slot.prepend(p);
+    }
+    if (msg) {
+      const m = document.createElement("p");
+      m.className = "push-msg";
+      m.textContent = msg;
+      slot.append(m);
+    }
+  }
+
   function render(state, msg) {
-    boxes.forEach((box) => {
-      const slot = ui(box);
-      slot.textContent = "";
-      slot.className = "push-slot";
-
-      if (state === "hidden" || (state === "on" && !msg && box.hasAttribute("data-push-hide-when-on"))) {
-        box.hidden = true;
-        return;
-      }
-      box.hidden = false;
-
-      const p = document.createElement("p");
-      p.className = "push-note";
-
-      if (state === "ios-install") {
-        p.innerHTML = "📲 En iPhone, los avisos llegan a la <b>app instalada</b>: tocá <b>Compartir</b> " +
-          "(el cuadrado con la flecha) → <b>Agregar a inicio</b>, abrí BYR Club desde ese ícono y activalos ahí.";
-        slot.append(p);
-        return;
-      }
-      if (state === "denied") {
-        p.textContent = "🔕 Tenés los avisos bloqueados para BYR Club. Para recibirlos, habilitalos en la configuración del navegador (o de la app) y volvé a esta página.";
-        slot.append(p);
-        return;
-      }
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "push-btn" + (state === "on" ? " is-on" : "");
-      btn.textContent = state === "on" ? "Desactivar avisos" : "🔔 Activar avisos";
-      btn.addEventListener("click", () => toggle(state === "on", btn));
-      slot.append(btn);
-
-      if (state === "on") {
-        p.textContent = "✅ Los avisos están activados en este dispositivo.";
-        slot.prepend(p);
-      }
-      if (msg) {
-        const m = document.createElement("p");
-        m.className = "push-msg";
-        m.textContent = msg;
-        slot.append(m);
-      }
-    });
+    lastState = state;
+    lastMsg = msg || null;
+    boxes.forEach((box) => renderBox(box, state, msg));
+    window.dispatchEvent(new CustomEvent("byr:push-state", { detail: { state } }));
   }
 
   async function toggle(isOn, btn) {
@@ -154,37 +168,59 @@
   }
 
   async function init() {
+    const info = { state: "hidden", loggedIn: false, configured: false };
     if (!supported) {
-      render(isIOS && !isStandalone ? "ios-install" : "hidden");
-      return;
+      info.state = isIOS && !isStandalone ? "ios-install" : "hidden";
+      render(info.state);
+      return info;
     }
     try {
       const res = await fetch(KEY_URL, { credentials: "same-origin" });
       const data = await res.json();
-      if (!data.ready || !data.publicKey || !data.loggedIn) {
+      info.configured = Boolean(data.ready && data.publicKey);
+      info.loggedIn = Boolean(data.loggedIn);
+      if (!info.configured || !info.loggedIn) {
         render("hidden");
-        return;
+        return info;
       }
       publicKey = data.publicKey;
     } catch (e) {
       render("hidden");
-      return;
+      return info;
     }
 
     if (Notification.permission === "denied") {
+      info.state = "denied";
       render("denied");
-      return;
+      return info;
     }
     let sub = null;
-    try { sub = await currentSub(); } catch (e) { /* sin SW todavía */ }
+    try {
+      /* serviceWorker.ready no resuelve nunca si no hay SW: le ponemos tope. */
+      sub = await Promise.race([
+        currentSub(),
+        new Promise((resolve) => setTimeout(() => resolve(null), 5000))
+      ]);
+    } catch (e) { /* sin SW todavía */ }
     if (sub && Notification.permission === "granted") {
+      info.state = "on";
       render("on");
       /* Re-asocia el dispositivo al socio logueado (si cambió de cuenta). */
       post(SUB_URL, sub.toJSON()).catch(() => {});
     } else {
+      info.state = "off";
       render("off");
     }
+    return info;
   }
 
-  init();
+  const ready = init();
+
+  window.BYRPush = {
+    ready,
+    mount(box) {
+      if (!boxes.includes(box)) boxes.push(box);
+      if (lastState) renderBox(box, lastState, lastMsg);
+    }
+  };
 })();
