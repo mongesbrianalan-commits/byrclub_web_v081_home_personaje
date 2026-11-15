@@ -57,6 +57,6 @@ if (!$row) {
     json_out(['error' => 'No existe ese pedido.'], 404);
 }
 json_out([
-    'error'  => 'Ese pedido ya fue ' . ($row['status'] === 'confirmed' ? 'confirmado' : 'cancelado') . '.',
+    'error'  => 'Ese pedido ya fue ' . ($row['status'] === 'cancelled' ? 'cancelado' : 'aceptado') . '.',
     'status' => $row['status'],
 ], 409);

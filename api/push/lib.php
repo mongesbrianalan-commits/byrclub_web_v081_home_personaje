@@ -312,7 +312,7 @@ function byr_push_order_message(int $orderId, string $status, string $fulfillmen
         case 'confirmed':
             return ['title' => '✅ ¡Aceptamos tu pedido!', 'body' => "Pedido #$orderId: ya lo tenemos. Te avisamos cuando esté listo.", 'url' => $url, 'tag' => "order-$orderId"];
         case 'preparing':
-            return ['title' => '🍔 Estamos preparando tu pedido', 'body' => "Pedido #$orderId: ya está en la plancha.", 'url' => $url, 'tag' => "order-$orderId"];
+            return ['title' => '🍔 ¡Aceptamos tu pedido!', 'body' => "Pedido #$orderId: ya lo estamos preparando.", 'url' => $url, 'tag' => "order-$orderId"];
         case 'on_the_way':
             return ['title' => '🛵 ¡Tu pedido va en camino!', 'body' => "Pedido #$orderId: salió para tu casa.", 'url' => $url, 'tag' => "order-$orderId", 'urgent' => true];
         case 'delivered':

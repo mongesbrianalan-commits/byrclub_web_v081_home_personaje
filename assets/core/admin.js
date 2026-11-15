@@ -1312,7 +1312,7 @@
         lastSeenOrderId = lastId;
         if (bellOn) playBell();
         showNewOrderAlert(Number(data.pending) || 1);
-        loadOrders();
+        loadOrders({ keepModal: true });
       }
     } catch (error) {
       /* Sin conexión o sesión vencida: se reintenta en la próxima vuelta. */
@@ -1352,40 +1352,149 @@
     return null;
   }
 
-  async function loadOrders() {
+  /* opts.keepModal: no tocar el detalle abierto (lo usa la campanita, para no
+     borrarle al cajero lo que está cargando cuando entra otro pedido). Ojo:
+     también se usa como listener de clic, así que puede llegar un Event. */
+  let ordersFlash = null; // { msg, kind } a mostrar después de recargar la lista
+  async function loadOrders(opts) {
     if (!ordersList) return;
+    const keepModal = Boolean(opts && opts.keepModal === true);
     setStatus(ordersAdminStatus, "Cargando pedidos…", "");
-    ordersList.innerHTML = "";
     try {
       const q = ordersFilterStatus ? `?status=${ordersFilterStatus}` : "";
       const res = await fetch(`${API}admin/orders-list.php${q}`, { credentials: "same-origin" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudieron cargar los pedidos.");
-      renderOrders(data.orders || []);
-      setStatus(ordersAdminStatus, "", "");
+      renderOrders(data.orders || [], keepModal);
+      // El resultado de la última acción (aceptar, cancelar…) sobrevive a la recarga.
+      const flash = ordersFlash;
+      ordersFlash = null;
+      setStatus(ordersAdminStatus, flash ? flash.msg : "", flash ? flash.kind : "");
     } catch (error) {
       setStatus(ordersAdminStatus, error.message, "error");
     }
   }
 
-  function renderOrders(list) {
+  function renderOrders(list, keepModal) {
     ordersList.innerHTML = "";
     if (!list.length) {
       ordersList.innerHTML = `<p class="oa-empty">No hay pedidos${ordersFilterStatus === "pending" ? " pendientes" : ""} por ahora.</p>`;
-      return;
     }
-    list.forEach((o) => ordersList.append(orderAdminCard(o)));
+    list.forEach((o) => ordersList.append(orderSummaryCard(o)));
+
+    /* Si el detalle de un pedido está abierto, lo refrescamos con los datos
+       nuevos (p. ej. después de editarlo). Si ya no está en esta lista
+       (pasó a "En curso", se canceló…), lo cerramos. */
+    if (orderModal && !keepModal) {
+      const fresh = list.find((o) => o.id === orderModal.orderId);
+      if (fresh) openOrderModal(fresh);
+      else closeOrderModal();
+    }
   }
 
+  function phoneHtml(o) {
+    const digits = String(o.customerPhone || "").replace(/\D/g, "");
+    if (digits) {
+      return `<a href="https://wa.me/${digits}" target="_blank" rel="noreferrer">💬 ${escapeHtml(o.customerPhone)}</a>`;
+    }
+    return o.customerPhone ? escapeHtml(o.customerPhone) : "";
+  }
+
+  /* Tarjeta resumida de la lista: lo justo para saber de quién es, a dónde
+     va y cuánto es. El resto se ve tocándola (abre el detalle). */
+  function orderSummaryCard(o) {
+    const st = ORDER_STATUS[o.status] || ORDER_STATUS.pending;
+    const card = document.createElement("article");
+    card.className = "oa-card oa-sum is-" + o.status;
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `Ver el pedido #${o.id} de ${o.customerName || "cliente"}`);
+
+    const phone = phoneHtml(o);
+    const where = o.fulfillment === "delivery"
+      ? `🛵 <span class="oa-addr">${escapeHtml(o.address || "sin dirección")}</span>`
+      : "🏪 Retira en el local";
+
+    card.innerHTML = `
+      <div class="oa-top">
+        <div class="oa-id">#${o.id} <small>· ${escapeHtml(fmtDateTime(o.createdAt, o.createdAtLabel))}</small></div>
+        <span class="oa-badge ${st.cls}">${st.label}</span>
+      </div>
+      <div class="oa-sum-name">${escapeHtml(o.customerName || "—")}</div>
+      ${phone ? `<div class="oa-customer oa-sum-phone">${phone}</div>` : ""}
+      <div class="oa-fulfill oa-sum-where">${where}</div>
+      <div class="oa-sum-foot">
+        <b class="oa-sum-total">${money(orderTotal(o))}</b>
+        <span class="oa-sum-more">Ver detalle ›</span>
+      </div>
+    `;
+
+    // El link de WhatsApp abre WhatsApp, no el detalle.
+    card.querySelectorAll("a").forEach((a) => a.addEventListener("click", (e) => e.stopPropagation()));
+    card.addEventListener("click", () => openOrderModal(o));
+    card.addEventListener("keydown", (e) => {
+      if (e.target !== card) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openOrderModal(o);
+      }
+    });
+    return card;
+  }
+
+  /* --- Popup con el detalle completo del pedido --- */
+  let orderModal = null; // { el, orderId }
+
+  function closeOrderModal() {
+    if (!orderModal) return;
+    orderModal.el.remove();
+    orderModal = null;
+    document.body.classList.remove("oa-modal-open");
+  }
+
+  function openOrderModal(o) {
+    const scroll = orderModal ? orderModal.el.querySelector(".oa-modal-card").scrollTop : 0;
+    if (orderModal) orderModal.el.remove();
+
+    const overlay = document.createElement("div");
+    overlay.className = "oa-modal";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", `Pedido #${o.id}`);
+
+    const box = document.createElement("div");
+    box.className = "oa-modal-card";
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "oa-modal-close";
+    closeBtn.setAttribute("aria-label", "Cerrar");
+    closeBtn.textContent = "×";
+    closeBtn.addEventListener("click", closeOrderModal);
+
+    box.append(closeBtn, orderAdminCard(o));
+    overlay.append(box);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeOrderModal(); });
+    document.body.append(overlay);
+    document.body.classList.add("oa-modal-open");
+    box.scrollTop = scroll;
+    orderModal = { el: overlay, orderId: o.id };
+    if (!scroll) closeBtn.focus({ preventScroll: true });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    // Si está abierto el popup de opciones del editor, Escape es para ese.
+    if (e.key === "Escape" && orderModal && !document.querySelector(".oa-opt-overlay")) closeOrderModal();
+  });
+
+  /* Detalle completo (va dentro del popup): ítems, pago, cupón, notas y las
+     acciones (aceptar, avanzar estado, editar, imprimir). */
   function orderAdminCard(o) {
     const st = ORDER_STATUS[o.status] || ORDER_STATUS.pending;
     const card = document.createElement("article");
-    card.className = "oa-card is-" + o.status;
+    card.className = "oa-card oa-detail is-" + o.status;
 
-    const digits = String(o.customerPhone || "").replace(/\D/g, "");
-    const waLink = digits
-      ? ` <a href="https://wa.me/${digits}" target="_blank" rel="noreferrer">💬 ${escapeHtml(o.customerPhone)}</a>`
-      : (o.customerPhone ? ` · ${escapeHtml(o.customerPhone)}` : "");
+    const phone = phoneHtml(o);
+    const waLink = phone ? ` ${phone}` : "";
 
     const itemsHtml = (o.items || [])
       .map((ln) => {
@@ -1401,11 +1510,11 @@
        de confirmar: si no, el cajero ve un número acreditado que no cierra
        con el sugerido y parece un error. */
     const couponBonus = Number(o.couponMultiplier) > 1
-      ? ` <strong>Multiplica los puntos x${Number(o.couponMultiplier)}</strong> al confirmar.`
+      ? ` <strong>Multiplica los puntos x${Number(o.couponMultiplier)}</strong> al aceptar.`
       : "";
 
     const couponHtml = o.couponLabel
-      ? `<div class="oa-coupon">🎟️ Cupón adjunto: ${escapeHtml(o.couponLabel)} (${escapeHtml(o.couponCode || "")}) — se marca canjeado al confirmar.${couponBonus}</div>`
+      ? `<div class="oa-coupon">🎟️ Cupón adjunto: ${escapeHtml(o.couponLabel)} (${escapeHtml(o.couponCode || "")}) — se marca canjeado al aceptar.${couponBonus}</div>`
       : "";
 
     const notesHtml = o.notes
@@ -1480,7 +1589,7 @@
       const confirmBtn = document.createElement("button");
       confirmBtn.type = "button";
       confirmBtn.className = "oa-confirm-btn";
-      confirmBtn.textContent = "Confirmar y acreditar ✓";
+      confirmBtn.textContent = "Aceptar pedido ✓";
 
       const cancelBtn = document.createElement("button");
       cancelBtn.type = "button";
@@ -1494,14 +1603,15 @@
         const points = parseInt(ptsInput.value, 10);
         confirmBtn.disabled = true;
         cancelBtn.disabled = true;
-        confirmBtn.textContent = "Confirmando…";
+        confirmBtn.textContent = "Aceptando…";
         try {
           const r = await api("admin/orders-confirm.php", {
             orderId: o.id,
             points: isNaN(points) ? o.pointsSuggested : points,
             paymentMethod: paySelect.value
           });
-          let msg = `✅ Pedido confirmado · +${fmt(r.pointsAwarded)} pts (nuevo saldo: ${fmt(r.newBalance)}).`;
+          const stLabel = (ORDER_STATUS[r.status] || ORDER_STATUS.confirmed).label;
+          let msg = `✅ Pedido #${o.id} aceptado → ${stLabel} (lo encontrás en "En curso"). +${fmt(r.pointsAwarded)} pts (nuevo saldo: ${fmt(r.newBalance)}).`;
           if (r.paymentRecorded) msg += ` Cobrado en ${METHOD_LABELS[r.paymentMethod] || r.paymentMethod}.`;
           if (r.couponApplied === true) {
             msg += " Cupón canjeado.";
@@ -1513,13 +1623,16 @@
           } else if (r.couponApplied === false) {
             msg += " (El cupón ya no estaba disponible, así que no se aplicó.)";
           }
-          setStatus(ordersAdminStatus, msg, "ok");
+          ordersFlash = { msg, kind: "ok" };
+          closeOrderModal();
           loadOrders();
         } catch (error) {
           setStatus(ordersAdminStatus, error.message, "error");
+          lineSt.textContent = error.message;
+          lineSt.className = "oa-line-status auth-form-status is-error";
           confirmBtn.disabled = false;
           cancelBtn.disabled = false;
-          confirmBtn.textContent = "Confirmar y acreditar ✓";
+          confirmBtn.textContent = "Aceptar pedido ✓";
         }
       });
 
@@ -1529,10 +1642,13 @@
         cancelBtn.textContent = "Cancelando…";
         try {
           await api("admin/orders-cancel.php", { orderId: o.id });
-          setStatus(ordersAdminStatus, `Pedido #${o.id} cancelado.`, "");
+          ordersFlash = { msg: `Pedido #${o.id} cancelado.`, kind: "" };
+          closeOrderModal();
           loadOrders();
         } catch (error) {
           setStatus(ordersAdminStatus, error.message, "error");
+          lineSt.textContent = error.message;
+          lineSt.className = "oa-line-status auth-form-status is-error";
           confirmBtn.disabled = false;
           cancelBtn.disabled = false;
           cancelBtn.textContent = "Cancelar";
@@ -1586,10 +1702,13 @@
           btn.textContent = "Guardando…";
           try {
             await api("admin/orders-status.php", { orderId: o.id, status: next });
-            setStatus(ordersAdminStatus, `Pedido #${o.id} → ${nextLabel}.`, "ok");
+            ordersFlash = { msg: `Pedido #${o.id} → ${nextLabel}.`, kind: "ok" };
+            closeOrderModal();
             loadOrders();
           } catch (error) {
             setStatus(ordersAdminStatus, error.message, "error");
+            lineSt.textContent = error.message;
+            lineSt.className = "oa-line-status auth-form-status is-error";
             btn.disabled = false;
             btn.textContent = "Marcar: " + nextLabel;
           }

@@ -65,7 +65,7 @@ try {
     if ($order['status'] !== 'pending') {
         $pdo->rollBack();
         json_out([
-            'error'  => 'Ese pedido ya fue ' . ($order['status'] === 'confirmed' ? 'confirmado' : 'cancelado') . '.',
+            'error'  => 'Ese pedido ya fue ' . ($order['status'] === 'cancelled' ? 'cancelado' : 'aceptado') . '.',
             'status' => $order['status'],
         ], 409);
     }
@@ -124,13 +124,34 @@ try {
         $save->execute([json_encode($state, JSON_UNESCAPED_UNICODE), $userId]);
     }
 
-    /* --- Marcar el pedido confirmado --- */
-    $upd = $pdo->prepare(
-        'UPDATE orders
-            SET status = "confirmed", points_awarded = ?, confirmed_at = NOW(), confirmed_by = ?
-          WHERE id = ? AND status = "pending"'
-    );
-    $upd->execute([$pointsToGrant, $admin, $orderId]);
+    /* --- Marcar el pedido aceptado ---
+       Aceptar ya lo manda a la plancha: queda directo "en preparación" (no
+       hace falta un clic extra en "Aceptado"). Si el ENUM todavía no tuviera
+       ese estado (falta la migración 2026-08-order-stages.sql), cae a
+       "confirmed" como antes. */
+    $finalStatus = 'preparing';
+    try {
+        $upd = $pdo->prepare(
+            'UPDATE orders
+                SET status = "preparing", points_awarded = ?, confirmed_at = NOW(), confirmed_by = ?
+              WHERE id = ? AND status = "pending"'
+        );
+        $upd->execute([$pointsToGrant, $admin, $orderId]);
+        $chk = $pdo->prepare('SELECT status FROM orders WHERE id = ?');
+        $chk->execute([$orderId]);
+        $ok = ($chk->fetchColumn() === 'preparing');
+    } catch (Throwable $e) {
+        $ok = false;
+    }
+    if (!$ok) {
+        $finalStatus = 'confirmed';
+        $upd = $pdo->prepare(
+            'UPDATE orders
+                SET status = "confirmed", points_awarded = ?, confirmed_at = NOW(), confirmed_by = ?
+              WHERE id = ? AND status IN ("pending", "")'
+        );
+        $upd->execute([$pointsToGrant, $admin, $orderId]);
+    }
 
     /* --- Cobro en caja (si el admin eligió un medio de pago) --- */
     /* Si la migración de caja no está corrida, se ignora el cobro y el pedido
@@ -175,12 +196,13 @@ foreach (byr_print_auto() as $kind) {
 }
 
 /* Aviso al celular del socio (si activó los avisos). Nunca rompe el pedido. */
-byr_push_order_status($pdo, $orderId, 'confirmed');
+byr_push_order_status($pdo, $orderId, $finalStatus);
 
 json_out([
     'ok'            => true,
     'orderId'       => $orderId,
     'printed'       => $printed,
+    'status'        => $finalStatus,
     'pointsAwarded' => $pointsToGrant,
     'newBalance'    => (int) ($state['wallet']['points'] ?? 0),
     'couponApplied' => $couponApplied,

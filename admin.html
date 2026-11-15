@@ -154,6 +154,30 @@
     .oa-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); border-radius: 18px; padding: 16px 18px; }
     .oa-card.is-confirmed { border-color: rgba(78,230,109,.4); }
     .oa-card.is-cancelled { opacity: .7; }
+    .oa-card.is-preparing { border-color: rgba(120,180,255,.4); }
+    .oa-card.is-on_the_way { border-color: rgba(255,180,80,.45); }
+    /* Tarjeta resumida (lista): se toca para abrir el detalle. */
+    .oa-sum { cursor: pointer; transition: transform .12s, background .12s; }
+    .oa-sum:hover { background: rgba(255,255,255,.11); transform: translateY(-1px); }
+    .oa-sum:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+    .oa-card.is-pending.oa-sum { border-color: rgba(255,213,31,.55); box-shadow: 0 0 0 1px rgba(255,213,31,.18) inset; }
+    .oa-sum .oa-top { margin-bottom: 6px; }
+    .oa-sum .oa-id { font-size: 1rem; }
+    .oa-sum-name { font-family: "Lilita One"; font-size: 1.35rem; line-height: 1.1; margin-bottom: 2px; overflow-wrap: anywhere; }
+    .oa-sum-phone { margin-bottom: 4px; }
+    .oa-sum-phone a { margin-left: 0; }
+    .oa-sum-where { margin-bottom: 10px; font-size: .95rem; overflow-wrap: anywhere; }
+    .oa-sum-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 2px dashed rgba(255,255,255,.18); padding-top: 10px; }
+    .oa-sum-total { font-family: "Lilita One"; font-size: 1.45rem; color: var(--yellow); }
+    .oa-sum-more { color: #9bd1ff; font-weight: 800; font-size: .88rem; }
+    /* Popup con el detalle del pedido. */
+    body.oa-modal-open { overflow: hidden; }
+    .oa-modal { position: fixed; inset: 0; z-index: 80; background: rgba(4,10,22,.72); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .oa-modal-card { position: relative; width: min(560px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; border-radius: 20px; background: #101c2f; box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+    .oa-modal-card .oa-detail { border-radius: 20px; padding: 20px 20px 18px; }
+    .oa-modal-card .oa-detail .oa-top { padding-right: 46px; }
+    .oa-modal-close { position: absolute; top: 12px; right: 12px; z-index: 1; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; }
+    .oa-modal-close:hover { background: rgba(255,255,255,.26); }
     .oa-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
     .oa-id { font-family: "Lilita One"; font-size: 1.2rem; }
     .oa-id small { color: #9bd1ff; font-weight: 700; font-family: "Baloo 2", sans-serif; }
