@@ -1275,6 +1275,46 @@
     }
   }
 
+  /* Cuando entra un pedido, la campanita suena una y otra vez (cada pocos
+     segundos) hasta que alguien le presta atención: pasar el mouse (o tocar)
+     el cartel de "pedido nuevo" o una tarjeta de pedido recibido, o abrir
+     un pedido. */
+  const RING_EVERY_MS = 4000;
+  let ringTimer = null;
+
+  function startRinging() {
+    if (!bellOn) return;
+    document.body.classList.add("oa-ringing");
+    if (ringTimer) return; // ya está sonando
+    ringStartedAt = Date.now();
+    playBell();
+    ringTimer = setInterval(() => {
+      if (!bellOn) { stopRinging(); return; }
+      playBell();
+    }, RING_EVERY_MS);
+  }
+
+  function stopRinging() {
+    if (ringTimer) clearInterval(ringTimer);
+    ringTimer = null;
+    document.body.classList.remove("oa-ringing");
+  }
+
+  let ringStartedAt = 0;
+
+  /* Usamos mousemove (no mouseover): si el mouse quedó quieto justo donde
+     aparece la tarjeta nueva, eso no cuenta como "lo vi". Igual damos un
+     segundo de gracia para que no se corte apenas empieza. */
+  function attendRinging(e) {
+    if (!ringTimer || Date.now() - ringStartedAt < 1000) return;
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest("[data-new-order-alert]") || t.closest(".oa-sum.is-pending") || t.closest(".oa-modal")) {
+      stopRinging();
+    }
+  }
+  ["mousemove", "pointerdown", "focusin"].forEach((ev) => document.addEventListener(ev, attendRinging, true));
+
   function paintBellToggle() {
     if (!bellToggle) return;
     bellToggle.classList.toggle("is-off", !bellOn);
@@ -1282,7 +1322,7 @@
     bellToggle.setAttribute("aria-pressed", bellOn ? "true" : "false");
     if (bellHint) {
       bellHint.textContent = bellOn
-        ? "💡 Suena cuando entra un pedido de la web. Dejá esta pestaña abierta."
+        ? "💡 Cuando entra un pedido de la web suena cada pocos segundos hasta que pasás el mouse por el pedido. Dejá esta pestaña abierta."
         : "🔕 La campanita está apagada: los pedidos nuevos solo se ven en la lista.";
     }
   }
@@ -1310,9 +1350,12 @@
       }
       if (lastId > lastSeenOrderId) {
         lastSeenOrderId = lastId;
-        if (bellOn) playBell();
+        startRinging();
         showNewOrderAlert(Number(data.pending) || 1);
         loadOrders({ keepModal: true });
+      } else if (ringTimer && data.pending != null && Number(data.pending) === 0) {
+        // Lo aceptaron/cancelaron desde otro lado: ya no hay nada que atender.
+        stopRinging();
       }
     } catch (error) {
       /* Sin conexión o sesión vencida: se reintenta en la próxima vuelta. */
@@ -2631,6 +2674,7 @@
         bellOn = !bellOn;
         localStorage.setItem(BELL_KEY, bellOn ? "1" : "0");
         paintBellToggle();
+        if (!bellOn) stopRinging();
         // Al prenderla suena una vez: sirve de prueba y, de paso, destraba el
         // audio del navegador (que exige un clic antes de dejar sonar nada).
         if (bellOn) playBell();
